@@ -1,124 +1,108 @@
-# NextStroke Master Implementation Plan
+# NextStroke Revised Master Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` or `superpowers:executing-plans` only after the owner approves the active phase plan. Use test-driven development for retained code.
 
-**Goal:** Deliver the invite-only NextStroke private beta through four independently testable implementation phases.
+**Goal:** Prove the risky preview and physical-execution assumptions first, then deliver an offline-first fineliner coach without premature cloud infrastructure.
 
-**Architecture:** Build a TypeScript monorepo whose local-first PWA owns image data, comparison, masks, and validation while a Cloudflare Worker owns beta authorization, opt-in synchronization, and provider-neutral AI orchestration. Each phase produces a usable vertical increment and freezes interfaces consumed by later phases.
+**Architecture:** Phase 0 is a disposable evidence lab. Production work begins only from passed evidence and keeps Quick Compare, material knowledge, coaching, imaging, and UI in separable units. `v0.1` stores projects locally; a minimal server exists only where secrets or paid model calls require it.
 
-**Tech Stack:** Node.js 24 LTS, pnpm 12, TypeScript, React, Vite, Dexie/IndexedDB, Zod, Canvas 2D, PDF.js, Vitest, Testing Library, Playwright, Hono, Cloudflare Workers, D1, R2, Cloudflare Access, OpenAI server-side adapters.
+**Tech direction:** TypeScript, React, Vite, Canvas 2D, IndexedDB/Dexie, Zod, PDF.js where retained, Vitest, Testing Library, Playwright plus real iPhone Safari. Exact versions are chosen after Phase 0.
 
 **Spec:** `docs/superpowers/specs/2026-10-03-nextstroke-product-design.md`
 
-## Global Constraints
+## Global constraints
 
-- The target repository is public at `jonasyr/nextstroke` under AGPL-3.0.
-- The deployed `v0.1` is an invite-only beta; cloud synchronization is off by default per project.
-- Original captures and checkpoints are immutable.
-- No image may leave the browser without an explicit, visible user action.
-- AI edits are separate masked layers; protected-region violations reject the preview.
-- Quick Compare must function locally without AI, an account, or a network connection.
-- iPhone Safari is a required platform; support the current and previous major iOS versions.
-- The MVP material profiles are fineliner, colored pencil, and watercolor.
-- AI model identifiers are environment configuration, never hard-coded domain assumptions.
-- No real personal image, API key, beta email list, or image content in source, fixtures, analytics, or logs.
-- Use synthetic or explicitly licensed image fixtures only.
-- All user-visible asynchronous work needs loading, cancellation, error, and offline states.
-- Every behavior or architecture decision must update the canonical documentation index and decision record in the same change.
+- Public repository: `jonasyr/nextstroke`, intended AGPL-3.0.
+- `v0.1` is fineliner-only.
+- Quick Compare works without an account, network, or AI.
+- Originals/checkpoints are immutable; final composites are local.
+- Provider full images are untrusted and never called change layers.
+- Controlled and experimental preview states remain distinct.
+- Material advice uses sourced claims and deterministic feasibility rules.
+- First public persistence is local plus export; no account or cloud sync.
+- Real iPhone Safari is a release gate.
+- No user art, secrets, proprietary catalog copies, or image-content telemetry in git or logs.
+- Paid live-model tests require explicit owner approval and cost limits.
 
-## Review Focus
+## Phase order
 
-1. A rotated HEIC/JPEG, a transparent PNG, a large image, or a multi-page PDF must import without orientation loss or an unbounded memory spike; Phase 2 Task 1 owns these tests.
-2. A two-finger gesture interrupted by a third pointer, browser blur, or fullscreen exit must leave transforms finite and pointer captures released; Phase 2 Task 3 owns these tests.
-3. IndexedDB eviction, quota failure, or a failed migration must preserve the current in-memory edit and show a recoverable state; Phase 3 Task 1 owns these tests.
-4. A generated preview that changes a protected pixel or exceeds the outside-mask threshold must never enter the accepted project state; Phase 3 Task 4 and Phase 4 Task 4 own these tests.
-5. Expired beta identity, interrupted asset upload, duplicate retry, or sync conflict must not expose another user's project or silently overwrite either version; Phase 4 Tasks 1–3 own these tests.
-
----
-
-## Plan set and dependency order
-
-| Phase | Plan | Independently testable outcome | Depends on |
+| Phase | Plan | Outcome | Start gate |
 | --- | --- | --- | --- |
-| 1 | `2026-10-03-nextstroke-phase-1-foundation.md` | Public-ready monorepo, governance, contracts, web/API smoke path, CI | Approved design |
-| 2 | `2026-10-03-nextstroke-phase-2-quick-compare.md` | Offline-capable Quick Compare with upload, PDF, alignment, gestures, fullscreen, and export | Phase 1 |
-| 3 | `2026-10-03-nextstroke-phase-3-guided-project.md` | Fully navigable local project workflow using deterministic suggestion/preview fixtures | Phases 1–2 |
-| 4 | `2026-10-03-nextstroke-phase-4-beta-cloud-ai.md` | Invite-only deployment, opt-in sync, analysis, bounded image preview, deletion, and telemetry | Phases 1–3 |
+| 0 | `2026-10-03-nextstroke-phase-0-proof-of-feasibility.md` | Evidence on preview, device, cost, and beginner execution | Owner approves experiment |
+| 1 | `2026-10-03-nextstroke-phase-1-foundation.md` | Lean retained workspace derived from passed experiments | Every Phase 0 GO criterion passes or pivot is approved |
+| 2 | `2026-10-03-nextstroke-phase-2-quick-compare.md` | Offline comparison utility on real iPhones | Foundation green |
+| 3 | `2026-10-03-nextstroke-phase-3-guided-project.md` | Fineliner knowledge, three ideas, instructions, calibration, local projects | Quick Compare useful and stable |
+| 4 | `2026-10-03-nextstroke-phase-4-beta-cloud-ai.md` | Passed controlled-preview path, checkpoints, export, public beta hardening | Coach useful without generated preview |
 
-Do not begin a later phase until the previous phase's exit gate is green and committed. Changes to immutable originals, explicit upload consent, masked-layer previews, local-first behavior, or iPhone-first support require a spec amendment.
+Cloud accounts/sync are not Phase 4. They require demonstrated demand and a future design.
 
-## Cross-phase interface ownership
+## Cross-phase ownership
 
-| Interface | Owner | Consumers |
+| Interface | First owner | Rule |
 | --- | --- | --- |
-| Domain schemas and IDs | Phase 1 `packages/contracts` | All packages and apps |
-| Canvas transforms and comparison state | Phase 2 `packages/compare` | Quick Compare and project check view |
-| Decoding, perspective, masks, and validation | Phases 2–3 `packages/imaging` | Web UI and AI preview acceptance |
-| Local repositories and sync queue | Phase 3 `apps/web/src/db` | Guided UI and cloud sync |
-| API client protocol | Phase 1 contract, Phase 4 implementation | Web and Worker |
-| Analysis and image-edit provider ports | Phase 4 `packages/ai` | Worker orchestration only |
-
-## Context preservation
-
-- `docs/README.md` is the canonical map and authority order for all humans and agents.
-- `docs/product/origin-and-evolution.md` explains the Fineliner Lupe starting point and why the product expanded.
-- `docs/decisions/decision-log.md` preserves each known selected and rejected option.
-- Root `README.md` and `AGENTS.md` must direct workers to the documentation index before implementation.
-- A future decision that changes scope, privacy, architecture, providers, or roadmap is documented in the same commit or pull request as the change.
+| Evaluation corpus and rubric | Phase 0 | Preserve all attempts; no best-of-only reporting |
+| Preview artifact vocabulary | Spec / Phase 0 | Do not collapse composite, difference, controlled, and experimental artifacts |
+| Workspace and contracts | Phase 1 | Freeze only interfaces supported by Phase 0 evidence |
+| Compare transforms/rendering | Phase 2 | Framework-independent and shared by checkpoint view |
+| Materials/evidence/rules | Phase 3 | Offline dataset, provenance required |
+| Local project repository/export | Phase 3 | Recoverable failures and explicit backup |
+| Retained preview adapter | Phase 4 | Only the Phase 0 winner; provider output remains untrusted |
 
 ## Release gates
 
-### Phase 1 exit
+### Phase 0
 
-- `pnpm check` and `pnpm test` pass from a fresh clone.
-- Web and Worker development servers start with documented commands.
-- Contract schemas reject malformed versioned payloads.
-- Repository governance and security documents are present.
+- All numerical GO criteria in the spec pass, or the owner explicitly approves the documented pivot.
+- The report includes every attempt, cost, latency, device outcome, and rejected result.
+- No production interface is inferred from a failed strategy.
 
-### Phase 2 exit
+### Phase 1
 
-- The existing Fineliner Lupe feature set is reproduced from clean, testable modules rather than copied as one minified file.
-- Quick Compare passes Chromium and WebKit end-to-end tests.
-- A real iPhone smoke checklist is documented and manually completed before merge.
-- The comparison workflow works after network disconnection.
+- Fresh-clone quality commands pass.
+- Contracts encode the accepted artifact vocabulary and sourced material model.
+- No account, sync, D1, or R2 scaffolding exists.
 
-### Phase 3 exit
+### Phase 2
 
-- A user can complete Capture → Straighten → Describe → Ideas → Preview → Execute → Check entirely with local fixtures.
-- Reloading at every stage restores the same project state.
-- Protected-mask and preview-validation failures cannot be accepted.
-- Project deletion removes all related local blobs.
+- Original/reference import, manual alignment, opacity, original reveal, CSS immersive mode, and export work offline.
+- Automatic alignment exposes confidence and manual fallback.
+- Real-device memory and gesture checklist passes on oldest supported and current iPhone.
 
-### Phase 4 exit
+### Phase 3
 
-- Cloudflare Access restricts the deployed beta to invited identities.
-- Sync is opt-in per project and conflicts preserve both versions.
-- AI analysis returns exactly three validated suggestions.
-- Preview generation creates a separate validated layer and rejects protected-region violations.
-- Deletion removes D1 metadata and R2 objects.
-- No live AI call runs in pull-request CI.
+- A beginner can receive three fineliner-feasible ideas and follow one without generated preview.
+- Every material fact has provenance or is explicitly generic/unknown.
+- Calibration is optional and skippable.
+- Local project reload, backup export, and database-failure recovery are exercised.
 
-## GitHub publication sequence
+### Phase 4
 
-1. Complete and approve all four plan documents locally.
-2. Create the public GitHub repository `jonasyr/nextstroke` with no generated starter files.
-3. Add `origin`, verify the owner and repository visibility, then push the existing `main` history containing the approved spec and plans.
-4. Execute Phase 1 on a feature branch or isolated worktree.
-5. Require CI before merging each phase to `main`.
-6. Configure Cloudflare and AI secrets only after Phase 4's code path exists; never commit secret values.
+- Only the preview strategy that passed Phase 0 is retained.
+- Controlled overlays obey original-copy boundaries.
+- Experimental inspiration is visibly distinct and never called safe.
+- Checkpoint comparison closes the physical loop.
+- Public deployment has rate/cost limits, privacy copy, accessibility, and real-iPhone evidence.
 
-## Whole-MVP verification
+## Estimated solo sequence
 
-Run from repository root:
+| Stage | Optimistic | Realistic | Pessimistic |
+| --- | ---: | ---: | ---: |
+| Phase 0 | 1 week | 2 weeks | 3–4 weeks |
+| Reduced MVP after GO | 5–7 weeks | 9–13 weeks | 16–24 weeks |
+| Stable public v1 | 24–32 weeks | 40–60 weeks | 70–100+ weeks |
 
-```bash
-pnpm install --frozen-lockfile
-pnpm format:check
-pnpm lint
-pnpm typecheck
-pnpm test
-pnpm build
-pnpm exec playwright test --project=chromium --project=webkit
-```
+Estimates include device testing and user research. They are not promises.
 
-Expected: every command exits `0`; live-provider tests remain skipped unless an explicit local opt-in flag and non-production test project are present.
+## Context and decision maintenance
+
+- Update `docs/project-state.md` after each gate.
+- Record every changed owner decision in `docs/decisions/decision-log.md` with alternatives.
+- Keep failed experiment evidence; do not erase it when pivoting.
+- Update `AGENTS.md` only for durable contributor/agent rules.
+- A new AI should begin with `docs/handoffs/continue-planning-prompt.md`.
+
+## Whole-product verification direction
+
+Once retained code exists, the root verification command must cover formatting, linting, types, unit tests, build, browser E2E, license checks, and documentation links. Playwright WebKit supports automation but never replaces the real-iPhone checklist.
+
+No phase starts automatically. The owner reviews the active written plan and its evidence first.

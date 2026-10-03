@@ -56,6 +56,28 @@ The broader guided workflow is allowed to change navigation and visual design, b
 
 ## 5. Product boundary reached on 2026-10-03
 
-The agreed MVP audience is beginners and hobby artists with an already-started physical artwork. The initial materials are fineliner, colored pencil, and watercolor. NextStroke is an iPhone-first PWA, deployed as an invite-only beta, with local-first projects and optional per-project synchronization.
+The first planning pass targeted beginners and hobby artists, three media, an invite-only cloud beta, and optional synchronization. An independent feasibility review then found that the plan committed to too much infrastructure before proving its central preview mechanism.
 
-AI is a supporting subsystem. The defining product is the combination of safe next-step selection, bounded preview, physical instructions, and deterministic comparison.
+The owner subsequently approved a narrower direction:
+
+- Coach + controlled layer remains the product core.
+- `v0.1` supports fineliner only.
+- Phase 0 tests the risky preview hypothesis before production architecture.
+- Local projects and export precede accounts and synchronization.
+- Uncertain model output may be shown only as experimental inspiration with a visible warning.
+- A sourced fineliner/paper knowledge base and optional personal calibration card become part of the MVP.
+
+AI remains a supporting subsystem. The defining product is now the combination of deterministic comparison, sourced material knowledge, physically executable next-step coaching, explicit uncertainty, and a controlled local overlay over an immutable original.
+
+## 6. What changed in the safety model
+
+The earlier wording assumed that a provider composite could be converted into a reliable transparent change layer and that pixel thresholds could prove safety. Research did not support either assumption.
+
+The revised model distinguishes four artifacts:
+
+1. `GeneratedComposite`: an untrusted full image from a provider.
+2. `DerivedDifferenceOverlay`: a diagnostic visualization of differences, never described as the true edit.
+3. `ControlledOverlay`: a direct or structured layer that meets product validation and is composited locally.
+4. `ExperimentalInspiration`: an uncertain result shown with warning, not an execution-safe layer.
+
+Outside the editable region and inside protected geometry, the renderer uses original pixels. Semantic quality still requires human confirmation; a pixel score alone is not a safety certificate.

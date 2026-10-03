@@ -43,7 +43,8 @@
 ## D-005 — Initial material profiles
 
 - **Date:** 2026-10-03
-- **Selected:** Fineliner, colored pencil, and watercolor.
+- **Superseded by:** D-023.
+- **Originally selected:** Fineliner, colored pencil, and watercolor.
 - **Alternatives:** Fineliner only; a broader set of media in the MVP.
 - **Reason:** These cover the current artwork style and meaningful differences in stroke, pressure, layering, and water use without making the MVP universal.
 - **Consequence:** Contracts and instructions use these three explicit profiles.
@@ -60,7 +61,8 @@
 ## D-007 — Account and storage model
 
 - **Date:** 2026-10-03
-- **Selected:** Local-first use with an optional account for sync/backup in the public product.
+- **Superseded for `v0.1` by:** D-026.
+- **Originally selected:** Local-first use with an optional account for sync/backup in the public product.
 - **Alternatives:** Mandatory account; device-only storage with no sync.
 - **Reason:** Local use protects privacy and lowers friction; optional sync supports backup and device transfer.
 - **Consequence:** IndexedDB is primary and server state cannot be the only copy.
@@ -84,7 +86,8 @@
 ## D-010 — Initial access model
 
 - **Date:** 2026-10-03
-- **Selected:** Invite-only private beta with login.
+- **Superseded for the first public MVP by:** D-026.
+- **Originally selected:** Invite-only private beta with login.
 - **Alternatives:** Public MVP; local prototype only; public account-optional release immediately.
 - **Reason:** The team needs cost, safety, and usability evidence before exposing model-backed endpoints publicly.
 - **Consequence:** Cloudflare Access gates beta deployment; account-optional local mode arrives at public `v1.0`.
@@ -92,7 +95,8 @@
 ## D-011 — System architecture
 
 - **Date:** 2026-10-03
-- **Selected:** Modular hybrid PWA: local image core plus server-side auth, sync, and AI orchestration.
+- **Superseded for `v0.1` by:** D-022, D-024, and D-026.
+- **Originally selected:** Modular hybrid PWA: local image core plus server-side auth, sync, and AI orchestration.
 - **Alternatives:** Entirely local/no backend; server-first application; native client.
 - **Reason:** Deterministic imaging and offline comparison belong on-device, while secrets and AI calls require a server boundary.
 - **Consequence:** TypeScript monorepo with separate `web`, `api`, `compare`, `imaging`, `contracts`, `ai`, and `ui` units.
@@ -100,7 +104,8 @@
 ## D-012 — Preview rendering and Canvas responsibility
 
 - **Date:** 2026-10-03
-- **Selected:** Hybrid preview pipeline: an image model renders a narrowly scoped artistic addition; Canvas aligns, masks, composites, displays, and validates it.
+- **Superseded by:** D-022 and D-025.
+- **Originally selected:** Hybrid preview pipeline: an image model renders a narrowly scoped artistic addition; Canvas aligns, masks, composites, displays, and validates it.
 - **Alternatives:** Canvas-only procedural painting; whole-image AI regeneration.
 - **Reason:** Canvas cannot invent convincing material-aware artwork, while whole-image generation can alter successful details.
 - **Consequence:** Preview is a separate transparent layer with an allowed mask and protected regions.
@@ -108,7 +113,8 @@
 ## D-013 — Safety and privacy level
 
 - **Date:** 2026-10-03
-- **Selected:** Immutable originals, explicit transmission, protected regions, local difference validation, per-project opt-in sync.
+- **Partially superseded by:** D-025 and D-026. Immutable originals, explicit transmission, and protected regions remain; difference validation is diagnostic and `v0.1` has no sync.
+- **Originally selected:** Immutable originals, explicit transmission, protected regions, local difference validation, per-project opt-in sync.
 - **Alternatives:** Stricter device-only beta; simplified masks/validation for faster development.
 - **Reason:** The lighthouse lamp example proved that unintended changes are a core product failure, not a cosmetic defect.
 - **Consequence:** Safety checks can reject an attractive preview; logs exclude image content.
@@ -123,7 +129,8 @@
 ## D-015 — Roadmap shape
 
 - **Date:** 2026-10-03
-- **Selected:** Complete private-beta core in `v0.1`, learning improvements in `v0.2`, account-optional public release in `v1.0`, and AR/community only after validated demand.
+- **Superseded by:** D-024 and D-026.
+- **Originally selected:** Complete private-beta core in `v0.1`, learning improvements in `v0.2`, account-optional public release in `v1.0`, and AR/community only after validated demand.
 - **Alternatives:** Smaller MVP without PDF/sync/material breadth; larger MVP with live camera, social features, or more media.
 - **Reason:** The selected MVP proves the full differentiated loop without absorbing speculative expansion.
 
@@ -152,7 +159,8 @@
 ## D-019 — Beta measurement
 
 - **Date:** 2026-10-03
-- **Selected:** Measure completion, comprehension, usefulness, mask adherence, speed, stability, privacy, and Safari compatibility without inspecting image content.
+- **Superseded metrics by:** D-024 and the revised specification Phase 0 gates.
+- **Originally selected:** Measure completion, comprehension, usefulness, mask adherence, speed, stability, privacy, and Safari compatibility without inspecting image content.
 - **Alternatives:** Qualitative interviews only; stricter initial numeric gates.
 - **Reason:** Release decisions need observable evidence, but privacy rules exclude image-content analytics.
 - **Consequence:** The approved spec contains exact gates and a minimum evidence threshold.
@@ -160,7 +168,8 @@
 ## D-020 — Implementation plan structure
 
 - **Date:** 2026-10-03
-- **Selected:** Master plan plus four independently testable phase plans.
+- **Superseded by:** D-024.
+- **Originally selected:** Master plan plus four independently testable phase plans.
 - **Alternatives:** One large plan; two larger client/cloud plans.
 - **Reason:** Repository foundation, Quick Compare, guided local workflow, and cloud/AI integration have distinct review and failure boundaries.
 - **Consequence:** A later phase cannot start until the previous phase exit gate is green.
@@ -172,3 +181,61 @@
 - **Alternatives:** Keep only current-state docs; rely on chat/issue history for rationale.
 - **Reason:** Future humans and AI models need a stable map of intent and must not reverse critical decisions by guessing.
 - **Consequence:** Behavior or architecture changes update documentation in the same pull request.
+
+## D-022 — Product core after feasibility review
+
+- **Date:** 2026-10-03
+- **Selected:** Coach + controlled layer.
+- **Alternatives:** AI-preview-first product; comparison-only product.
+- **Reason:** Quick Compare and material-aware coaching are feasible and independently useful. Whole-image generation cannot honestly guarantee preservation of existing marks or yield a true transparent change layer.
+- **Consequence:** The product leads with three physically executable next-step options, sourced material constraints, instructions, and a locally composited overlay. Full-image generation is secondary and untrusted.
+- **Reconsider when:** A provider contract and independent evaluation demonstrate repeatable transparent-overlay output and contour preservation on the target corpus.
+
+## D-023 — Fineliner-only `v0.1`
+
+- **Date:** 2026-10-03
+- **Selected:** Fineliner only for the first reliable release.
+- **Alternatives:** Fineliner plus colored pencil; fineliner, colored pencil, and watercolor.
+- **Reason:** Each medium requires separate physical rules and evaluation. Watercolor adds irreversible pigment, water, and paper-state behavior; treating media as a simple enum hides the real quality work.
+- **Consequence:** Colored pencil is a later gated expansion. Watercolor requires separate field research before planning.
+- **Reconsider when:** Fineliner meets its own evidence gates and a material-specific study is approved.
+
+## D-024 — Phase 0 before production architecture
+
+- **Date:** 2026-10-03
+- **Selected:** Run a strict 1–2 week proof of feasibility on 30 ordinary iPhone photographs before building the production architecture.
+- **Alternatives:** Three-day desk test; immediately build the polished MVP.
+- **Reason:** The previous plan delayed its highest-risk live-provider experiment until after foundation, comparison, local workflow, sync, and cloud work.
+- **Consequence:** Phase 0 compares three preview strategies without cherry-picking and has explicit GO/PIVOT/STOP thresholds. Failed gates prevent automatic progression.
+
+## D-025 — Controlled and experimental preview states
+
+- **Date:** 2026-10-03
+- **Selected:** Distinguish controlled overlays from experimental inspiration.
+- **Alternatives:** Hide every failed preview; repeatedly regenerate until something looks acceptable.
+- **Reason:** The owner wants the best uncertain idea to remain visible, but uncertainty must not become a false safety claim.
+- **Consequence:** A failed candidate may appear with prominent warning and physical guidance. It is not called safe or exact, and default export includes its warning or excludes it as a clean instruction layer.
+
+## D-026 — Local projects and export before accounts or sync
+
+- **Date:** 2026-10-03
+- **Selected:** The first public version stores projects locally and supports explicit export/backup.
+- **Alternatives:** Optional account and sync in the MVP; session-only state.
+- **Reason:** Accounts, conflict handling, cloud deletion, retention, and privacy expand the MVP without testing the core product value.
+- **Consequence:** IndexedDB remains best-effort and the UI must recommend export. Account and sync work requires demonstrated demand and a separate plan.
+
+## D-027 — Sourced material knowledge in the MVP
+
+- **Date:** 2026-10-03
+- **Selected:** Ship a small curated fineliner/paper knowledge base with 10–20 common black fineliners and a conservative generic profile.
+- **Alternatives:** Let the LLM rely on general knowledge; postpone material intelligence; build a large commercial catalog first.
+- **Reason:** Sourced tool constraints make recommendations executable and differentiate NextStroke from a generic art chatbot.
+- **Consequence:** Claims include provenance, conditions, evidence level, confidence, and retrieval date. The LLM may explain selected claims but may not invent material facts.
+
+## D-028 — Optional personal calibration card
+
+- **Date:** 2026-10-03
+- **Selected:** Offer a two-minute pen-and-paper calibration card as an optional recommended step.
+- **Alternatives:** Require calibration; postpone calibration until after MVP.
+- **Reason:** Paper and individual pen behavior materially affect line width, darkness, bleed, and layering, but mandatory setup would delay first value.
+- **Consequence:** Uncalibrated users receive more conservative advice. Camera-derived measurements are relative and must not be presented as absolute colorimetry.

@@ -1,438 +1,349 @@
 # NextStroke Product and System Design
 
-**Status:** Proposed for final review  
-**Date:** 2026-10-03  
-**Target repository:** `jonasyr/nextstroke` (public)  
-**License:** AGPL-3.0  
-**Initial release:** Invite-only private beta
+**Status:** Approved direction; revised after independent feasibility review
 
-## 1. Executive summary
+**Date:** 2026-10-03
 
-NextStroke is an iPhone-first progressive web app for beginners and hobby artists who already have a physical artwork in progress. It helps a person decide and execute the next safe, realistic improvement without replacing their style or regenerating the entire work.
+**Owner decisions:** `docs/decisions/decision-log.md` D-022 through D-028
 
-The product combines a guided, material-aware analysis with a deterministic comparison tool. AI may propose and render a tightly bounded change layer. Browser-native imaging code aligns images, composites that layer, validates its bounds, and lets the user compare it with the untouched original. The existing overlay workflow remains available as a standalone quick mode.
+**Feasibility evidence:** `docs/reviews/2026-10-03-independent-feasibility-review.md`
 
-The initial material profiles are fineliner, colored pencil, and watercolor. A reference image is optional. The product is deliberately not a general art chatbot, social network, or one-click artwork generator.
+## 1. Product definition
 
-## 2. Problem
+NextStroke is an iPhone-first physical-art coach for beginners and hobby artists who have an already-started analog artwork. It helps them decide and execute the next feasible fineliner marks without replacing their work.
 
-People working on physical art often reach a point where they can see that something is missing but cannot confidently answer:
+The product combines:
 
-- What should I change next?
-- Can I execute that change with the tools I own?
-- How will it affect this specific physical artwork?
-- Will the change preserve the parts that already work?
-- How do I translate a digital suggestion into real strokes, pressure, colors, and order?
+- offline Quick Compare for original/reference or checkpoint comparison;
+- three small next-step options constrained by the selected tool and paper;
+- explicit editable and protected regions;
+- a controlled visual overlay where evidence supports one;
+- beginner-readable physical instructions;
+- checkpoint comparison after execution;
+- visible uncertainty when only experimental inspiration is available.
 
-Generic image generators tend to recreate the whole image, silently changing successful details. Generic critique tools stop at advice. Tracing tools help reproduce a reference but do not decide what is safe or useful on an artwork already in progress. NextStroke connects diagnosis, a bounded preview, physical instructions, and a new-photo comparison in one workflow.
+The promise is **“the next feasible stroke with your actual tool”**, not automatic beautification and not a guarantee that a generative model understands the artwork perfectly.
 
-## 3. Audience and promise
+## 2. Problem and differentiation
 
-### Primary audience
+Beginners often know that an analog work is unfinished but cannot judge which small action is low-risk, how it would look, or whether it is feasible with the materials they own. Generic image generators can create attractive alternatives but commonly redraw successful details. Generic art chatbots do not connect advice to location, material, execution, and later comparison.
 
-Beginners and hobby artists with an already-started analog artwork who want practical help completing or improving it.
+NextStroke differentiates through a closed physical loop:
 
-### Product promise
+1. inspect the real work;
+2. select the real fineliner and paper context;
+3. choose one of three bounded actions;
+4. see a controlled overlay or clearly warned inspiration;
+5. execute concrete steps on paper;
+6. photograph the checkpoint and compare.
 
-> Photograph the work you already made. Choose one realistic improvement. See only that change, learn how to make it with your own materials, and verify the result without losing your original style.
+## 3. Audience
 
-### Design principles
+### Primary
 
-1. Preserve authorship: suggest the next action rather than replace the artwork.
-2. Make uncertainty visible: advice and previews may be useful without pretending to be exact physical simulations.
-3. Prefer bounded changes: every preview has a mask, locked regions, and a local validation step.
-4. Teach while helping: instructions explain why a change works and how to execute it.
-5. Keep the comparison tool useful without AI, an account, or a network connection.
-6. Treat iPhone Safari as a first-class platform.
+Beginners and hobby artists with a started fineliner artwork and an iPhone.
 
-## 4. Scope
+### Not optimized for in `v0.1`
 
-### Included in the private-beta MVP
+- professional production workflows;
+- digital-only drawing;
+- teachers managing classes;
+- automatic restoration;
+- colored pencil or watercolor guidance;
+- unrestricted image editing.
 
-- Invite-only login for access to the deployed beta
-- Project creation from camera, image, or one selected PDF page
-- Cropping, four-corner perspective correction, and capture-quality warnings
-- Fineliner, colored-pencil, and watercolor material profiles
-- Available-tool and goal selection
-- Optional reference image
-- Explicit user-triggered AI analysis
-- Exactly three structured improvement candidates
-- Impact, effort, risk, required materials, and reasoning for each candidate
-- Selection of one candidate for a bounded preview
-- `Careful`, `Balanced`, and `Bold` change boundaries
-- User-editable protected regions
-- Material-aware preview as a separate masked change layer
-- Local validation for changes outside the allowed mask or inside protected regions
-- Beginner-friendly, step-by-step physical instructions
-- Checkpoint photo and before/after comparison
-- Local projects, with cloud synchronization enabled per project rather than globally
-- Export of the current comparison or instruction sheet
-- The complete existing comparison feature as Quick Compare
+## 4. Product principles
 
-### Quick Compare invariants
+1. **Originals are immutable.** Suggestions and previews are additional artifacts.
+2. **Comparison is useful without AI.** Quick Compare works offline and without an account.
+3. **Physical feasibility beats visual spectacle.** Advice must match the selected tool and paper.
+4. **Uncertainty is a product state.** “No controlled preview” is allowed.
+5. **Models do not define truth.** Provider output is untrusted until locally bounded and accepted.
+6. **Sources travel with material claims.** The interface can show where a fact came from.
+7. **Local first means recoverable, not magically permanent.** Export is part of the storage model.
+8. **iPhone Safari is tested on devices.** Emulation is supporting evidence only.
 
-Quick Compare retains:
+## 5. `v0.1` scope
 
-- original and reference/suggestion uploads
-- PDF upload and page choice
-- automatic and manual alignment
-- horizontal and vertical position, scale, and rotation
-- opacity control
-- pan and pinch zoom
-- tap or press-and-hold to show the original
-- fullscreen with the exact current transform and opacity state
-- image export/download
-- iPhone-safe gestures without text selection, image dragging, or the Safari long-press menu inside the canvas workspace
+### Included
 
-### Explicitly outside the MVP
+- iPhone-first installable PWA;
+- JPEG and PNG import with orientation and color normalization;
+- optional single-page PDF import under explicit memory limits;
+- original and optional reference/checkpoint upload;
+- manual crop and four-corner perspective correction;
+- automatic corner/alignment suggestion with confidence and manual fallback;
+- opacity comparison, swipe/split option, tap and press-hold original reveal;
+- pan, pinch zoom, reset, fit, and CSS immersive comparison;
+- image export and local project-package backup;
+- three fineliner-specific next-step suggestions;
+- editable region plus protected geometry;
+- Careful/Balanced/Bold control based on physical risk, area, contrast, and step count;
+- controlled overlay when possible;
+- experimental inspiration with warning when selected by the user;
+- material-aware execution instructions;
+- 10–20 curated black fineliner profiles, generic profile, paper context;
+- optional personal calibration card;
+- local projects and checkpoints in IndexedDB with export warning;
+- explicit confirmation before any image is sent to a remote model.
 
-- Live augmented-reality drawing guidance
-- A public social feed or public profiles
-- Payments and subscriptions
-- Unlimited free-form chat as the primary interaction
-- Support for every art medium
-- Automatic full-artwork makeovers
-- A dependency on Jev
-- Native iOS applications
+### Excluded
 
-## 5. Main user flow
+- account, login, cloud sync, D1, or R2 project storage;
+- colored-pencil or watercolor production support;
+- AR camera overlay;
+- community or marketplace;
+- silent background upload;
+- automatic destructive edits;
+- claims of exact mask adherence or semantic safety from pixel percentages;
+- conversion of a full generated composite into a claimed “true change layer”;
+- native iPhone element-fullscreen as a requirement;
+- large multi-page PDF project workflow;
+- broad provider-neutral architecture before a provider passes Phase 0.
 
-1. **Start:** Create a project from the camera, photo library, or a PDF page.
-2. **Check capture:** Crop, detect four corners, correct perspective, and flag blur, glare, or an unusable angle.
-3. **Set context:** Select material, available tools, and the desired outcome; optionally add a reference.
-4. **Consent and analyze:** Show which images will be transmitted. Send them only after the user explicitly starts analysis.
-5. **Choose:** Present three comparable improvement candidates.
-6. **Preview:** The user chooses one candidate, a change boundary, and any protected regions. Generate one bounded change layer.
-7. **Validate:** Browser-side imaging rejects or flags changes outside the permitted mask.
-8. **Execute:** Show one physical action at a time, including material, color, pressure, direction, and approximate duration.
-9. **Check:** Capture the result and align it with the prior checkpoint using the comparison engine.
-10. **Continue or finish:** Save a checkpoint, repeat with another suggestion, export, or stop.
+## 6. Main flows
 
-Quick Compare is independently reachable from the start screen and does not require the guided project flow.
+### 6.1 Quick Compare
 
-## 6. Mobile UX
+1. Choose original.
+2. Choose reference or checkpoint.
+3. Normalize both to a bounded working size.
+4. Accept automatic alignment or adjust four points/transform manually.
+5. Compare using opacity, split, original reveal, zoom, and pan.
+6. Enter CSS immersive mode with current settings preserved.
+7. Export the current comparison or return without creating a project.
 
-### Start screen
+Quick Compare must remain usable offline after the PWA shell is installed.
 
-- `New project` is the dominant action.
-- `Quick compare` opens the existing non-AI workflow.
-- Recent projects appear below the actions.
-- Synchronization state is visible but visually secondary.
-- There is no tool wall and no generic chat box.
+### 6.2 Guided project
 
-### Guided project stages
+1. Capture or import the artwork.
+2. Correct perspective and confirm the working crop.
+3. Select a known fineliner or generic profile and paper context.
+4. Optionally complete the calibration card.
+5. Describe intent, desired area, and what must remain untouched.
+6. Receive exactly three bounded ideas.
+7. Select one idea and confirm editable/protected regions.
+8. Request a preview only after a transmission explanation and confirmation.
+9. Review controlled overlay or experimental inspiration state.
+10. Follow ordered physical steps.
+11. Capture a checkpoint and compare it with the starting image.
+12. Save locally and optionally export a project package.
 
-The project is a single reversible flow:
+## 7. Preview artifact model
 
-1. Capture
-2. Straighten
-3. Describe
-4. Ideas
-5. Preview
-6. Execute
-7. Check
+```ts
+type PreviewTrust = "controlled" | "experimental" | "rejected";
 
-Progress is visible without behaving like a rigid form. Drafts save locally after every meaningful change.
+interface GeneratedComposite {
+  kind: "generated-composite";
+  assetId: string;
+  providerRunId: string;
+  trust: "untrusted";
+}
 
-### Preview view
+interface DerivedDifferenceOverlay {
+  kind: "derived-difference-overlay";
+  assetId: string;
+  sourceCompositeId: string;
+  diagnosticOnly: true;
+}
 
-- The artwork receives the largest available viewport.
-- A tap temporarily shows the original; press-and-hold keeps it visible.
-- The opacity control remains directly below the image.
-- Fullscreen preserves the exact mask, transform, zoom, and opacity.
-- `Show changes only` isolates the transparent change layer.
-- Protected regions can be painted and erased with a finger.
-- The default preview favors physical feasibility over an idealized render.
+interface ControlledOverlay {
+  kind: "controlled-overlay";
+  assetId: string;
+  construction: "direct-alpha" | "structured-strokes" | "svg";
+  editableMaskRevision: string;
+  protectedGeometryRevision: string;
+  trust: "controlled";
+}
 
-### Execution mode
-
-Each step card contains:
-
-- tool and material
-- color or mix
-- pressure or water load where relevant
-- stroke direction and placement
-- approximate duration
-- optional magnified detail crop
-
-Primary actions are `Done`, `Skip`, `Too risky`, and `Show another way`. The generated plan works offline after it has been received.
-
-### iPhone and Safari requirements
-
-- Safe-area-aware layout and comfortable one-handed controls
-- Touch targets of at least 44 points
-- Dynamic Type, reduced-motion support, meaningful labels, and keyboard operation where applicable
-- No selection, image dragging, or disruptive context menu inside the image workspace
-- Normal browser and accessibility behavior remains intact outside that workspace
-- Image gestures do not accidentally zoom or scroll the page
-- Camera and file permissions are requested only in context and with a short explanation
-
-## 7. Automated painted previews
-
-Canvas alone cannot create a convincing new artistic intervention. NextStroke therefore uses a hybrid pipeline:
-
-1. A vision-capable model returns a structured diagnosis and three proposals.
-2. After the user selects a proposal, the system derives a narrowly scoped edit request and allowed mask.
-3. An image-editing model renders the material-aware intervention within that region.
-4. The imaging package extracts or reconstructs a transparent change layer.
-5. Canvas applies alignment, transforms, compositing, opacity, protected-region overlays, and comparison.
-6. A local difference validator checks the rendered result against the original and the allowed mask.
-7. A violating preview is rejected or clearly marked uncertain; it is never silently presented as valid.
-
-For example, a lighthouse-lamp improvement may contain a white-yellow core, a soft warm halo, and an optional transparent beam. The existing black lamp grid is protected and must survive unchanged.
-
-The `Careful`, `Balanced`, and `Bold` control changes permitted area, contrast, step count, and execution risk. It is not presented as an opaque AI creativity or intelligence slider.
-
-## 8. Data model
-
-### Core entities
-
-- `Project`: title, material profile, goal, available tools, local ID, optional synchronized ID
-- `Capture`: immutable source asset, normalized view, capture time, crop, and perspective transform
-- `Reference`: optional reference image or selected PDF page
-- `SuggestionSet`: model provenance and exactly three structured candidates
-- `Suggestion`: effect, difficulty, risk, materials, explanation, and target region
-- `ChangePlan`: selected suggestion and ordered physical steps
-- `PreviewLayer`: rendered change asset, allowed mask, protected mask, transform, and validation result
-- `Checkpoint`: immutable later capture linked to a prior project state
-- `Feedback`: optional one-tap usefulness, feasibility, and result-similarity signals
-
-All AI and API payloads are validated against versioned schemas in `packages/contracts`. Original captures and checkpoints are immutable; derived files may be regenerated or deleted.
-
-## 9. AI and safety rules
-
-1. Never overwrite an original capture.
-2. Do not transmit an image until the user explicitly starts analysis or preview generation.
-3. Show which assets are about to be sent.
-4. Keep analysis, preview generation, and comparison as separate user-controlled actions.
-5. Generate structured suggestions before any image edit.
-6. Generate a preview only for the selected suggestion.
-7. Require an allowed mask and support protected masks.
-8. Measure change outside the allowed mask and inside protected regions.
-9. Reject previews that violate configured thresholds.
-10. Record provider/model/version and validation outcomes without logging image content.
-11. Keep provider adapters interchangeable; the domain model must not depend on one provider's response format.
-12. Present previews as guidance, not as a guaranteed physical simulation.
-
-Jev is deferred. It may later become a typed, explainable layer for ranking suggestions, modeling risk, or routing uncertainty. It must not become the vision engine or the central product concept.
-
-## 10. Privacy, storage, and deletion
-
-- IndexedDB is the primary store for local projects and assets.
-- During beta, invited users authenticate to access the deployment.
-- Cloud synchronization is disabled by default for each new project and can be enabled per project.
-- Local-only projects and Quick Compare remain technically independent of cloud storage.
-- Product events contain action types and outcomes, not image content, personal prompt text, or full filenames.
-- Secrets remain server-side.
-- Deleting a project removes synchronized project images and derived previews, subject only to documented backup-retention limits.
-- The public release opens local mode without an account; authentication becomes optional for synchronization and device transfer.
-
-## 11. Technical architecture
-
-The implementation is a TypeScript monorepo:
-
-```text
-apps/web              iPhone-first PWA and UI
-apps/api              authentication, synchronization, and AI orchestration
-packages/compare      framework-independent overlay and alignment engine
-packages/imaging      crop, perspective, masks, normalization, and validation
-packages/contracts    shared versioned schemas and domain types
-packages/ai           provider-neutral analysis and image-edit adapters
-packages/ui           shared accessible interface primitives
-docs/                 product, architecture, privacy, roadmap, and decisions
-tests/fixtures         synthetic and licensed deterministic fixtures
+interface ExperimentalInspiration {
+  kind: "experimental-inspiration";
+  assetId: string;
+  source: "generated-composite" | "failed-overlay";
+  trust: "experimental";
+  warningCode: string;
+}
 ```
 
-### Web client
+`GeneratedComposite` and `DerivedDifferenceOverlay` can never be silently promoted to `ControlledOverlay`. Human approval records preference; it does not change the artifact's technical trust class.
 
-- React and TypeScript PWA
-- Browser-native Canvas and image processing
-- IndexedDB-first persistence
-- Service worker for the shell, saved plans, and Quick Compare
-- No AI provider key in the client
+## 8. Image and safety pipeline
 
-### API
+1. Keep the immutable source blob.
+2. Apply orientation and convert a bounded working copy to defined sRGB behavior.
+3. Store transform and crop revisions in source-normalized coordinates.
+4. Maintain separate `editableRegion`, `protectedGeometry`, and `featherBand` masks.
+5. Send only the confirmed working crop, required context, and masks after explicit user action.
+6. Treat provider output as untrusted.
+7. Register provider output to the working source with confidence; fall back to manual alignment.
+8. For a controlled output, copy original pixels outside the editable region and inside protected geometry.
+9. Evaluate geometry, photometry, contour similarity, and artifact structure separately.
+10. Ask the user to confirm artistic meaning.
+11. Keep experimental candidates in a separate state with prominent warning.
 
-- Cloudflare-compatible Worker architecture
-- Invite-only beta access
-- Authentication, sync metadata, optional asset storage, rate limits, and AI orchestration
-- Server-side model credentials and provider adapters
+A pixel ratio is a diagnostic signal, not a semantic certificate. Resampling, antialiasing, photo lighting, and registration can all change pixels without changing artistic content, while a critical line can be damaged inside an allowed region.
 
-### Offline behavior
+## 9. Material knowledge
 
-Available offline after first load:
+The authoritative subsystem design is `docs/product/material-knowledge-base.md`.
 
-- Quick Compare
-- local projects and captures
-- cached execution plans
-- alignment, masks, validation, and export
+Key invariants:
 
-Requires a network connection:
+- `v0.1` is fineliner-only.
+- Material claims include source, evidence level, conditions, confidence, and retrieval date.
+- Manufacturer statements remain attributed claims.
+- NextStroke tests include method, paper, environment, and revision.
+- Community reports identify possible failures but cannot establish a safety claim.
+- Recommendations are rule-filtered before an LLM explains them.
+- Unknown tools use a conservative generic profile.
+- Calibration is optional and produces relative, not absolute, measurements.
 
-- login refresh when the session expires
-- new AI analysis
-- new preview generation
-- synchronization
+## 10. Data model
 
-## 12. Failure handling
+Core local entities:
 
-- Blurry, reflective, or highly skewed input produces a concrete recapture instruction.
-- Uncertain subject detection asks the user to mark the target area.
-- A preview that changes a protected region is automatically rejected and may be retried with a stricter request.
-- If AI is unavailable, the project and Quick Compare continue to work and analysis can be retried later.
-- A sync conflict preserves both versions and never silently overwrites either.
-- Export failure leaves the full local project intact.
-- Interrupted uploads and analyses are resumable or safely restartable without duplicate project state.
+- `Project`
+- `ImmutableAsset`
+- `WorkingImageRevision`
+- `TransformRevision`
+- `MaskRevision`
+- `ToolSelection`
+- `PaperSelection`
+- `CalibrationSample`
+- `SuggestionSet`
+- `SelectedSuggestion`
+- `PreviewAttempt`
+- `ControlledOverlay`
+- `ExperimentalInspiration`
+- `ExecutionPlan`
+- `Checkpoint`
+- `ExportManifest`
 
-## 13. Repository governance
+Every derived artifact records its source asset hash, algorithm or model version, prompt/schema version where applicable, transform revision, and creation time.
 
-The public repository uses AGPL-3.0 and initially targets `jonasyr/nextstroke`.
+## 11. Storage and privacy
 
-```text
-apps/
-packages/
-docs/
-  product/
-  architecture/
-  privacy/
-  decisions/
-  roadmap/
-  superpowers/specs/
-tests/fixtures/
-AGENTS.md
-CONTRIBUTING.md
-SECURITY.md
-CODE_OF_CONDUCT.md
-LICENSE
-README.md
-```
+- Projects and blobs are local in `v0.1`.
+- IndexedDB is best-effort storage and may be evicted; the UI communicates this.
+- Use `navigator.storage.estimate()`, `persisted()`, and `persist()` when supported.
+- Project-package export is available early, not postponed to cloud work.
+- Reopening after backgrounding retries database access idempotently.
+- No user image or image-derived description enters logs or analytics.
+- A remote analysis/preview call requires a visible explanation of what will be sent.
+- Server processing, if used, retains no project asset by default and follows a documented deletion window.
 
-### Required `AGENTS.md` invariants
+Cloud accounts and synchronization require a future design amendment covering identity, conflicts, deletion, retention, backups, and applicable data-protection obligations.
 
-- Never overwrite an original image.
-- Never upload without an explicit and visible user action.
-- Treat every AI edit as a separate masked layer.
-- Detect material changes outside the allowed mask.
-- Keep `packages/compare` and `packages/imaging` independent of React and model providers.
-- Define shared data structures only in `packages/contracts`.
-- Treat iPhone Safari as a required target.
-- Implement loading, empty, error, cancellation, and offline states for every user-visible async feature.
-- Keep keys, personal images, and real user data out of source, fixtures, and logs.
-- Run the relevant tests, type checking, linting, and build before declaring a change complete.
+## 12. Mobile and accessibility
 
-### Documentation
+- Support the current and previous major iOS versions at release time, verified again before launch.
+- Define a working image pixel budget; file-size limits alone are insufficient.
+- Decode and downsample early, reuse canvases, release `ImageBitmap`, PDF, and OpenCV resources.
+- Use CSS immersive mode as the reliable iPhone path.
+- All touch interactions have button alternatives.
+- Handle pointer cancellation, browser blur, orientation change, background/resume, and safe areas.
+- Prevent selection, native image drag, and disruptive long-press only inside the interaction workspace.
+- Keep at least 44-by-44 CSS-pixel targets, visible focus, screen-reader labels, and sufficient contrast.
+- Never disable page zoom globally.
 
-- Product promise, current status, screenshots, and local setup
-- Product scope and non-goals
-- Versioned roadmap
-- Architecture and data-flow documentation
-- Threat model for images, accounts, providers, and exports
-- Privacy and deletion design
-- Architecture Decision Records
-- Provider and storage migration guides
-- Contribution and security-reporting guidance
+## 13. Architecture direction
 
-### Continuous integration
+After Phase 0, the retained product may use a TypeScript workspace with:
 
-- Formatting, lint, TypeScript, tests, and production build
-- Unit tests for transforms, masks, contracts, and validators
-- Visual regression tests using synthetic fixtures
-- Browser flow: upload, mocked analysis, preview, compare, checkpoint, export
-- WebKit execution as the closest automated Safari check
-- Accessibility checks
-- Secret, dependency, and license scanning
-- Deterministic mocks rather than live paid AI calls in pull requests
-- Deployment only from protected successful builds
+- `apps/web`: React/Vite PWA and browser adapters;
+- `apps/api`: minimal secrets boundary for model calls only when required;
+- `packages/contracts`: versioned runtime schemas;
+- `packages/compare`: transforms and deterministic comparison state;
+- `packages/imaging`: decoding, masks, alignment, compositing, export;
+- `packages/materials`: sourced dataset, evidence model, rule engine;
+- `packages/coaching`: suggestion and instruction contracts;
+- `packages/ui`: accessible visual components.
 
-## 14. Roadmap
+Phase 0 is allowed to use disposable scripts and a thin server endpoint. It must not prematurely freeze production interfaces.
 
-### `v0.1` — private beta
+## 14. Failure behavior
 
-Deliver the complete scoped flow described in Sections 4–12 for invited testers.
-
-### `v0.2` — learning release
-
-- Stronger material-specific guidance and calibration cards
-- One-tap feasibility, usefulness, and similarity feedback
-- Project-state restoration
-- Several preview variants for the same selected idea
-- Better automatic masks and protected regions
-- Installable offline help
-- Anonymous opt-in quality metrics
-
-### `v1.0` — public release
-
-- Local mode without an account
-- Optional account for synchronization and device transfer
-- Stabilized model and provider selection
-- Full accessibility and Safari compatibility matrix
-- Private project-link or instruction-sheet sharing
-- Public privacy, limitation, and deletion documentation
-- Production cost limits and abuse protection
-
-### Later, only after validated demand
-
-- Live camera or AR execution guidance
-- Acrylic, marker, charcoal, and other material profiles
-- Jev-based typed ranking and risk decisions
-- Personal material library
-- Teacher and workshop mode
-- Optional community features that do not displace the core workflow
-
-## 15. Private-beta success gates
-
-| Area | Gate |
+| Failure | Required behavior |
 | --- | --- |
-| Core flow | At least 70% of started analyses reach a saved execution plan |
-| Comprehension | At least 80% of testers understand the next physical action without outside help |
-| Usefulness | At least 70% find one or more of the three suggestions useful and feasible |
-| Protected regions | No accepted preview exceeds the defined pixel-change tolerance inside a protected region |
-| Mask adherence | At least 99% of material preview changes fall within the allowed mask |
-| Speed | Median under 20 seconds to suggestions and under 45 seconds to a preview on a normal connection |
-| Stability | At least 99% crash-free sessions and 98% success for upload, save, and export |
-| Privacy | Zero silent image uploads; every transmission maps to a recorded user action |
-| Safari | The full core flow works on the current and previous major iOS versions |
-| Evidence | At least 10 beta participants and 30 completed projects before the `v1.0` decision |
+| Unsupported/oversized image | Explain limit; preserve project; offer lower-resolution retry |
+| PDF memory risk | Render only selected page; release resources; offer image conversion |
+| Auto-alignment low confidence | Keep current images and open manual control |
+| Database unavailable | Keep current session in memory when possible; offer immediate export |
+| No network | Quick Compare and existing local projects remain available |
+| Provider timeout | Preserve request state; allow deliberate retry; prevent duplicate billing where possible |
+| Controlled overlay fails | Offer physical instruction and optionally warned experimental inspiration |
+| Material fact missing | Use conservative generic rule and disclose uncertainty |
+| Calibration skipped | Continue with conservative recommendations |
+| Original-copy boundary violated | Reject controlled state; never silently accept |
 
-These gates are decision inputs, not public marketing promises. Product analytics store event names and outcomes only. Optional one-tap feedback supplies the qualitative measures.
+## 15. Phase 0 gates
 
-## 16. Naming and accepted risks
+Phase 0 uses 30 normal iPhone photos, initially 15 fineliner, 10 colored-pencil, and 5 watercolor examples for comparative research; only fineliner can qualify `v0.1`.
 
-The chosen product and repository name is **NextStroke**. The name has unrelated existing uses, including a rowing service and an unrelated GitHub repository. The GitHub namespace `jonasyr/nextstroke` remains technically distinct. The owner accepts the discovery and potential trademark/brand-confusion risk for the MVP; a formal trademark and domain review is required before significant public marketing or paid launch.
+GO requires all of:
 
-Other accepted MVP limitations:
+- at least 70% of fineliner cases yield at least one acceptable bounded preview without selecting only favorable seeds;
+- zero critical contour destruction among outputs labeled controlled;
+- at least 80% of accepted overlays are understandable in isolation;
+- at least 70% of beginner participants understand the instruction without help;
+- at least 60% execute without making the work worse under the study rubric;
+- no crash or reload in the defined real-device cycle;
+- median preview under 60 seconds and under USD 0.30 including realistic retry rate.
 
-- A rendered preview cannot guarantee the exact result of physical pigments, paper, lighting, or skill.
-- WebKit automation cannot replace periodic tests on real iPhones.
-- Local pixel thresholds reduce unexpected changes but cannot prove artistic equivalence.
-- Supporting three material families requires conservative instructions rather than exhaustive medium simulation.
+PIVOT away from generated preview as the core when any applies:
 
-## 17. Implementation decisions deferred to the plan
+- more than 10% of accepted outputs contain unnoticed contour or paper changes;
+- more than half of cases need mask repair or repeated attempts;
+- quality depends on cherry-picking;
+- direct overlay and structured strokes are not useful while full-composite difference is the only route.
 
-The implementation plan may select specific libraries and service providers, provided it preserves this design. It must document:
+The pivot product is Quick Compare + sourced critique + manually confirmed stroke/SVG plan + checkpoint comparison.
 
-- package manager and monorepo tooling
-- exact React/PWA stack
-- authentication and invite mechanism
-- database and object storage provider
-- primary and fallback analysis/image-edit providers
-- schema-validation library
-- local imaging implementation and thresholds
-- deployment targets and environments
-- observability without image-content logging
-- initial synthetic fixtures and device/browser test matrix
+## 16. Roadmap
 
-Any change to the product boundary, privacy defaults, immutable-original rule, masked-layer architecture, or iPhone-first requirement requires an explicit design amendment rather than an incidental implementation choice.
+1. **Phase 0 — Proof of feasibility:** test core preview, iPhone memory, cost, and beginner execution.
+2. **Phase 1 — Lean foundation:** create only the architecture required by passed experiments.
+3. **Phase 2 — Quick Compare:** ship the independent offline comparison value.
+4. **Phase 3 — Fineliner coach:** add sourced materials, three ideas, optional calibration, and physical instructions.
+5. **Phase 4 — Controlled preview and local beta:** add only the preview path that passed Phase 0, local projects, checkpoints, export, and public hardening.
+6. **Later:** accounts/sync on demonstrated demand, then colored pencil behind its own gate, then possible watercolor research.
 
-## 18. Documentation and decision provenance
+## 17. Success measures
 
-NextStroke treats product reasoning as a maintained artifact rather than context that exists only in chat history.
+Early product evidence emphasizes task outcomes, not vanity metrics:
 
-- `docs/README.md` is the canonical documentation index and reading order for humans and AI agents.
-- `docs/product/origin-and-evolution.md` records the original Fineliner Lupe, the user problem it solved, its retained capabilities, and why the scope evolved.
-- `docs/decisions/decision-log.md` records every known product decision with date, selected option, alternatives, rationale, consequences, and reconsideration trigger.
-- `docs/decisions/README.md` defines when to append to the decision log and when a full Architecture Decision Record is required.
-- `docs/superpowers/specs/` contains approved design intent.
-- `docs/superpowers/plans/` contains executable implementation order and test gates.
+- Quick Compare completion without help;
+- time to align and inspect;
+- instruction comprehension;
+- physical execution success and regret rate;
+- rate of controlled versus experimental versus absent previews;
+- provider retries, cost, and latency;
+- crashes/reloads, memory failures, database reopen failures;
+- use and effect of calibration;
+- percentage of user-facing material claims with valid provenance.
 
-`README.md` and `AGENTS.md` must link to `docs/README.md`. Agents must read the documentation index, approved spec, active phase plan, and relevant ADRs before changing product boundaries or architecture. New decisions must be documented in the same pull request as the change; they may not be left only in an issue, commit message, or model conversation.
+Small betas produce qualitative signals, not statistically credible “99% safe” claims.
+
+## 18. Governance
+
+- Public repository: `jonasyr/nextstroke`.
+- Intended license: AGPL-3.0, subject to dependency and distribution review before release.
+- Root `AGENTS.md` and `docs/README.md` are mandatory entry points.
+- Product, privacy, architecture, provider, or roadmap changes update documents in the same change.
+- No real user artwork, credentials, beta lists, or proprietary copied catalogs enter the repository.
+- Synthetic or explicitly licensed fixtures only.
+- Live paid-model evaluations never run automatically in pull-request CI.
+
+## 19. Open decisions intentionally deferred
+
+- exact retained framework/package versions after Phase 0;
+- which preview strategy, if any, graduates from the experiment;
+- exact initial fineliner catalog after license/source review;
+- whether a minimal API is needed for analysis as well as preview;
+- public hosting provider and cost controls;
+- account and sync architecture;
+- colored-pencil and watercolor scope.
+
+These are deferred because evidence, not convenience, must decide them.
