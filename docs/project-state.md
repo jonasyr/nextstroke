@@ -8,7 +8,7 @@
 
 **Implementation status:** Legacy prototype preserved; Phase 0 lab closed; Phase 1 workspace (`apps/web`, `packages/*`) built
 
-**Active phase:** Phase 1 lean foundation, tasks done (D-052): TypeScript workspace with quality gates, runtime contracts, PWA shell, governance; interface map `docs/architecture/interface-map.md` awaits owner review before Phase 2. Phase 0 closed with PIVOT (D-048); Phase 4 preview route is the hybrid S1 template → S3 stroke plan (D-051). Beginner study is a hard Phase 3 exit gate. Report: `docs/research/phase-0-results.md`
+**Active phase:** Phase 2 Quick Compare (`docs/superpowers/plans/2026-10-03-nextstroke-phase-2-quick-compare.md`), started 2026-10-03 after the owner accepted the Phase 1 interface map. Phase 1 done (D-052). Phase 0 closed with PIVOT (D-048); Phase 4 preview route is the hybrid S1 template → S3 stroke plan (D-051). Beginner study is a hard Phase 3 exit gate. Open owner item: AGPL `LICENSE` file (`docs/legal/license.md`)
 
 **Latest review:** `docs/reviews/2026-10-03-documentation-readiness-review.md`
 

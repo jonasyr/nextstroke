@@ -41,18 +41,6 @@ describe("App shell", () => {
     await act(async () => setOnline(true));
     expect(screen.queryByRole("status")).toBeNull();
   });
-
-  it("opens and closes the immersive container without the Fullscreen API", () => {
-    window.location.hash = "#/compare";
-    render(<App />);
-    fireEvent.click(screen.getByRole("button", { name: "Vollbild" }));
-    expect(screen.getByRole("dialog", { name: "Vollbild" })).toBeTruthy();
-    fireEvent.keyDown(window, { key: "Escape" });
-    expect(screen.queryByRole("dialog")).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Vollbild" }));
-    fireEvent.click(screen.getByRole("button", { name: "Vollbild schließen" }));
-    expect(screen.queryByRole("dialog")).toBeNull();
-  });
 });
 
 describe("update notice", () => {

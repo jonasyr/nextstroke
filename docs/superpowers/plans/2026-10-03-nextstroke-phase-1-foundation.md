@@ -57,7 +57,7 @@
 
 ## Status (2026-10-03)
 
-Tasks 1–4 are done (D-052). Interface map for the owner review: `docs/architecture/interface-map.md`. Open: owner review of the interface map, and the AGPL `LICENSE` file (`docs/legal/license.md`).
+Tasks 1–4 are done (D-052). Interface map for the owner review: `docs/architecture/interface-map.md`. The owner accepted the interface map on 2026-10-03 and started Phase 2. Open: the AGPL `LICENSE` file (`docs/legal/license.md`).
 
 ## Exit gate
 

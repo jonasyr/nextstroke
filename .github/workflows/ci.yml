@@ -24,3 +24,7 @@ jobs:
           cache: pnpm
       - run: ./scripts/setup.sh
       - run: ./scripts/check.sh
+      - name: Browser tests (Playwright, Chromium)
+        run: |
+          pnpm --filter @nextstroke/web exec playwright install --with-deps chromium
+          pnpm run e2e

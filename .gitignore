@@ -17,3 +17,5 @@ lab/private/
 apps/*/dist/
 packages/*/dist/
 coverage/
+apps/web/test-results/
+apps/web/playwright-report/
