@@ -8,7 +8,7 @@
 
 **Implementation status:** Working legacy comparison prototype imported; disposable Phase 0 lab in progress under `lab/`; production rewrite not started
 
-**Active phase:** Phase 0 closed 2026-10-03 with PIVOT (D-048): S3 retained as the only preview strategy (6 of 7 cases controlled, all technical criteria met); the beginner criteria were not measured and become a hard Phase 3 exit gate. Report: `docs/research/phase-0-results.md`. Next: Phase 1 lean foundation (`docs/superpowers/plans/2026-10-03-nextstroke-phase-1-foundation.md`) Follow-up shading test (D-049) done: S3 4/7 controlled but looks mechanical, S2-v2 2/7 (placement), S1-v2 best looking but experimental by rule; owner decision on the preview route pending.
+**Active phase:** Phase 0 closed 2026-10-03 with PIVOT (D-048): S3 retained as the only preview strategy (6 of 7 cases controlled, all technical criteria met); the beginner criteria were not measured and become a hard Phase 3 exit gate. Report: `docs/research/phase-0-results.md`. Next: Phase 1 lean foundation (`docs/superpowers/plans/2026-10-03-nextstroke-phase-1-foundation.md`) Follow-up shading test (D-049) done: S3 4/7 controlled but looks mechanical, S2-v2 2/7 (placement), S1-v2 best looking but experimental by rule; owner decision on the preview route pending. Hybrid test (D-050): S1 template transferred to an S3 stroke plan, 5/7 controlled and 6/7 fit the style, median 70 s; owner decision on adopting it pending.
 
 **Latest review:** `docs/reviews/2026-10-03-documentation-readiness-review.md`
 
