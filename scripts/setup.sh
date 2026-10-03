@@ -19,10 +19,11 @@ done
 echo "== Legacy Fineliner Lupe prototype"
 ./legacy/fineliner-lupe/prepare-vendor.sh
 
-if [ -f pyproject.toml ]; then
-  echo "== Python environment (uv)"
-  if have uv; then uv sync; else echo "uv is required: https://docs.astral.sh/uv/" >&2; exit 1; fi
-fi
+for project in . lab; do
+  [ -f "$project/pyproject.toml" ] || continue
+  echo "== Python environment (uv): $project"
+  if have uv; then (cd "$project" && uv sync --frozen); else echo "uv is required: https://docs.astral.sh/uv/" >&2; exit 1; fi
+done
 
 if [ -f package.json ]; then
   echo "== Node workspace (pnpm)"

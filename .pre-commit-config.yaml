@@ -1,0 +1,29 @@
+# Install with: uvx pre-commit install
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+        exclude: ^legacy/
+      - id: end-of-file-fixer
+        exclude: ^legacy/
+      - id: check-yaml
+      - id: check-added-large-files
+        args: [--maxkb=1024]
+        exclude: ^legacy/
+      - id: detect-private-key
+  - repo: local
+    hooks:
+      - id: doc-links
+        name: documentation links
+        entry: python3 scripts/check_doc_links.py
+        language: system
+        pass_filenames: false
+        files: \.md$
+      - id: lab-checks
+        name: lab format, lint, types, tests
+        entry: sh -c 'cd lab && uv run --frozen ruff format . && uv run --frozen ruff check --fix . && uv run --frozen mypy && uv run --frozen pytest -q'
+        language: system
+        pass_filenames: false
+        files: ^lab/
