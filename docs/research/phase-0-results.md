@@ -115,3 +115,17 @@ Findings:
 - **S3 stays the safest route but looks mechanical.** It met the rubric most often, yet the owner noted that controlled S3 shading "does not look natural", "looks pasted in" or "nobody would draw haze like that". The rubric checks safety and placement, not whether the addition fits the drawing's style.
 - **S1 looks best.** The owner rated S1 shading as the most integrated ("extremely well integrated", "the closest so far"), and five of seven S1 candidates passed every rubric criterion after copyback. S1 remains experimental by spec rule (provider full images are never accepted change layers), so it cannot count as controlled without an owner decision.
 - Moderation refused one more harmless drawing (kayak, `sexual`); two refusals in 46 OpenAI calls.
+
+## Hybrid test: S1 template transferred into an S3 stroke plan (D-050)
+
+For the same seven shading cases, a contextless subagent transferred the new strokes of the S1-v2 composite into a stroke plan, which the lab rendered and composited like any S3 candidate. One attempt each, owner-rated with the ten criteria plus a separate style question ("fits the drawing's style, does not look pasted in"). The owner knew all seven were hybrid candidates.
+
+| | S3-v2 alone | S2-v2 | S1-v2 | **Hybrid S1 → S3** |
+| --- | --- | --- | --- | --- |
+| Controlled | 4 / 7 | 2 / 7 | 0 / 7 (rule) | **5 / 7** |
+| Owner's style judgement | "mechanical", "pasted in" (notes) | mixed | best ("extremely well integrated") | **6 / 7 fit the style** |
+
+- Both hybrid failures (c02h, c07h) leave untouched bands above and below the shaded area. The S1 template already had that gap, and the drafted masks were inset from the sign and stripe edges, so the cause is the template and the mask, not the transfer.
+- All seven passed the boundary audit; no critical contour was damaged.
+- Latency is the weak point: S1 median 29 s plus transfer median 41 s gives a median of 70 s per case (maximum 106 s), above the 60 s Phase 0 limit. Cost is about USD 0.07 for the S1 call plus one stroke-plan call.
+- The S1 image stays experimental inspiration; only the locally rendered stroke plan is a controlled layer, so the hybrid fits product rules 3–6 as written.
