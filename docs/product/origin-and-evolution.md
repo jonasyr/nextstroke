@@ -22,7 +22,7 @@ The working feature set grew to include:
 - image export/download
 - suppression of selection, image drag, and Safari's disruptive long-press behavior inside the canvas workspace
 
-The current implementation lives separately in the private Site source and serves as behavioral reference, not as the architecture for the new repository. Its compressed single-file implementation must be migrated into tested packages rather than copied wholesale.
+The current implementation is preserved in this repository at `legacy/fineliner-lupe/` and serves as behavioral reference, not as the architecture for the production rewrite. Its compact static implementation must eventually be migrated into tested packages rather than copied wholesale into the new architecture.
 
 ## 2. The lesson from the lighthouse edit
 

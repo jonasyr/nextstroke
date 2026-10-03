@@ -2,6 +2,8 @@
 
 This is the canonical map of NextStroke's product and engineering context. Humans and AI agents should start here rather than infer intent from code or chat history.
 
+The working historical comparison app is stored at `legacy/fineliner-lupe/`; its README explains how to run it.
+
 ## Required reading order
 
 1. [Current project state](project-state.md) — what is approved, what exists, and what happens next.
@@ -48,6 +50,7 @@ Implementation plans explain how to build the approved design; they do not silen
 | Privacy model and data flow | `docs/privacy/` |
 | Current version targets | `docs/roadmap/` |
 | Contributor and agent rules | root `CONTRIBUTING.md` and `AGENTS.md` |
+| Existing working prototype | `legacy/fineliner-lupe/` |
 | Independent audits | `docs/reviews/` |
 | Context-free handoffs | `docs/handoffs/` |
 

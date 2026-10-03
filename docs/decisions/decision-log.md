@@ -239,3 +239,11 @@
 - **Alternatives:** Require calibration; postpone calibration until after MVP.
 - **Reason:** Paper and individual pen behavior materially affect line width, darkness, bleed, and layering, but mandatory setup would delay first value.
 - **Consequence:** Uncalibrated users receive more conservative advice. Camera-derived measurements are relative and must not be presented as absolute colorimetry.
+
+## D-029 — Preserve the existing Fineliner Lupe prototype
+
+- **Date:** 2026-10-03
+- **Selected:** Import the exact tracked static Site implementation into `legacy/fineliner-lupe/`.
+- **Alternatives:** Leave the app in a separate private workspace; discard it and rebuild only from documentation; copy only selected snippets.
+- **Reason:** The public repository must preserve the actual working upload, comparison, alignment, gesture, PDF, immersive-view, and export behavior that motivated NextStroke.
+- **Consequence:** The imported `dist/` app and its local PDF.js assets are a runnable behavioral reference. New production architecture remains governed by Phase 0 and must not treat the compact legacy bundle as the desired module structure.

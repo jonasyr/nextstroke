@@ -6,7 +6,7 @@
 
 **Branch:** `main`
 
-**Implementation status:** Planning only; no product code exists
+**Implementation status:** Working legacy comparison prototype imported; production rewrite not started
 
 **Next executable phase:** Phase 0 proof of feasibility, after plan review
 
@@ -27,6 +27,7 @@ NextStroke is an iPhone-first physical-art coach that compares an artwork with a
 
 ## Evidence status
 
+- The existing Fineliner Lupe prototype is preserved at `legacy/fineliner-lupe/` and can be served directly from its `dist/` directory.
 - An independent review concluded `GO, ABER PLAN ÄNDERN`.
 - Core comparison, manual alignment, local projects, and structured analysis are feasible.
 - Exact mask following, true alpha-layer recovery from a generated full image, and semantic safety from pixel-diff alone are not established.
@@ -43,6 +44,8 @@ The next worker must first validate and refine the revised documents, then execu
 3. structured strokes/SVG rendered deterministically.
 
 The default product path favors direct overlays or structured strokes. Full-composite generation remains an experimental inspiration path.
+
+The prototype is not Phase 0 evidence by itself. It is the reference for upload, comparison, gestures, alignment, immersive viewing, and export behavior.
 
 ## Do not build yet
 

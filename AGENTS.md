@@ -1,6 +1,6 @@
 # NextStroke Agent Guide
 
-Read `docs/README.md` before changing code or plans. This repository is currently documentation-first: no application implementation has been approved yet.
+Read `docs/README.md` before changing code or plans. This repository is documentation-first, but it also contains the working historical prototype at `legacy/fineliner-lupe/`. No production rewrite has been approved yet.
 
 ## Current state
 
@@ -10,6 +10,7 @@ Read `docs/README.md` before changing code or plans. This repository is currentl
 - Phase 0 is a 1–2 week proof of feasibility and must pass before production architecture is expanded.
 - First public storage is local plus export. Accounts, cloud sync, colored pencil, and watercolor are later work.
 - A small sourced fineliner/paper knowledge base and optional calibration card are part of the MVP.
+- The imported static prototype at `legacy/fineliner-lupe/dist/` is a behavioral reference, not the target architecture.
 
 See `docs/project-state.md` for the exact handoff state and `docs/decisions/decision-log.md` for rationale.
 
@@ -30,11 +31,12 @@ See `docs/project-state.md` for the exact handoff state and `docs/decisions/deci
 
 1. Confirm the active phase in `docs/project-state.md`.
 2. Read the governing spec and the active phase plan.
-3. Do not start Phase 1 until Phase 0 evidence meets every GO criterion.
-4. Use test-driven implementation for retained code.
-5. Keep source files focused and framework-independent logic outside React components.
-6. Update the decision log, project state, spec, and plan in the same change whenever scope, architecture, privacy, external services, or quality gates change.
-7. Never commit secrets, user artwork, unlicensed fixtures, provider responses containing personal images, or image-content telemetry.
+3. Inspect `legacy/fineliner-lupe/` before recreating existing comparison behavior.
+4. Do not start Phase 1 until Phase 0 evidence meets every GO criterion.
+5. Use test-driven implementation for retained code.
+6. Keep source files focused and framework-independent logic outside React components.
+7. Update the decision log, project state, spec, and plan in the same change whenever scope, architecture, privacy, external services, or quality gates change.
+8. Never commit new secrets, user artwork, unlicensed fixtures, provider responses containing personal images, or image-content telemetry.
 
 ## Document authority
 
