@@ -1,2 +1,3 @@
 /** Transforms and deterministic comparison state (Phase 2). */
-export {};
+export * from "./gestures.ts";
+export * from "./state.ts";
