@@ -1,0 +1,9 @@
+{
+  "name": "@nextstroke/coaching",
+  "private": true,
+  "type": "module",
+  "description": "Suggestion and instruction contracts and rules (Phase 3).",
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}

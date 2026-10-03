@@ -1,0 +1,9 @@
+{
+  "name": "@nextstroke/ui",
+  "private": true,
+  "type": "module",
+  "description": "Accessible visual components and the German message catalog (D-040).",
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}

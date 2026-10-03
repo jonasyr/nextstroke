@@ -27,3 +27,9 @@ repos:
         language: system
         pass_filenames: false
         files: ^lab/
+      - id: workspace-checks
+        name: workspace lint, types, boundaries, tests
+        entry: sh -c 'pnpm biome check --write . && pnpm run typecheck && pnpm run deps && pnpm vitest run'
+        language: system
+        pass_filenames: false
+        files: ^(apps|packages)/|^(package\.json|pnpm-lock\.yaml|tsconfig.*\.json|biome\.json|vitest\.config\.ts|\.dependency-cruiser\.cjs)$

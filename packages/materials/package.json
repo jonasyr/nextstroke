@@ -1,0 +1,9 @@
+{
+  "name": "@nextstroke/materials",
+  "private": true,
+  "type": "module",
+  "description": "Sourced fineliner and paper dataset, evidence model and rules (Phase 3).",
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}

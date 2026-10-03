@@ -12,3 +12,8 @@ lab/private/
 *.local.*
 .env
 .env.*
+
+# Node workspace build output
+apps/*/dist/
+packages/*/dist/
+coverage/

@@ -20,6 +20,11 @@ for project in lab; do
   )
 done
 
+if [ -f package.json ]; then
+  echo "== TypeScript workspace: lint, types, boundaries, licenses, tests, build"
+  pnpm run check
+fi
+
 for script in lab/probe/dist/*.js; do
   [ -f "$script" ] || continue
   echo "== JavaScript syntax: $script"
