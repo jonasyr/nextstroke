@@ -390,3 +390,16 @@
 - **Reason:** Owner choice. Counting mixed media or digital work would evaluate `v0.1` on materials it does not support (D-023).
 - **Consequence:** With 7 cases one case moves the success rate by 14 percentage points; a GO is weak evidence and the report must say so. The Phase 4 holdout of real, consented photos carries more weight. `nextstroke-lab decide --corpus-size 7` applies the scaled gate.
 - **Reconsider when:** More eligible images become available before the run starts.
+
+## D-045 — Phase 0 generation: contextless Claude subagents for S3, OpenAI API for S1/S2
+
+- **Date:** 2026-10-03
+- **Supersedes:** The manual-subscription generation route of D-031 (the no-spend rule stays for everything except the capped OpenAI run).
+- **Selected:**
+  - Ideas and S3 strokes run as contextless Claude subagents inside Claude Code: each gets only the frozen `ideas-s3-v1` instructions (with material sheet and stroke schema), the case's two messages, and the case image. Both messages are answered in one turn (a single-turn approximation of the two-message chat). Every attempt is a fresh subagent.
+  - S1 and S2 run through the OpenAI Images API (GPT Image 2.5) with a hard cost cap of USD 5. The key is injected by the cloud environment's proxy credential for `api.openai.com`; it never appears in chat, code, logs, or git.
+  - Because the owner is not available for immediate screening, the orchestrating agent screens attempts for the stop-at-first-success rule (D-035). Final ratings remain the owner's blinded ratings.
+- **Alternatives:** Manual runs in the ChatGPT and Claude apps; Anthropic API for S3 (no key available); GPT text model for S3.
+- **Reason:** Manual runs were too slow for the owner; only an OpenAI key is available.
+- **Consequence:** S3 cost and latency are estimates (no API billing); subagents run on the session model rather than a pinned API model. S1/S2 cost and latency are measured. The orchestrator knows the masks, but subagents do not. Screening by the orchestrator is recorded per attempt so the owner can audit it.
+- **Reconsider when:** An Anthropic API key becomes available, or owner ratings disagree with the orchestrator's screening.

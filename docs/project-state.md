@@ -40,6 +40,7 @@ NextStroke is an iPhone-first physical-art coach that compares an artwork with a
 20. **Corpus sources:** Pinterest drawings allowed, kept private, reported separately (D-042).
 21. **Device evidence:** first probe run accepted for Phase 0; remaining device checks move to the Phase 2 exit gate (D-043).
 22. **Corpus size:** 12 supplied images; 7 fineliner cases count toward GO (5 of 7 needed), 5 are comparison-only (D-044).
+23. **Generation route:** S3/ideas via contextless Claude subagents; S1/S2 via OpenAI API with proxy-injected key, cap USD 5 (D-045).
 
 ## Evidence status
 
