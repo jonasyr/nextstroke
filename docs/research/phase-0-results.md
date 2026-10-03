@@ -91,3 +91,27 @@ See `docs/research/2026-10-03-sites-probe-iphone.md`. Passed on the owner's iPho
 Recommendation: retain S3 as the only controlled-preview route; do not retain S2 (no margin, placement failures, refusal risk); keep S1 only as labeled experimental inspiration. Run the beginner study as early as a usable coach exists.
 
 Owner decision (D-048, 2026-10-03): PIVOT with S3 retained. The beginner criteria (≥ 70% understand, ≥ 60% do not worsen) become a hard Phase 3 exit gate; no Phase 4 preview work and no public test before they pass. Phase 1 may start.
+
+## Follow-up test: shading and v2 prompts (D-049)
+
+One attempt per strategy and case, owner-rated in one blinded round (27 candidates). Shading masks were Claude drafts, not owner-reviewed. Spend USD 1.34 (21 OpenAI calls at about USD 0.067 with `quality=high`, one refusal, four 502 server errors retried once).
+
+| Shading case | S3-v2 (strokes + hatch fills) | S2-v2 (transparent layer) | S1-v2 (masked edit + copyback) |
+| --- | --- | --- | --- |
+| c01h mountain face | experimental | rejected (drawn in the sky) | experimental, rubric clean |
+| c02h lighthouse side | experimental | rejected (drawn beside the tower) | experimental, rubric clean |
+| c03h kayak shadow | controlled | refused by moderation (`sexual`) | experimental, rubric clean |
+| c04h sea haze | controlled | experimental (stroke across the sail) | experimental (location) |
+| c05h evening sky | controlled | controlled | experimental, rubric clean |
+| c06h whale body | controlled | controlled (85% of the strokes fell outside the area and were clipped) | experimental, rubric clean |
+| c07h sign | experimental | experimental | experimental |
+| **Controlled** | **4 / 7** | 2 / 7 | 0 / 7 by rule; 5 / 7 pass every rubric criterion |
+
+Simple tasks with S2-v2, first attempt: 4 of 7 controlled (c02–c05); c01 and c07 rejected because the strokes landed outside the allowed area, c06 had one bubble instead of three. S2-v1 first attempts in Phase 0 were also 4 of 7. The v2 prompt did not improve placement and costs about three times as much per call.
+
+Findings:
+
+- **S2 fails on placement, not drawing.** In the rejected cases 0–1% of the generated ink lay inside the allowed area; the strokes were plausible but on the wrong sign, in the sky, or beside the tower. OpenAI's guide lists precise placement as a known limitation. A second, outlined reference image did not fix it.
+- **S3 stays the safest route but looks mechanical.** It met the rubric most often, yet the owner noted that controlled S3 shading "does not look natural", "looks pasted in" or "nobody would draw haze like that". The rubric checks safety and placement, not whether the addition fits the drawing's style.
+- **S1 looks best.** The owner rated S1 shading as the most integrated ("extremely well integrated", "the closest so far"), and five of seven S1 candidates passed every rubric criterion after copyback. S1 remains experimental by spec rule (provider full images are never accepted change layers), so it cannot count as controlled without an owner decision.
+- Moderation refused one more harmless drawing (kayak, `sexual`); two refusals in 46 OpenAI calls.
