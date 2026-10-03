@@ -13,11 +13,10 @@ Operational checklist for the approved plan (`docs/superpowers/plans/2026-10-03-
 
 ## Corpus preparation (Task 1)
 
-1. Photograph each work handheld as usual; export JPEG (Settings → Camera → Formats → Most Compatible, or share as JPEG).
-2. Crop to 3:2 (landscape or portrait) so ChatGPT outputs (1536×1024 / 1024×1536) can be registered without guessing. Keep the uncropped photo too.
-3. Save as `private/cases/cNN/original.jpg`.
-4. Paint masks at the same size: `editable.png` (white = may change), `protected.png` (white = critical contours that must not change), optional `feather.png` (white band inside editable).
-5. Add a manifest line: id, kind (`hand` or `printed` + source URL + license), lighting, paper, perspective, desired change, protected description, critical contours inside editable (yes/no), S1 subset (yes/no).
+1. Save the source image privately (`private/sources/`). Pinterest pins (D-042) work as JPEG, PNG, or WebP. Better: print some pins on drawing paper and photograph them handheld, so the case has real paper, light, and perspective. iPhone photos: Settings → Camera → Formats → Most Compatible.
+2. Run `uv run nextstroke-lab prepare private/sources/<file> --case-dir private/cases/cNN`. It applies orientation and sRGB, scales to at most 2048 px, center-crops to 3:2 so ChatGPT outputs (1536×1024 / 1024×1536) can be registered, and writes `original.png` plus blank `editable.png` and `protected.png`. Check that the crop kept the important part; if not, crop the source by hand first.
+3. Paint the masks over the blank templates at the same size: `editable.png` (white = may change), `protected.png` (white = critical contours that must not change), optional `feather.png` (white band inside editable).
+4. Add a manifest line: id, source (`web` + pin URL, `printed` + URL + license, `own`, or `volunteer`), photographed by hand (yes/no), lighting, paper, perspective, desired change, protected description, critical contours inside editable (yes/no), S1 subset (yes/no).
 
 ## Generation (Tasks 2–3)
 

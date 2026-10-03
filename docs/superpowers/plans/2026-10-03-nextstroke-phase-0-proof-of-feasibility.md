@@ -29,7 +29,7 @@
 - [x] Owner approves this plan (D-041).
 - [ ] Prompt templates for ideas, strategy S1, S2, and S3 are written, versioned, and frozen.
 - [ ] Consent template covers: purpose, the named services (OpenAI ChatGPT, Anthropic Claude), that those services may retain uploads under their consumer terms, local storage location, deletion date (no later than 90 days after the Phase 0 decision), and withdrawal.
-- [ ] Corpus sources confirmed: owner-made works and consenting volunteers only; no web-sourced artwork.
+- [ ] Corpus sources recorded per case: web-sourced (Pinterest, D-042), printed licensed (D-035), owner-made, or volunteer with consent. Web images are never committed or shown in the report.
 - [ ] 5–8 beginner participants scheduled for days 8–9.
 - [ ] Two to three standardized starter drawings exist on real drawing paper, made by the owner and licensed for the study.
 - [ ] Rating rubric and the thresholds in §15 of the spec are committed to the repository before any output is generated (pre-registration).
@@ -57,7 +57,7 @@
 
 - [ ] Capture or collect 30 ordinary handheld iPhone photographs of started fineliner works with varied light, shadow, perspective, paper tone, and line density.
 - [ ] Up to 10 cases may be CC0 or CC BY line drawings (for example ArtPack or OpenSketch) printed on drawing paper and photographed the same way. Record source URL and license, mark these cases `printed` in the manifest, and choose the S1 subset before generation, covering both kinds.
-- [ ] Crop every case photo to 3:2 (landscape or portrait) before annotation. ChatGPT returns 1536×1024, 1024×1536, or 1024×1024 images; without a matching aspect ratio S1/S2 outputs could not be registered without guessing and would be rejected for format alone. Keep the uncropped photo privately.
+- [ ] Run `nextstroke-lab prepare` on every source image. It crops to 3:2 (landscape or portrait) before annotation. ChatGPT returns 1536×1024, 1024×1536, or 1024×1024 images; without a matching aspect ratio S1/S2 outputs could not be registered without guessing and would be rejected for format alone. Keep the uncropped photo privately.
 - [ ] For each case record: anonymous ID, lighting, paper visibility, perspective, device, desired small change, editable region, protected geometry, critical contours.
 - [ ] Store originals in the private experiment store; commit only the anonymized manifest without images.
 

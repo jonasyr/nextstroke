@@ -37,6 +37,7 @@ NextStroke is an iPhone-first physical-art coach that compares an artwork with a
 17. **Quality guardrails:** modular ports-and-adapters design, TDD, automatic lint/format/type checks in pre-commit and CI, git workflow in `CONTRIBUTING.md` (D-039).
 18. **Language:** German UI for `v0.1`, English later, message catalog from Phase 1 (D-040).
 19. **Phase 0 approved** with the review's proposed values; legacy demo images are not fixtures (D-041).
+20. **Corpus sources:** Pinterest drawings allowed, kept private, reported separately (D-042).
 
 ## Evidence status
 

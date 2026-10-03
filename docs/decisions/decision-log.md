@@ -361,3 +361,13 @@
 - **Selected:** The owner approved the revised Phase 0 plan, including the values proposed in the readiness review: study data deleted no later than 90 days after the Phase 0 decision, a 2048 px working edge, at least 10 cases with critical contours inside or touching the editable region, and a 100 ms main-thread threshold.
 - **Also decided:** The legacy demo images (`legacy/fineliner-lupe/dist/original.png`, `improved.png`) are not used as fixtures or corpus cases, because the artwork is not fineliner-only.
 - **Consequence:** Phase 0 is the active phase. Execution starts with prerequisites; the lab code lives in `lab/` on its own branch and is disposable unless a later plan retains it.
+
+## D-042 — Web-sourced corpus images allowed in Phase 0
+
+- **Date:** 2026-10-03
+- **Supersedes:** The Phase 0 prerequisite "owner-made works and consenting volunteers only; no web-sourced artwork".
+- **Selected:** Corpus cases may be fineliner drawings saved from Pinterest. They are prepared with `nextstroke-lab prepare` (orientation, sRGB, 2048 px cap, 3:2 crop) and stay in the private store.
+- **Alternatives:** The owner's own rough starters; printed CC0/CC BY drawings photographed by hand; volunteers' works with consent.
+- **Reason:** Owner choice; the owner has no own fineliner works and wants to start quickly.
+- **Consequence:** The artists have not consented, so these images are never committed, never used as test fixtures, never shown in the report, and are deleted with the other study data. Pinterest images are usually finished, clean, or edited and often small, while the product targets ordinary handheld photos of started works; GO evidence from them is therefore weaker. Mitigations: mark `source: web` in the manifest, report results split by source, prefer printing some pins on drawing paper and photographing them by hand, and rely on the Phase 4 holdout of real, consented photos before any public beta. Standardized study starters may be printed web drawings on real drawing paper.
+- **Reconsider when:** Results differ strongly between web and photographed cases, or consented real photos become available.

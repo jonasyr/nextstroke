@@ -4,7 +4,7 @@
 
 **Date:** 2026-10-03
 
-**Owner decisions:** `docs/decisions/decision-log.md` D-022 through D-041
+**Owner decisions:** `docs/decisions/decision-log.md` D-022 through D-042
 
 **Feasibility evidence:** `docs/reviews/2026-10-03-independent-feasibility-review.md`
 
@@ -338,7 +338,7 @@ Owner decisions: D-024, D-030, D-031, D-032, D-034, D-035. The operational check
 
 ### 15.1 Corpus and method
 
-- 30 ordinary iPhone photographs of started fineliner works (D-030); at least 10 have an annotated critical contour inside or touching the editable region. At most 10 may be photographs of printed CC0/CC BY line drawings, reported separately (D-035).
+- 30 ordinary iPhone photographs of started fineliner works (D-030); at least 10 have an annotated critical contour inside or touching the editable region. At most 10 may be photographs of printed CC0/CC BY line drawings (D-035); web-sourced drawings are allowed and kept private (D-042). Results are reported per source.
 - Strategies: S1 masked full-composite edit, S2 direct transparent overlay, S3 structured strokes/SVG rendered locally.
 - S2 and S3: up to three attempts per case, stopping at the first `controlled` screening result. S1: one attempt on 10 pre-selected cases. A strategy stops after 10 failed cases because it can no longer reach GO. Every attempt is reported (D-035).
 - Models are run manually through existing subscriptions without additional spend (D-031). Cost is an API-equivalent estimate from published pricing on the run date.
