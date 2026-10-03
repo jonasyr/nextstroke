@@ -43,9 +43,13 @@ When documents conflict, use this order:
 1. The newest approved decision entry
 2. `docs/superpowers/specs/2026-10-03-nextstroke-product-design.md`
 3. `docs/project-state.md`
-4. The revised master plan
-5. The active phase plan
-6. Historical documents and the independent review
+4. Accepted Architecture Decision Records
+5. The revised master plan
+6. The active phase plan
+7. Historical documents and the independent review
+8. Code comments and issue discussions
+
+This matches `docs/README.md`.
 
 Historical rationale is evidence, not current scope. Do not silently revive superseded requirements.
 

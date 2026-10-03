@@ -17,7 +17,8 @@ This is the canonical map of NextStroke's product and engineering context. Human
    - [Phase 2: Quick Compare](superpowers/plans/2026-10-03-nextstroke-phase-2-quick-compare.md)
    - [Phase 3: Fineliner Coach and Local Projects](superpowers/plans/2026-10-03-nextstroke-phase-3-guided-project.md)
    - [Phase 4: Controlled Preview and Local Beta](superpowers/plans/2026-10-03-nextstroke-phase-4-beta-cloud-ai.md)
-9. [Context-free continuation prompt](handoffs/continue-planning-prompt.md) — handoff for an AI that sees only the repository.
+9. [Documentation readiness review](reviews/2026-10-03-documentation-readiness-review.md) — contradiction table, verified claims, and Phase 0 readiness.
+10. [Context-free continuation prompt](handoffs/continue-planning-prompt.md) — handoff for an AI that sees only the repository.
 
 ## Authority order
 
@@ -45,9 +46,10 @@ Implementation plans explain how to build the approved design; they do not silen
 | Decision options and rationale | `docs/decisions/decision-log.md` |
 | One major technical choice | `docs/decisions/NNNN-*.md` |
 | Task order, files, tests, commits | `docs/superpowers/plans/` |
-| Privacy model and data flow | `docs/privacy/` |
-| Current version targets | `docs/roadmap/` |
-| Contributor and agent rules | root `CONTRIBUTING.md` and `AGENTS.md` |
+| Privacy model and data flow | `docs/privacy/` (created in Phase 1; until then spec §11) |
+| Current version targets | `docs/roadmap/` (created when needed; until then spec §16) |
+| Experiment results | `docs/research/` |
+| Contributor and agent rules | root `AGENTS.md`; `CONTRIBUTING.md` is added in Phase 1 |
 | Independent audits | `docs/reviews/` |
 | Context-free handoffs | `docs/handoffs/` |
 
