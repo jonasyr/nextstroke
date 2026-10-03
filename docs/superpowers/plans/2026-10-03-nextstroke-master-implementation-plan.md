@@ -79,7 +79,7 @@ Cloud accounts/sync are not Phase 4. They require demonstrated demand and a futu
 
 ### Phase 4
 
-- Only the preview strategy that passed Phase 0 is retained: S3 structured strokes (D-048).
+- Only the preview strategy that passed Phase 0 is retained: S3 structured strokes, built as the hybrid S1 template → S3 stroke plan (D-048, D-051), with median latency under 60 s and holdout reconfirmation.
 - Controlled overlays obey original-copy boundaries.
 - Experimental inspiration is visibly distinct and never called safe.
 - Checkpoint comparison closes the physical loop.
