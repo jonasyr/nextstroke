@@ -480,3 +480,12 @@
 - **Reason:** Owner choice after D-049/D-050: the hybrid was controlled most often on shading (5 of 7) and fit the drawing's style in 6 of 7 cases, while plain S3 looked mechanical and S2 misplaced strokes.
 - **Consequence:** Phase 4 needs a server-side secret for OpenAI plus a stroke-plan model, so the minimal API of Phase 4 Task 4 is required. Two provider calls per preview raise cost (about USD 0.07 plus the plan call) and latency. Phases 1–3 are unchanged, except that contracts must represent an S1 template as an untrusted, experimental asset linked to the controlled stroke plan derived from it.
 - **Reconsider when:** The latency gate or the holdout reconfirmation fails.
+
+## D-052 — Phase 1 toolchain versions
+
+- **Date:** 2026-10-03
+- **Selected:** Node 24 LTS in CI, Node 22.12 or newer supported locally (`engines`); pnpm 12.8.1 via `packageManager`; TypeScript 6.0.3; Vite 8.3, React 19.3, Vitest 5.0 with V8 coverage at 90%, Biome 2.5, dependency-cruiser 18.5, zod 4.6 for runtime contracts. All checked against the npm registry and nodejs.org on 2026-10-03.
+- **Alternatives:** TypeScript 7.0.2 (the native compiler). It type-checks the workspace, but dependency-cruiser cannot use its API yet and would miss type-only imports in boundary checks.
+- **Reason:** Current stable releases (D-037, D-039) with every quality gate fully working.
+- **Consequence:** Upgrade to TypeScript 7 once dependency-cruiser supports it. zod is a general runtime dependency, not one of the spec §13.2 reused libraries; the license check covers it like the rest.
+- **Reconsider when:** dependency-cruiser supports TypeScript 7, or Node 26 becomes LTS.

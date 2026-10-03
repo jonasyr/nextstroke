@@ -11,7 +11,20 @@ uvx pre-commit install      # run the same checks on every commit
 
 ## Checks
 
-`./scripts/check.sh` runs everything CI runs: documentation links, and for each Python project (currently `lab/`) Ruff format, Ruff lint, mypy strict, and pytest. TypeScript checks (Biome, `tsc --strict`, dependency-cruiser, Vitest) join in Phase 1.
+`./scripts/check.sh` runs everything CI runs: documentation links; for each Python project (currently `lab/`) Ruff format, Ruff lint, mypy strict, and pytest; and for the TypeScript workspace `pnpm run check`, which runs Biome, `tsc` strict, dependency-cruiser boundary rules, the production license allowlist, Vitest with 90% coverage, and the web build.
+
+Toolchain (D-052): Node 24 LTS (22.12 or newer works), pnpm 12.8.1 (`npm i -g pnpm@12.8.1` or Corepack), TypeScript 6.0.3.
+
+| Command | What it does |
+| --- | --- |
+| `pnpm run lint` / `pnpm run format` | Biome lint and format check / write |
+| `pnpm run typecheck` | `tsc` with the strict base config |
+| `pnpm run deps` | dependency-cruiser package boundaries (`.dependency-cruiser.cjs`) |
+| `pnpm run licenses` | production dependency license allowlist |
+| `pnpm run test` | Vitest with coverage thresholds |
+| `pnpm run build` | static web build to `apps/web/dist/` |
+
+Workspace layout (spec §13): `apps/web` (React/Vite PWA) and `packages/{contracts,compare,imaging,materials,coaching,ui}`. Contracts depend on nothing else in the workspace; domain packages never import React or `ui`; packages never import apps.
 
 Never bypass hooks (`--no-verify`) or merge with red CI. Fix the cause instead.
 

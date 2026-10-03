@@ -1,0 +1,9 @@
+{
+  "name": "@nextstroke/compare",
+  "private": true,
+  "type": "module",
+  "description": "Transforms and deterministic comparison state (Phase 2).",
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}
