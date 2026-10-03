@@ -10,6 +10,12 @@ from pathlib import Path
 
 import numpy as np
 
+from nextstroke_lab.adapters.annotation import (
+    AnnotationRequest,
+    annotate_case,
+    parse_polygons,
+    review_sheet,
+)
 from nextstroke_lab.adapters.attempt_log import AttemptLog
 from nextstroke_lab.adapters.image_io import load_working_image, save_png
 from nextstroke_lab.domain.classification import Strategy, Trust
@@ -56,6 +62,26 @@ def _prepare(args: argparse.Namespace) -> int:
             }
         )
     )
+    return 0
+
+
+def _annotate(args: argparse.Namespace) -> int:
+    request = AnnotationRequest(
+        editable_polygons=parse_polygons(args.editable),
+        desired_change=args.change,
+        protected_description=args.protect_note,
+        extra_protected=parse_polygons(args.extra_protected),
+        ink_window=args.ink_window,
+        ink_offset=args.ink_offset,
+    )
+    annotation = annotate_case(args.case_dir, request)
+    print(annotation.model_dump_json())
+    return 0
+
+
+def _sheet(args: argparse.Namespace) -> int:
+    count = review_sheet(args.cases_root, args.out)
+    print(json.dumps({"cases": count, "sheet": str(args.out)}))
     return 0
 
 
@@ -135,6 +161,23 @@ def build_parser() -> argparse.ArgumentParser:
     prep.add_argument("source", type=Path)
     prep.add_argument("--case-dir", type=Path, required=True)
     prep.set_defaults(run=_prepare)
+
+    ann = sub.add_parser(
+        "annotate", help="draft masks: editable polygons + automatic ink protection"
+    )
+    ann.add_argument("case_dir", type=Path)
+    ann.add_argument("--editable", required=True, help="JSON list of normalized polygons")
+    ann.add_argument("--change", required=True, help="pre-registered desired change (German)")
+    ann.add_argument("--protect-note", required=True, help="what must not change")
+    ann.add_argument("--extra-protected", default="[]", help="JSON list of normalized polygons")
+    ann.add_argument("--ink-window", type=int, default=31)
+    ann.add_argument("--ink-offset", type=int, default=25)
+    ann.set_defaults(run=_annotate)
+
+    sheet = sub.add_parser("sheet", help="render a review sheet of annotated cases")
+    sheet.add_argument("cases_root", type=Path)
+    sheet.add_argument("--out", type=Path, required=True)
+    sheet.set_defaults(run=_sheet)
 
     cand = sub.add_parser("candidate", help="composite and audit one provider output")
     cand.add_argument("case_dir", type=Path)
