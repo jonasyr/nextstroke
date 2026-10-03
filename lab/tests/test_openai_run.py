@@ -223,3 +223,13 @@ def test_a_refused_attempt_counts_as_not_controlled_without_screening(root: Path
     _run(root, FakeClient(error=ProviderError(400, "moderation_blocked", "blocked")))
     summary = _run(root, FakeClient(), attempt=2)
     assert summary["attempt"] == 2
+
+
+def test_unreviewed_annotations_run_only_when_allowed_and_say_so(root: Path) -> None:
+    path = root / "cases" / "c01" / "annotation.json"
+    meta = json.loads(path.read_text())
+    meta["owner_reviewed"] = False
+    path.write_text(json.dumps(meta))
+    _run(root, FakeClient(), allow_unreviewed=True)
+    (record,) = AttemptLog(root / "attempts.jsonl").read()
+    assert "annotation not owner-reviewed" in record.notes

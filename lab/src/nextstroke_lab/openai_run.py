@@ -61,6 +61,7 @@ class RunSettings:
     model: str = "gpt-image-2.5-sunburst"
     quality: str = "medium"
     cap_usd: float = 5.0
+    allow_unreviewed: bool = False  # only for post-hoc comparison cases such as c08b
     prices: TokenPrices = field(default=GPT_IMAGE_2_5_PRICES)
 
 
@@ -90,13 +91,16 @@ def record_screening(  # noqa: PLR0913 - keyword-only screening fields
     )
 
 
-def _check_protocol(root: Path, case_dir: Path, short: str, attempt: int) -> str:
+def _check_protocol(
+    root: Path, case_dir: Path, short: str, attempt: int, settings: RunSettings
+) -> tuple[str, str]:
     if short == "s1" and attempt != 1:
         raise ProtocolError("S1 has one attempt per case (D-035)")
     if not 1 <= attempt <= MAX_ATTEMPTS:
         raise ProtocolError(f"attempt must be 1..{MAX_ATTEMPTS}")
     meta = json.loads((case_dir / "annotation.json").read_text(encoding="utf-8"))
-    if not meta.get("owner_reviewed"):
+    reviewed = bool(meta.get("owner_reviewed"))
+    if not reviewed and not settings.allow_unreviewed:
         raise ProtocolError(f"{case_dir.name} annotation is not owner-reviewed")
     if attempt > 1:
         earlier = _screens(root).get(short, {}).get(case_dir.name, [])
@@ -109,7 +113,7 @@ def _check_protocol(root: Path, case_dir: Path, short: str, attempt: int) -> str
             raise ProtocolError(f"screen attempt {attempt - 1} before running attempt {attempt}")
         if "controlled" in done.values():
             raise ProtocolError(f"{case_dir.name} {short} is already controlled; stop (D-035)")
-    return str(meta["desired_change"])
+    return str(meta["desired_change"]), "" if reviewed else "; annotation not owner-reviewed"
 
 
 def _request(case_dir: Path, short: str, change: str, settings: RunSettings) -> EditRequest:
@@ -143,7 +147,7 @@ def run_attempt(  # noqa: PLR0913 - explicit collaborators keep the runner testa
 ) -> dict[str, object]:
     case_dir = root / "cases" / case_id
     strategy = STRATEGIES[short]
-    change = _check_protocol(root, case_dir, short, attempt)
+    change, caveat = _check_protocol(root, case_dir, short, attempt, settings)
     log = AttemptLog(root / "attempts.jsonl")
     costs = [r.cost_usd for r in log.read() if r.cost_usd is not None]
     check_budget(sum(costs), reserve_usd(costs), settings.cap_usd)
@@ -166,7 +170,13 @@ def run_attempt(  # noqa: PLR0913 - explicit collaborators keep the runner testa
         result = client.edit(request)
     except ProviderError as error:
         log.append(
-            AttemptRecord(**base, latency_seconds=clock() - start, failure=str(error), cost_usd=0.0)
+            AttemptRecord(
+                **base,
+                latency_seconds=clock() - start,
+                failure=str(error),
+                cost_usd=0.0,
+                notes=caveat.removeprefix("; "),
+            )
         )
         return {**summary, "failure": str(error), "spent_usd": sum(costs)}
     latency = clock() - start
@@ -183,7 +193,7 @@ def run_attempt(  # noqa: PLR0913 - explicit collaborators keep the runner testa
             output_sha256=hashlib.sha256(result.png).hexdigest(),
             cost_usd=cost,
             usage=result.usage.as_dict(),
-            notes=f"size {request.size}, background {request.background}",
+            notes=f"size {request.size}, background {request.background}{caveat}",
         )
     )
     summary |= {
