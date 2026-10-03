@@ -72,13 +72,14 @@ Cloud accounts/sync are not Phase 4. They require demonstrated demand and a futu
 ### Phase 3
 
 - A beginner can receive three fineliner-feasible ideas and follow one without generated preview.
+- Deferred Phase 0 beginner gate (D-048): with 5–8 beginners on standardized starters, at least 70% understand the instruction and at least 60% do not worsen the work. Phase 4 does not start before this passes.
 - Every material fact has provenance or is explicitly generic/unknown.
 - Calibration is optional and skippable.
 - Local project reload, backup export, and database-failure recovery are exercised.
 
 ### Phase 4
 
-- Only the preview strategy that passed Phase 0 is retained.
+- Only the preview strategy that passed Phase 0 is retained: S3 structured strokes (D-048).
 - Controlled overlays obey original-copy boundaries.
 - Experimental inspiration is visibly distinct and never called safe.
 - Checkpoint comparison closes the physical loop.

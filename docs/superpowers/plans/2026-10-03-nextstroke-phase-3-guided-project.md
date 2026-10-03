@@ -60,8 +60,11 @@
 - [ ] Implement Capture → Straighten → Tool → Intent → Ideas → Execute → Check.
 - [ ] Reuse Quick Compare for checkpoint inspection.
 - [ ] Test with 5–8 beginners without developer explanation.
+- [ ] This study is also the deferred Phase 0 beginner gate (D-048): use standardized starters first, define "understands" and "worsens" as in spec §15.2, and record it in the Phase 0 results report.
 
 ## Exit gate
+
+The first two criteria are hard gates carried over from Phase 0 (D-048). If either fails, Phase 4 does not start and the owner selects and records a further pivot.
 
 - At least 70% of study participants understand the instruction unaided.
 - At least 60% execute without worsening the work under the approved rubric.

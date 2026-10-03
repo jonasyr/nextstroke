@@ -428,3 +428,16 @@
 - **Reason:** Owner choice, to move on.
 - **Consequence:** The "unnoticed changes" criterion is not measured (reported as 0 because there is no second pass, not because none exist), and rater consistency is unknown. The report must state both. With round 1 only: S3 6 of 7, S2 5 of 7, S1 0 of 7 cases controlled. `decide` returns PIVOT with S3 as the best strategy and one unmet criterion: no beginner study evidence.
 - **Reconsider when:** A later re-rating disagrees with round 1.
+
+## D-048 — Phase 0 outcome: PIVOT, S3 retained, beginner study moves to the Phase 3 exit gate
+
+- **Date:** 2026-10-03
+- **Selected:**
+  - Phase 0 ends in PIVOT (spec §15.4): S3 met every technical GO criterion (6 of 7 cases, no contour destruction, 6 of 6 understandable, 32 s, about USD 0.02), but no beginner study was run.
+  - S3 (structured strokes rendered locally) is the only preview strategy Phase 4 may retain. S2 is not retained. S1 stays experimental inspiration only.
+  - The two beginner criteria (at least 70% of 5–8 participants understand the instruction, at least 60% do not worsen the work) become a hard Phase 3 exit gate, measured with the real coach on standardized starters. No Phase 4 preview work and no public test start before they pass.
+  - Phase 1 may start. Report: `docs/research/phase-0-results.md`.
+- **Alternatives:** Run the beginner study now and close Phase 0 as GO; retain S2 alongside S3.
+- **Reason:** Owner choice, to move on without recruiting participants now. S2 has no margin (5 of 7), misplaces strokes and drew one refusal on harmless art.
+- **Consequence:** The biggest open product risk, whether the coach actually helps a beginner draw, is untested until the end of Phase 3. Phases 1–3 must not assume it. Phase 4 still reconfirms S3 through the production API path on a fresh holdout of real, consented photos.
+- **Reconsider when:** The Phase 3 beginner gate fails (then the owner selects a further pivot), or S3 fails the Phase 4 holdout.

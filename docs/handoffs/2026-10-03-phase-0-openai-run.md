@@ -38,7 +38,6 @@ Rated on the phone through a private claude.ai page backed by the page database 
 
 Round 2 skipped by the owner. `nextstroke-lab decide private/candidates --key private/pack-1-key.json --ratings private/ratings-1.json --log private/attempts.jsonl --evidence private/evidence.json --cost s3=0.02 --corpus-size 7 --cases c01,c02,c03,c04,c05,c06,c07` → `pivot`, best strategy S3, unmet: "no beginner study evidence", no triggers. Successes: S3 6, S2 5, S1 0 of 7.
 
-## Open after the run
+## Closed (D-048)
 
-- Owner rates pack 2 the next day (Task 5), built the same way as a phone page. Compare the ratings with `screening.json`; S2 is a GO candidate only if the owner's ratings confirm 5 of 7.
-- Beginner study (Task 7) and evidence file, then `nextstroke-lab decide --corpus-size 7`.
+Phase 0 closed with PIVOT: S3 retained, beginner study moved to the Phase 3 exit gate. Report: `docs/research/phase-0-results.md`. The private store (`lab/private/`) and the claude.ai rating page are study data: delete them with the other study data per D-042 once they are no longer needed.

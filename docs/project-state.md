@@ -8,7 +8,7 @@
 
 **Implementation status:** Working legacy comparison prototype imported; disposable Phase 0 lab in progress under `lab/`; production rewrite not started
 
-**Active phase:** Phase 0 proof of feasibility, approved 2026-10-03 (D-041). Done: lab tooling, hosting probe, material sheet draft, corpus prepared and annotations owner-approved (8 cases incl. one comparison case). S3 and ideas done via subagents (D-045; orchestrator screening 7/7 GO cases controlled). S1/S2 done via OpenAI API (D-046; 24 calls, USD 0.53 measured; orchestrator screening S2 5/7 GO cases controlled, S1 all experimental by rule). Owner rating done; round 2 skipped, round 1 final (D-047): S3 6/7, S2 5/7, S1 0/7 GO cases controlled. `decide` → PIVOT, best S3, only unmet criterion: no beginner study. Next: owner decides between running the beginner study (Task 7) and selecting a pivot; beginner study; `decide --corpus-size 7` (`docs/handoffs/2026-10-03-phase-0-openai-run.md`)
+**Active phase:** Phase 0 closed 2026-10-03 with PIVOT (D-048): S3 retained as the only preview strategy (6 of 7 cases controlled, all technical criteria met); the beginner criteria were not measured and become a hard Phase 3 exit gate. Report: `docs/research/phase-0-results.md`. Next: Phase 1 lean foundation (`docs/superpowers/plans/2026-10-03-nextstroke-phase-1-foundation.md`)
 
 **Latest review:** `docs/reviews/2026-10-03-documentation-readiness-review.md`
 
@@ -43,6 +43,7 @@ NextStroke is an iPhone-first physical-art coach that compares an artwork with a
 23. **Generation route:** S3/ideas via contextless Claude subagents; S1/S2 via OpenAI API with proxy-injected key, cap USD 5 (D-045).
 24. **OpenAI run parameters:** `gpt-image-2.5-sunburst`, medium quality, edits endpoint with reference photo, measured cost from `usage`, refusals count as attempts (D-046).
 25. **Rating:** round 2 skipped; round-1 owner ratings are final (D-047).
+26. **Phase 0 outcome:** PIVOT; S3 is the only retained preview strategy; beginner study is the Phase 3 exit gate before any Phase 4 preview work or public test (D-048).
 
 ## Evidence status
 
@@ -58,13 +59,9 @@ Full review: `docs/reviews/2026-10-03-independent-feasibility-review.md`.
 
 ## Current milestone
 
-The documentation readiness review is complete and the revised Phase 0 plan awaits owner approval. Phase 0 then compares, under the attempt and futility rules of D-035:
+Phase 0 is closed with PIVOT (D-048). Of the three strategies, S3 structured strokes rendered locally met every technical criterion and is the only preview path Phase 4 may retain. S2 is not retained. S1 full-composite editing stays an experimental inspiration path only. Whether the coach helps beginners is untested; the beginner criteria are a hard Phase 3 exit gate.
 
-1. S1 masked full-composite editing followed by hard original copyback (baseline; at most experimental);
-2. S2 direct transparent overlay generation;
-3. S3 structured strokes/SVG rendered deterministically.
-
-Only S2 or S3 can satisfy GO. Full-composite generation remains an experimental inspiration path.
+Next is Phase 1, the lean foundation. Freeze only interfaces Phase 0 supports: S3 stroke plans, not transparent-layer or full-composite contracts beyond the experimental label.
 
 The prototype is not Phase 0 evidence by itself. It is the reference for upload, comparison, gestures, alignment, immersive viewing, and export behavior.
 
@@ -81,7 +78,7 @@ The prototype is not Phase 0 evidence by itself. It is the reference for upload,
 
 ## Definition of the next successful handoff
 
-- all revised documents are internally consistent;
-- Phase 0 has exact dataset, metrics, costs, privacy handling, and decision outcomes (done in the 2026-10-03 readiness review);
-- the owner has reviewed and approved the Phase 0 plan;
-- implementation has not silently expanded beyond the approved experiment.
+- Phase 1 workspace and quality gates exist and pass from a fresh clone;
+- contracts encode the preview vocabulary with S3 stroke plans as the only controlled route;
+- no account, sync, D1, or R2 scaffolding exists;
+- the Phase 3 beginner gate from D-048 is still open and not assumed passed.
