@@ -456,3 +456,12 @@
 - **Reason:** Owner's concern that Phase 0 tested only very simple additions, that shading will be harder for stroke plans, and that prompt quality matters.
 - **Consequence:** One attempt per case measures first-attempt quality only. Masks are drafts; the owner sees them in the rating view. The result may change which strategy Phase 4 retains; Phase 1 does not depend on it.
 - **Reconsider when:** The results are in.
+
+## D-050 — Hybrid test: S1 image as template, S3 stroke plan as controlled layer
+
+- **Date:** 2026-10-03
+- **Selected:** For the seven shading cases, a contextless Claude subagent transfers the new strokes of the S1-v2 composite (the template) into an S3 stroke plan (prompt `s3-from-s1-v1`, experiment root `lab/private/x3/`). Inputs: the photo, the photo with the allowed area outlined, the S1 template, and a zoomed crop of the template with a coordinate grid. One attempt per case, owner-rated. The S1 image stays experimental inspiration; only the rendered stroke plan can be controlled. No new OpenAI calls.
+- **Alternatives:** Allow S1 as a controlled route (changes product rule 3); keep S3 alone.
+- **Reason:** Owner choice after D-049: S1 looked most natural, S3 was safest but mechanical.
+- **Consequence:** If the hybrid is controlled and looks natural, the preview route becomes S1 (inspiration) + S3 transfer (controlled), at about USD 0.07 per image call plus the stroke-plan call. The S1 template depends on OpenAI and inherits its refusal and server-error risk.
+- **Reconsider when:** The results are in.

@@ -112,6 +112,32 @@ Antworte nur mit dem Strichplan als JSON nach diesem Schema, mit schema_version 
 {stroke_plan_schema}
 ```
 
+## Hybrid transfer (`s3-from-s1-v1`, D-050, frozen 2026-10-03)
+
+One contextless subagent per case with Bild 1 (photo), Bild 2 (outlined photo), Bild 3 (S1-v2 composite as template) and Bild 4 (zoomed crop of Bild 3 with a coordinate grid in full-image units), then the message `Fall {case_id}. Striche für: {desired_change}. Nicht verändern: {protected_description}.`:
+
+```text
+Du überträgst eine Bildvorlage in einen exakten Strichplan für eine begonnene Fineliner-Zeichnung. Die App zeichnet den Plan exakt auf das Foto.
+
+Bild 1: das Foto der Zeichnung (Original).
+Bild 2: dasselbe Foto; der erlaubte Bereich ist magenta umrandet.
+Bild 3: die Vorlage – dasselbe Foto, in dem die gewünschte Ergänzung im erlaubten Bereich schon eingezeichnet ist.
+Bild 4: ein vergrößerter Ausschnitt von Bild 3 um den erlaubten Bereich, mit Hilfslinien; die Beschriftungen sind Koordinaten relativ zum ganzen Bild 1.
+
+Aufgabe: Vergleiche Bild 3 mit Bild 1 und übertrage NUR die neuen Striche aus Bild 3 in einen Strichplan – gleiche Position, Richtung, Länge, Abstand, Dichte und Strichstärke, so dass das Ergebnis wie Bild 3 aussieht. Erfinde nichts dazu und lass nichts Wesentliches weg.
+
+Regeln:
+- Nur schwarzer Fineliner. Kein Weiß, keine Farbe, keine deckenden Flächen, kein Radieren.
+- Neue Striche nur innerhalb der magenta Umrandung. Bestehende Linien aus Bild 1 nicht nachzeichnen.
+- Koordinaten 0..1 relativ zu Bild 1 (0,0 = oben links, x nach rechts, y nach unten). Nutze die Hilfslinien in Bild 4 zum genauen Messen.
+- width als Anteil der längsten Bildkante (Fineliner 0,1–0,5 mm entsprechen meist 0,0005–0,003), darkness 0..1.
+- order ist die Zeichenreihenfolge und über strokes und fills hinweg eindeutig.
+- Unregelmäßige, handgezeichnete Linien (unterschiedliche Längen, leicht gebogen) als einzelne strokes mit mehreren Punkten übertragen; nur wirklich gleichmäßige Schraffuren als fills (polygon, angle_deg mit 0 = waagerecht, 90 = senkrecht, 45 = von links oben nach rechts unten, 135 = von links unten nach rechts oben; spacing, width, darkness, cross). Bis zu 200 strokes sind erlaubt.
+
+Antworte nur mit dem Strichplan als JSON nach diesem Schema, mit schema_version "2", ohne weiteren Text:
+{stroke_plan_schema}
+```
+
 ## Recording
 
 For every attempt write one line to `private/attempts.jsonl` (see `AttemptRecord`): service, the model label shown in the app, prompt revision, start time, wall-clock seconds from sending to a usable result, output path and SHA-256, or the failure reason (refusal, wrong format, timeout).
