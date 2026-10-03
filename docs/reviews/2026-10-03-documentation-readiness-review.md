@@ -122,7 +122,7 @@ Added after `main` imported `legacy/fineliner-lupe/` and the owner approved the 
 | Origin | HTTPS at the root of `<slug>.<owner>.chatgpt.site`, its own origin | Good for service worker scope and isolated storage |
 | Server code | Worker mode supports secrets and outbound HTTPS | A Phase 4 model proxy can live on Sites |
 | Custom headers | Not documented; third parties report `_headers` ignored in static mode | No COOP/COEP, so no threaded WASM; design single-threaded |
-| `.wasm` MIME, size limits, SPA fallback, injected scripts, service worker, iPhone install | Not documented | Phase 0 Task 6 deployment probe decides |
+| `.wasm` MIME, size limits, SPA fallback, injected scripts, service worker, iPhone install | Not documented; probe on a real iPhone passed all on 2026-10-03 (13 MB file deployed) | See `docs/research/2026-10-03-sites-probe-iphone.md` |
 | Analytics and residency | Traffic analytics automatic; no data residency | Disclose in privacy copy; keep images on device |
 | Deployment | Only through ChatGPT, not CI | Manual deploy procedure documented in Phase 1 |
 

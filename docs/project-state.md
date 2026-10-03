@@ -41,6 +41,8 @@ NextStroke is an iPhone-first physical-art coach that compares an artwork with a
 
 ## Evidence status
 
+- 2026-10-03 ChatGPT Sites probe on a real iPhone (iOS 26.5.2, Home Screen app): every hosting criterion passed, including offline service worker, `.wasm` MIME, single-threaded opencv.js, and ten 12 MP cycles without crash. Open: background/resume, `persist()`, 24/48 MP and HEIC inputs, exact device model. See `docs/research/2026-10-03-sites-probe-iphone.md`.
+
 - The existing Fineliner Lupe prototype is preserved at `legacy/fineliner-lupe/` and can be served directly from its `dist/` directory.
 - An independent review concluded `GO, ABER PLAN ÄNDERN`.
 - Core comparison, manual alignment, local projects, and structured analysis are feasible.
