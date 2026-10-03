@@ -44,7 +44,7 @@
 ## Task 3: Structured coaching
 
 - [ ] Define input schema for intent, target area, protected details, skill level, tool, and paper.
-- [ ] Return exactly three bounded ideas with risk level and required technique.
+- [ ] Return exactly three bounded ideas with risk level, required technique, and Careful/Balanced/Bold classification (D-014).
 - [ ] Generate ordered physical instructions from rule-approved facts only.
 - [ ] Show source/evidence summaries in accessible language.
 
