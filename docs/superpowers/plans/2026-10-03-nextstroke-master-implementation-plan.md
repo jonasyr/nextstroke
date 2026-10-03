@@ -67,7 +67,7 @@ Cloud accounts/sync are not Phase 4. They require demonstrated demand and a futu
 
 - Original/reference import, manual alignment, opacity, original reveal, CSS immersive mode, and export work offline.
 - Automatic alignment exposes confidence and manual fallback.
-- Real-device memory and gesture checklist passes on oldest supported (iPhone 11 class) and current iPhone; this closes the device risk left open in Phase 0 (D-034).
+- Real-device memory and gesture checklist passes on oldest supported (iPhone 11 class) and current iPhone; this closes the device risks left open in Phase 0: iPhone 11 class (D-034), background/resume during processing, 48 MP and HEIC photos, and the `persist()` result (D-043).
 
 ### Phase 3
 

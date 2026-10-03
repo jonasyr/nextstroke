@@ -38,6 +38,7 @@ NextStroke is an iPhone-first physical-art coach that compares an artwork with a
 18. **Language:** German UI for `v0.1`, English later, message catalog from Phase 1 (D-040).
 19. **Phase 0 approved** with the review's proposed values; legacy demo images are not fixtures (D-041).
 20. **Corpus sources:** Pinterest drawings allowed, kept private, reported separately (D-042).
+21. **Device evidence:** first probe run accepted for Phase 0; remaining device checks move to the Phase 2 exit gate (D-043).
 
 ## Evidence status
 
