@@ -215,7 +215,7 @@
 - **Selected:** Distinguish controlled overlays from experimental inspiration.
 - **Alternatives:** Hide every failed preview; repeatedly regenerate until something looks acceptable.
 - **Reason:** The owner wants the best uncertain idea to remain visible, but uncertainty must not become a false safety claim.
-- **Consequence:** A failed candidate may appear with prominent warning and physical guidance. It is not called safe or exact. Export behavior is specified by D-032.
+- **Consequence:** A failed candidate may appear with prominent warning and physical guidance. It is not called safe or exact. Export behavior is specified by D-033.
 
 ## D-026 — Local projects and export before accounts or sync
 
@@ -241,7 +241,15 @@
 - **Reason:** Paper and individual pen behavior materially affect line width, darkness, bleed, and layering, but mandatory setup would delay first value.
 - **Consequence:** Uncalibrated users receive more conservative advice. Camera-derived measurements are relative and must not be presented as absolute colorimetry.
 
-## D-029 — Phase 0 corpus is fineliner-only
+## D-029 — Preserve the existing Fineliner Lupe prototype
+
+- **Date:** 2026-10-03
+- **Selected:** Import the exact tracked static Site implementation into `legacy/fineliner-lupe/`.
+- **Alternatives:** Leave the app in a separate private workspace; discard it and rebuild only from documentation; copy only selected snippets.
+- **Reason:** The public repository must preserve the actual working upload, comparison, alignment, gesture, PDF, immersive-view, and export behavior that motivated NextStroke.
+- **Consequence:** The imported `dist/` app and its local PDF.js assets are a runnable behavioral reference. New production architecture remains governed by Phase 0 and must not treat the compact legacy bundle as the desired module structure.
+
+## D-030 — Phase 0 corpus is fineliner-only
 
 - **Date:** 2026-10-03
 - **Supersedes:** The 15 fineliner / 10 colored-pencil / 5 watercolor split in the earlier spec and Phase 0 plan.
@@ -251,7 +259,7 @@
 - **Consequence:** Colored pencil and watercolor evidence moves entirely to their own later gates.
 - **Reconsider when:** A colored-pencil study is approved after fineliner passes.
 
-## D-030 — Phase 0 runs manually on existing subscriptions
+## D-031 — Phase 0 runs manually on existing subscriptions
 
 - **Date:** 2026-10-03
 - **Selected:** No additional spend. Image strategies run manually in ChatGPT (Plus/Pro); ideas, instructions, and structured strokes run manually in Claude (Pro/Max).
@@ -260,7 +268,7 @@
 - **Consequence:** No API calls, deployed server, or automation of consumer apps. Model versions cannot be pinned; the UI model label and date are recorded instead. Cost becomes an API-equivalent estimate. Training-use settings are disabled before uploads, and consent names the services. Phase 4 must reconfirm the retained strategy through the production API path on a fresh holdout set before a public beta.
 - **Reconsider when:** A budget for API evaluation becomes available, or manual evidence is too noisy to decide.
 
-## D-031 — No STOP outcome in Phase 0
+## D-032 — No STOP outcome in Phase 0
 
 - **Date:** 2026-10-03
 - **Selected:** Phase 0 has GO and PIVOT outcomes only. Any unmet GO criterion leads to PIVOT; the owner selects and records the pivot.
@@ -269,7 +277,7 @@
 - **Consequence:** The continuation prompt's request for STOP criteria is answered by this decision. The default pivot for preview failures remains the spec's pivot product; other pivots are chosen and recorded by the owner.
 - **Reconsider when:** A pivot also fails its own evaluation.
 
-## D-032 — Experimental inspiration export
+## D-033 — Experimental inspiration export
 
 - **Date:** 2026-10-03
 - **Clarifies:** D-025, which allowed either a warning or exclusion; project state and Phase 4 wording conflicted.
@@ -278,7 +286,7 @@
 - **Reason:** A warning that lives only in app UI disappears as soon as the image leaves the app.
 - **Reconsider when:** Beta users show that the burned-in warning blocks a legitimate need.
 
-## D-033 — Phase 0 beginner study materials and device scope
+## D-034 — Phase 0 beginner study materials and device scope
 
 - **Date:** 2026-10-03
 - **Selected:** Every participant first works on an owner-made standardized starter drawing with pre-generated previews; afterwards a participant may optionally use their own work with consent. Phase 0 device testing uses the owner's current iPhone only.
@@ -287,11 +295,11 @@
 - **Consequence:** The iPhone 11-class test is an open Phase 0 risk and must pass before the Phase 2 exit gate.
 - **Reconsider when:** An iPhone 11-class device becomes available before Phase 0 starts.
 
-## D-034 — Reduce Phase 0 manual effort
+## D-035 — Reduce Phase 0 manual effort
 
 - **Date:** 2026-10-03
 - **Selected:** S2/S3 attempts stop at the first `controlled` screening result (up to 3); a strategy stops after 10 failed cases; S1 runs once on 10 pre-selected cases; ideas and S3 strokes share one Claude chat per case; lab tooling is built before day 1; up to 10 of 30 cases may be photographs of printed CC0/CC BY line drawings.
 - **Alternatives:** Exactly 3 attempts for every case and strategy (about 300 manual interactions); a paid API run of about USD 10–20.
-- **Reason:** The manual budget route (D-030) made Phase 0 about 15–25 hours of manual generation. These rules cut it to roughly 6–9 hours without changing GO thresholds. All rules are pre-registered, and every attempt is still reported.
+- **Reason:** The manual budget route (D-031) made Phase 0 about 15–25 hours of manual generation. These rules cut it to roughly 6–9 hours without changing GO thresholds. All rules are pre-registered, and every attempt is still reported.
 - **Consequence:** S1 evidence is thinner but S1 cannot satisfy GO. Printed toner is not fineliner ink, so printed cases are reported separately. A next-day downgrade of a first-attempt success is not retried, which makes the gate slightly stricter.
 - **Reconsider when:** A budget for scripted API runs becomes available.

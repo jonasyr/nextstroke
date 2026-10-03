@@ -42,7 +42,7 @@
 
 - [ ] Show trust state persistently in standard and immersive views.
 - [ ] Provide opacity, original reveal, and changes-only backgrounds for controlled overlays.
-- [ ] For experimental inspiration, show warning and physical instruction; export or share only with the warning drawn into the image, never clean; instruction-only export is always allowed (D-032).
+- [ ] For experimental inspiration, show warning and physical instruction; export or share only with the warning drawn into the image, never clean; instruction-only export is always allowed (D-033).
 - [ ] Support “no controlled preview available” as a complete outcome.
 
 ## Task 4: Minimal API and cost controls
@@ -61,7 +61,7 @@
 
 ## Exit gate
 
-- Controlled previews meet Phase 0-derived criteria on a fresh holdout set run through the production API path, because Phase 0 evidence was manual (D-030).
+- Controlled previews meet Phase 0-derived criteria on a fresh holdout set run through the production API path, because Phase 0 evidence was manual (D-031).
 - Experimental state remains distinct in every display/share/export path.
 - No project image is stored by the service beyond documented transient processing.
 - Real-device, accessibility, privacy, and cost gates are green.

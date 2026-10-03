@@ -4,7 +4,7 @@
 
 **Date:** 2026-10-03
 
-**Owner decisions:** `docs/decisions/decision-log.md` D-022 through D-033
+**Owner decisions:** `docs/decisions/decision-log.md` D-022 through D-035
 
 **Feasibility evidence:** `docs/reviews/2026-10-03-independent-feasibility-review.md`
 
@@ -189,7 +189,7 @@ interface RejectedCandidate {
 
 `GeneratedComposite` and `DerivedDifferenceOverlay` can never be promoted to `ControlledOverlay`, silently or with approval. A `GeneratedComposite`, even after original copyback, can become at most `ExperimentalInspiration`. Human approval records preference; it does not change the artifact's technical trust class.
 
-### 7.1 Experimental inspiration export (D-032)
+### 7.1 Experimental inspiration export (D-033)
 
 An `ExperimentalInspiration` image can be exported or shared only with a visible warning drawn into the exported pixels. A clean export is never offered. Exporting the physical instructions without the image is always allowed.
 
@@ -307,14 +307,14 @@ Phase 0 is allowed to use disposable scripts and a thin server endpoint. It must
 
 ## 15. Phase 0 gates
 
-Owner decisions: D-024, D-029, D-030, D-031, D-033, D-034. The operational checklist is the Phase 0 plan.
+Owner decisions: D-024, D-030, D-031, D-032, D-034, D-035. The operational checklist is the Phase 0 plan.
 
 ### 15.1 Corpus and method
 
-- 30 ordinary iPhone photographs of started fineliner works (D-029); at least 10 have an annotated critical contour inside or touching the editable region. At most 10 may be photographs of printed CC0/CC BY line drawings, reported separately (D-034).
+- 30 ordinary iPhone photographs of started fineliner works (D-030); at least 10 have an annotated critical contour inside or touching the editable region. At most 10 may be photographs of printed CC0/CC BY line drawings, reported separately (D-035).
 - Strategies: S1 masked full-composite edit, S2 direct transparent overlay, S3 structured strokes/SVG rendered locally.
-- S2 and S3: up to three attempts per case, stopping at the first `controlled` screening result. S1: one attempt on 10 pre-selected cases. A strategy stops after 10 failed cases because it can no longer reach GO. Every attempt is reported (D-034).
-- Models are run manually through existing subscriptions without additional spend (D-030). Cost is an API-equivalent estimate from published pricing on the run date.
+- S2 and S3: up to three attempts per case, stopping at the first `controlled` screening result. S1: one attempt on 10 pre-selected cases. A strategy stops after 10 failed cases because it can no longer reach GO. Every attempt is reported (D-035).
+- Models are run manually through existing subscriptions without additional spend (D-031). Cost is an API-equivalent estimate from published pricing on the run date.
 - Thresholds and definitions are committed before any output is generated.
 
 ### 15.2 Definitions
@@ -353,7 +353,7 @@ S1 can never be `controlled`. Pixel ratios are reported as diagnostics only.
 - reported quality depends on unreported selection;
 - S2 and S3 both fail while S1 is the only usable visual route.
 
-The default pivot target for preview failures is Quick Compare + sourced critique + manually confirmed stroke/SVG plan + checkpoint comparison. For beginner, device, or cost failures, the owner selects and records the pivot. There is no STOP outcome (D-031); the owner decides after reviewing the report.
+The default pivot target for preview failures is Quick Compare + sourced critique + manually confirmed stroke/SVG plan + checkpoint comparison. For beginner, device, or cost failures, the owner selects and records the pivot. There is no STOP outcome (D-032); the owner decides after reviewing the report.
 
 Phase 0 evidence is manual and partly unblinded. Before a public beta, Phase 4 must reconfirm the retained strategy through the production API path on a fresh holdout set, and the iPhone 11-class device test must pass before the Phase 2 exit gate.
 

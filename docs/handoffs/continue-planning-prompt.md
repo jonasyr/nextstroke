@@ -22,8 +22,9 @@ Your mission is to independently validate and finish the revised product specifi
    - `docs/superpowers/plans/2026-10-03-nextstroke-master-implementation-plan.md`
    - every phase plan referenced by the master plan
 4. Inspect git status, recent commits, repository tree, and any open code. Do not assume application code exists.
-5. Build a contradiction table: document/section, conflicting claim, current authority, proposed resolution.
-6. Verify unstable technical claims against current primary sources. For platform and API behavior use official documentation first; use papers for research limits, GitHub/WebKit issues for reproducible failures, and forums only as anecdotal risk evidence.
+5. Inspect `legacy/fineliner-lupe/` completely enough to understand the existing static app, its hosted configuration, bundled PDF.js runtime, and supported behaviors. Treat it as a behavioral reference, not the target architecture.
+6. Build a contradiction table: document/section, conflicting claim, current authority, proposed resolution.
+7. Verify unstable technical claims against current primary sources. For platform and API behavior use official documentation first; use papers for research limits, GitHub/WebKit issues for reproducible failures, and forums only as anecdotal risk evidence.
 
 ## Confirmed owner decisions you must preserve
 

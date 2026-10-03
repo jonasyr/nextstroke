@@ -17,7 +17,7 @@
 | --- | --- | --- | --- |
 | 1 | Riskiest hypothesis tested in 1–2 weeks | Yes, but prerequisites and timebox end were undefined | 10-day timebox, prerequisites separated, missing evidence counts as unmet |
 | 2 | Three strategies compared without cherry-picking | Attempt count, case success, and eligibility undefined | 3 attempts per case per strategy, all reported; S1 cannot be controlled |
-| 3 | Exact GO, PIVOT, STOP | No STOP; mixed outcomes undefined | GO and PIVOT exact; no STOP by owner decision D-031 |
+| 3 | Exact GO, PIVOT, STOP | No STOP; mixed outcomes undefined | GO and PIVOT exact; no STOP by owner decision D-032 |
 | 4 | Four artifact types distinguished | Yes; type definitions inconsistent | Consistent trust union, provenance, rejected type |
 | 5 | Hard copyback outside editable and inside protected | Yes; mask priority and feather band undefined | Protected wins; feather band inside editable |
 | 6 | No semantic safety from pixel ratios | Met | Unchanged |
@@ -32,16 +32,16 @@
 
 | Rank | Document / section | Conflicting or missing claim | Authority | Resolution |
 | --- | --- | --- | --- | --- |
-| BLOCKER | Spec §15; Phase 0 Task 6 | No STOP criteria; outcomes when neither GO nor PIVOT applies were undefined | Continuation prompt requirement 3 | Owner chose no STOP outcome (D-031); any unmet GO criterion is PIVOT |
+| BLOCKER | Spec §15; Phase 0 Task 6 | No STOP criteria; outcomes when neither GO nor PIVOT applies were undefined | Continuation prompt requirement 3 | Owner chose no STOP outcome (D-032); any unmet GO criterion is PIVOT |
 | BLOCKER | Spec §15; Phase 0 Tasks 2, 6 | "Acceptable bounded preview", case, and attempt count undefined; "at least one" with unlimited seeds is best-of-N | Spec §15 | Defined case success over exactly 3 recorded attempts; first-attempt rate covers the "repeated attempts" trigger |
 | BLOCKER | Spec §7 vs Phase 0 strategy 1 | Full composite counted toward GO although `ControlledOverlay.construction` excludes it | Spec §7, D-022 | S1 is baseline only and can be at most experimental; GO needs S2 or S3 |
 | BLOCKER | Phase 0 Tasks 3, 6 | "Accepted", "acceptable", "controlled" used interchangeably; no classification rules | Spec §15 | Spec §15.2–15.3 define terms and the three classes |
-| BLOCKER | Phase 0 Tasks 1, 4 | Budget, working-pixel budget, devices, raters required "before the run" but unset | Phase 0 plan | Pre-registered parameter table; budget D-030; devices D-033 |
+| BLOCKER | Phase 0 Tasks 1, 4 | Budget, working-pixel budget, devices, raters required "before the run" but unset | Phase 0 plan | Pre-registered parameter table; budget D-031; devices D-034 |
 | HIGH | Phase 0 Task 5 | Beginner gates could pass with developer-written instructions, so the product's generation was not tested; "sourced tool context" had no source | Spec §6.2 | Instructions come unedited from the frozen template; throwaway material sheet added |
-| HIGH | Spec §15 corpus | 15 fineliner cases make 70% hinge on one case; 15 out-of-scope cases spend effort | D-023 | 30 fineliner (D-029) |
+| HIGH | Spec §15 corpus | 15 fineliner cases make 70% hinge on one case; 15 out-of-scope cases spend effort | D-023 | 30 fineliner (D-030) |
 | HIGH | Phase 0 privacy | Third-party upload of participant art, retention, and consent content unspecified | AGENTS rule 7, spec §11 | Consent contents, training settings off, deletion date, named services |
 | HIGH | Master plan vs Phase 0 | "1–2 weeks" and "without extending" vs pessimistic 3–4 weeks; recruitment not planned | D-024 | Prerequisites outside a 10-day execution timebox |
-| HIGH | Project state #4 vs D-025 vs Phase 4 Task 3 | Experimental export: "not exportable" vs "warning or exclusion" | D-025 (ambiguous) | Burned-in warning only (D-032) |
+| HIGH | Project state #4 vs D-025 vs Phase 4 Task 3 | Experimental export: "not exportable" vs "warning or exclusion" | D-025 (ambiguous) | Burned-in warning only (D-033) |
 | HIGH | Spec §8 | Feather band could extend outside editable region and break invariant 5; protected/editable priority unstated | AGENTS rule 5 | Feather band inside editable; protected wins; copyback at export resolution |
 | MEDIUM | Spec §7 types | `trust: "untrusted"` not in `PreviewTrust`; no rejected type; no provenance despite §10 | Spec §10 | Types rewritten |
 | MEDIUM | D-017 vs D-024 | Full monorepo and CI "from the start" vs disposable Phase 0 | D-024 newer | D-017 scope narrowed |
@@ -71,21 +71,21 @@
 | Current iOS versions | iOS 27 (27.0.1) and iOS 26; both support iPhone 11 and later | support.apple.com/en-us/100100 |
 | HEIC in iOS Safari | `<img>` supported since iOS 17; `createImageBitmap` unverified, so test on a device | caniuse |
 
-The manual subscription route (D-030) means Phase 0 uses ChatGPT and Claude apps. Consumer apps have their own retention and training settings. The plan requires disabling training use and recording settings, but does not claim the consumer apps match API retention.
+The manual subscription route (D-031) means Phase 0 uses ChatGPT and Claude apps. Consumer apps have their own retention and training settings. The plan requires disabling training use and recording settings, but does not claim the consumer apps match API retention.
 
 ## 5. Owner decisions taken in this review
 
-- D-029: Phase 0 corpus is 30 fineliner photographs.
-- D-030: Phase 0 runs manually on existing ChatGPT and Claude subscriptions with no added spend.
-- D-031: No STOP outcome; failed GO criteria lead to an owner-recorded PIVOT.
-- D-032: Experimental inspiration exports only with a burned-in warning.
-- D-033: Standardized starter drawings plus optional own work; current iPhone only, with the iPhone 11-class test deferred to the Phase 2 exit gate.
-- D-034: Reduced manual effort (added after the owner asked to shorten Phase 0).
+- D-030: Phase 0 corpus is 30 fineliner photographs.
+- D-031: Phase 0 runs manually on existing ChatGPT and Claude subscriptions with no added spend.
+- D-032: No STOP outcome; failed GO criteria lead to an owner-recorded PIVOT.
+- D-033: Experimental inspiration exports only with a burned-in warning.
+- D-034: Standardized starter drawings plus optional own work; current iPhone only, with the iPhone 11-class test deferred to the Phase 2 exit gate.
+- D-035: Reduced manual effort (added after the owner asked to shorten Phase 0).
 
 ## 6. Consequences the owner should know before approving
 
 1. **Manual evidence is weaker.** Model versions cannot be pinned, the cost criterion is an estimate, and blinding is partial. A GO from Phase 0 is provisional until Phase 4 reconfirms the retained strategy through the production API. That reconfirmation is the first required spend, about USD 10–20.
-2. **Ten days of manual runs is tight.** The original design (30 cases × 3 strategies × 3 attempts plus 30 idea sets) meant roughly 15–25 hours of manual generation. D-034 (stop at first success, futility stop, 10-case S1 baseline, combined chats) reduces this to roughly 6–9 hours. If the timebox ends with missing evidence, those criteria count as unmet.
+2. **Ten days of manual runs is tight.** The original design (30 cases × 3 strategies × 3 attempts plus 30 idea sets) meant roughly 15–25 hours of manual generation. D-035 (stop at first success, futility stop, 10-case S1 baseline, combined chats) reduces this to roughly 6–9 hours. If the timebox ends with missing evidence, those criteria count as unmet.
 3. **The device gate is partial.** A clean run on a current iPhone says little about the iPhone 11's memory limits.
 4. **Participant own work requires upload to consumer apps.** The consent template must say so explicitly.
 5. **Values proposed by this review need confirmation:** the 90-day deletion limit for study data, the 2048 px working edge, "at least 10 cases with critical contours inside the editable region", and a 100 ms main-thread threshold.

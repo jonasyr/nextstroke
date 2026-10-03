@@ -10,17 +10,17 @@
 
 **Spec:** `docs/superpowers/specs/2026-10-03-nextstroke-product-design.md` §15
 
-**Decisions:** D-024, D-029 through D-034
+**Decisions:** D-024, D-030 through D-035
 
 ## Global constraints
 
 - Owner approval of this plan is required before any model run or participant session.
-- No paid API calls and no additional spend (D-030). Models are used manually through the owner's ChatGPT Plus/Pro and Claude Pro/Max subscriptions. Do not automate, script, or scrape consumer apps.
+- No paid API calls and no additional spend (D-031). Models are used manually through the owner's ChatGPT Plus/Pro and Claude Pro/Max subscriptions. Do not automate, script, or scrape consumer apps.
 - Before uploading any image to a consumer app, disable every setting that allows conversations to be used for model training, and record the setting state and date in the run log.
-- Participant artwork is uploaded only with signed consent that names the services used (D-030, D-033).
+- Participant artwork is uploaded only with signed consent that names the services used (D-031, D-034).
 - Do not commit personal artwork, participant data, provider outputs containing artwork, or credentials. The private experiment store lives outside git.
 - Record every attempt and every rejection. Selecting results without reporting all attempts is cherry-picking and invalidates the run.
-- Only fineliner. The corpus is 30 fineliner photographs (D-029).
+- Only fineliner. The corpus is 30 fineliner photographs (D-030).
 - All provider output is untrusted. Only the local compositor can produce a `controlled` classification.
 - Record service, app/model label shown in the UI, date, prompt-template revision, input and output dimensions, wall-clock latency, and attempt number for every call.
 
@@ -34,14 +34,14 @@
 - [ ] Two to three standardized starter drawings exist on real drawing paper, made by the owner and licensed for the study.
 - [ ] Rating rubric and the thresholds in §15 of the spec are committed to the repository before any output is generated (pre-registration).
 - [ ] Training-use settings in both subscriptions are disabled.
-- [ ] Lab tooling is built and tested before day 1 (D-034): S3 stroke renderer, compositor with boundary audit, rating page with randomized IDs, and attempt-log form. It reuses existing open-source libraries where their licenses are AGPL-compatible.
+- [ ] Lab tooling is built and tested before day 1 (D-035): S3 stroke renderer, compositor with boundary audit, rating page with randomized IDs, and attempt-log form. It reuses existing open-source libraries where their licenses are AGPL-compatible.
 - [ ] A Claude Project holds the frozen ideas + S3 instructions, so each case needs one chat.
 
 ## Fixed parameters (pre-registered)
 
 | Parameter | Value |
 | --- | --- |
-| Corpus | 30 fineliner photos; at least 10 with an annotated critical contour inside or touching the editable region; at most 10 may be printed licensed line drawings (D-034) |
+| Corpus | 30 fineliner photos; at least 10 with an annotated critical contour inside or touching the editable region; at most 10 may be printed licensed line drawings (D-035) |
 | Strategies | S1 masked full-composite edit, S2 direct transparent overlay, S3 structured strokes/SVG rendered locally |
 | Attempts | S2 and S3: up to 3 per case, stopping at the first `controlled` screening result; S1: 1 attempt on 10 pre-selected cases. All attempts recorded |
 | Futility stop | A strategy stops once it has 10 failed cases, because it can no longer reach 21 of 30 |
@@ -118,7 +118,7 @@ The change requested for every strategy is the case's pre-registered desired cha
 
 ## Task 8 (day 10): Decide without extending the timebox
 
-Apply spec §15.4 exactly. Criteria that have no evidence when the timebox ends count as unmet. There is no STOP outcome (D-031): any unmet GO criterion leads to PIVOT, and the owner selects and records the pivot before Phase 1.
+Apply spec §15.4 exactly. Criteria that have no evidence when the timebox ends count as unmet. There is no STOP outcome (D-032): any unmet GO criterion leads to PIVOT, and the owner selects and records the pivot before Phase 1.
 
 ## Required report
 
