@@ -145,6 +145,7 @@
 ## D-017 — Repository and quality policy
 
 - **Date:** 2026-10-03
+- **Scope narrowed by:** D-024. Applies to retained code from Phase 1 onward; disposable Phase 0 experiment code is exempt.
 - **Selected:** Full monorepo boundaries, strong `AGENTS.md`, durable product/security/privacy docs, and CI gates from the start.
 - **Alternatives:** Simpler initial documentation/CI; stricter mandatory per-change reviewer and coverage rules.
 - **Reason:** Image privacy, Safari behavior, and model boundaries are too important to remain implicit.
@@ -214,7 +215,7 @@
 - **Selected:** Distinguish controlled overlays from experimental inspiration.
 - **Alternatives:** Hide every failed preview; repeatedly regenerate until something looks acceptable.
 - **Reason:** The owner wants the best uncertain idea to remain visible, but uncertainty must not become a false safety claim.
-- **Consequence:** A failed candidate may appear with prominent warning and physical guidance. It is not called safe or exact, and default export includes its warning or excludes it as a clean instruction layer.
+- **Consequence:** A failed candidate may appear with prominent warning and physical guidance. It is not called safe or exact. Export behavior is specified by D-032.
 
 ## D-026 — Local projects and export before accounts or sync
 
@@ -239,3 +240,49 @@
 - **Alternatives:** Require calibration; postpone calibration until after MVP.
 - **Reason:** Paper and individual pen behavior materially affect line width, darkness, bleed, and layering, but mandatory setup would delay first value.
 - **Consequence:** Uncalibrated users receive more conservative advice. Camera-derived measurements are relative and must not be presented as absolute colorimetry.
+
+## D-029 — Phase 0 corpus is fineliner-only
+
+- **Date:** 2026-10-03
+- **Supersedes:** The 15 fineliner / 10 colored-pencil / 5 watercolor split in the earlier spec and Phase 0 plan.
+- **Selected:** 30 fineliner photographs.
+- **Alternatives:** 20 fineliner plus 10 colored pencil; keep 15/10/5.
+- **Reason:** Only fineliner can qualify `v0.1`. With 15 cases one case moves the success rate by 6.7 points; 30 cases make the 70% gate less noisy and spend no effort on media that cannot affect the decision.
+- **Consequence:** Colored pencil and watercolor evidence moves entirely to their own later gates.
+- **Reconsider when:** A colored-pencil study is approved after fineliner passes.
+
+## D-030 — Phase 0 runs manually on existing subscriptions
+
+- **Date:** 2026-10-03
+- **Selected:** No additional spend. Image strategies run manually in ChatGPT (Plus/Pro); ideas, instructions, and structured strokes run manually in Claude (Pro/Max).
+- **Alternatives:** Paid API with a small cap of about USD 20; a hybrid of the two; pausing Phase 0.
+- **Reason:** The owner has no budget for API usage. Manual runs can still show feasibility if every attempt is logged.
+- **Consequence:** No API calls, deployed server, or automation of consumer apps. Model versions cannot be pinned; the UI model label and date are recorded instead. Cost becomes an API-equivalent estimate. Training-use settings are disabled before uploads, and consent names the services. Phase 4 must reconfirm the retained strategy through the production API path on a fresh holdout set before a public beta.
+- **Reconsider when:** A budget for API evaluation becomes available, or manual evidence is too noisy to decide.
+
+## D-031 — No STOP outcome in Phase 0
+
+- **Date:** 2026-10-03
+- **Selected:** Phase 0 has GO and PIVOT outcomes only. Any unmet GO criterion leads to PIVOT; the owner selects and records the pivot.
+- **Alternatives:** The review's rule (stop the guided coach below 60% beginner execution and continue Quick Compare alone); a STOP that always requires an owner decision.
+- **Reason:** Owner choice. The owner decides the direction after reading the Phase 0 report instead of committing to a predefined stop.
+- **Consequence:** The continuation prompt's request for STOP criteria is answered by this decision. The default pivot for preview failures remains the spec's pivot product; other pivots are chosen and recorded by the owner.
+- **Reconsider when:** A pivot also fails its own evaluation.
+
+## D-032 — Experimental inspiration export
+
+- **Date:** 2026-10-03
+- **Clarifies:** D-025, which allowed either a warning or exclusion; project state and Phase 4 wording conflicted.
+- **Selected:** An experimental image can be exported or shared only with a visible warning drawn into the pixels. Clean export is never offered. Instruction-only export is always allowed.
+- **Alternatives:** Never exportable; clean export after explicit confirmation.
+- **Reason:** A warning that lives only in app UI disappears as soon as the image leaves the app.
+- **Reconsider when:** Beta users show that the burned-in warning blocks a legitimate need.
+
+## D-033 — Phase 0 beginner study materials and device scope
+
+- **Date:** 2026-10-03
+- **Selected:** Every participant first works on an owner-made standardized starter drawing with pre-generated previews; afterwards a participant may optionally use their own work with consent. Phase 0 device testing uses the owner's current iPhone only.
+- **Alternatives:** Standardized starters only; participants' own work only. For devices: borrowing an iPhone 11-class device before Phase 0.
+- **Reason:** Standardized starters make the worsening rubric comparable; optional own work adds realism. Only a current iPhone is available.
+- **Consequence:** The iPhone 11-class test is an open Phase 0 risk and must pass before the Phase 2 exit gate.
+- **Reconsider when:** An iPhone 11-class device becomes available before Phase 0 starts.

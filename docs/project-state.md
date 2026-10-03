@@ -8,7 +8,9 @@
 
 **Implementation status:** Planning only; no product code exists
 
-**Next executable phase:** Phase 0 proof of feasibility, after plan review
+**Next executable phase:** Phase 0 proof of feasibility, after owner approval of the revised Phase 0 plan
+
+**Latest review:** `docs/reviews/2026-10-03-documentation-readiness-review.md`
 
 ## One-sentence product definition
 
@@ -19,11 +21,15 @@ NextStroke is an iPhone-first physical-art coach that compares an artwork with a
 1. **Product core:** Coach + controlled layer.
 2. **Material scope:** Fineliner only for `v0.1`; colored pencil follows only after separate evidence; watercolor is later research.
 3. **Sequence:** A timeboxed Phase 0 precedes production infrastructure.
-4. **Unsafe result behavior:** The best failed candidate may be shown only as clearly labeled experimental inspiration, accompanied by a physical instruction. It is not exportable or described as safe by default.
+4. **Unsafe result behavior:** The best failed candidate may be shown only as clearly labeled experimental inspiration, accompanied by a physical instruction. It is never described as safe, and it is exportable only with a warning drawn into the image (D-032).
 5. **Storage:** Local projects plus explicit export. No account or cloud sync in the first public version.
 6. **Knowledge:** A curated, sourced fineliner and paper knowledge base is part of the MVP.
 7. **Calibration:** A two-minute personal pen-and-paper test card is optional but recommended.
 8. **Existing capability retained:** Quick Compare remains a first-class offline mode with original/reference uploads, alignment, opacity control, tap/hold original reveal, immersive comparison, and image export.
+9. **Phase 0 corpus:** 30 fineliner photographs (D-029).
+10. **Phase 0 budget:** No additional spend; manual runs in the owner's ChatGPT and Claude subscriptions (D-030).
+11. **Phase 0 outcomes:** GO or PIVOT only; no STOP outcome (D-031).
+12. **Phase 0 study and devices:** standardized starter drawings plus optional own work; owner's current iPhone only, iPhone 11-class test deferred to the Phase 2 exit gate (D-033).
 
 ## Evidence status
 
@@ -36,13 +42,13 @@ Full review: `docs/reviews/2026-10-03-independent-feasibility-review.md`.
 
 ## Current milestone
 
-The next worker must first validate and refine the revised documents, then execute Phase 0 only after explicit owner approval. Phase 0 compares:
+The documentation readiness review is complete and the revised Phase 0 plan awaits owner approval. Phase 0 then compares, with three recorded attempts per case:
 
-1. masked full-composite inpainting followed by hard original copyback;
-2. direct transparent overlay generation;
-3. structured strokes/SVG rendered deterministically.
+1. S1 masked full-composite editing followed by hard original copyback (baseline; at most experimental);
+2. S2 direct transparent overlay generation;
+3. S3 structured strokes/SVG rendered deterministically.
 
-The default product path favors direct overlays or structured strokes. Full-composite generation remains an experimental inspiration path.
+Only S2 or S3 can satisfy GO. Full-composite generation remains an experimental inspiration path.
 
 ## Do not build yet
 
@@ -58,6 +64,6 @@ The default product path favors direct overlays or structured strokes. Full-comp
 ## Definition of the next successful handoff
 
 - all revised documents are internally consistent;
-- Phase 0 has exact dataset, metrics, costs, privacy handling, and stop conditions;
+- Phase 0 has exact dataset, metrics, costs, privacy handling, and decision outcomes (done in the 2026-10-03 readiness review);
 - the owner has reviewed and approved the Phase 0 plan;
 - implementation has not silently expanded beyond the approved experiment.
