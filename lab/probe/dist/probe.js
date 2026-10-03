@@ -129,20 +129,21 @@ function watchdog() {
   return () => { clearInterval(timer); return { worstBlockMs: Math.round(worst), blocksOver100ms: over }; };
 }
 
-async function cycles(file) {
+async function cycles(files) {
   const canvas = $('work');
   let backgrounds = 0;
   const onVisibility = () => { if (document.visibilityState === 'hidden') backgrounds += 1; };
   document.addEventListener('visibilitychange', onVisibility);
   const stop = watchdog();
   const timings = [];
-  let decodeBitmap = null;
+  const decoded = new Map();
   try {
     for (let i = 1; i <= 10; i += 1) {
       sessionStorage.setItem(RUNNING, String(i));
       const t0 = performance.now();
+      const file = files[(i - 1) % files.length];
       const bitmap = await createImageBitmap(file);
-      decodeBitmap = { width: bitmap.width, height: bitmap.height, type: file.type || 'unknown' };
+      decoded.set(file, { width: bitmap.width, height: bitmap.height, megapixels: Math.round(bitmap.width * bitmap.height / 1e5) / 10, type: file.type || 'unknown' });
       const scale = Math.min(1, 2048 / Math.max(bitmap.width, bitmap.height));
       canvas.width = Math.round(bitmap.width * scale);
       canvas.height = Math.round(bitmap.height * scale);
@@ -158,10 +159,14 @@ async function cycles(file) {
       record('cycles_progress', 'info', `${i}/10`);
     }
     sessionStorage.removeItem(RUNNING);
-    record('ten_cycles', 'pass', { timingsMs: timings, decoded: decodeBitmap, backgrounds, ...stop() });
+    const images = [...decoded.values()];
+    const maxMegapixels = Math.max(...images.map(d => d.megapixels));
+    record('ten_cycles', 'pass', { timingsMs: timings, images, maxMegapixels, backgrounds, ...stop() });
+    if (maxMegapixels < 12) record('cycles_stress', 'info', 'no image of 12 MP or more: add a full-resolution camera photo');
+    if (!backgrounds) record('cycles_background', 'info', 'app was not sent to the background during the cycles');
   } catch (error) {
     sessionStorage.removeItem(RUNNING);
-    record('ten_cycles', 'fail', { error: String(error), completed: timings.length, decoded: decodeBitmap, ...stop() });
+    record('ten_cycles', 'fail', { error: String(error), completed: timings.length, images: [...decoded.values()], ...stop() });
   } finally {
     canvas.width = canvas.height = 0;
     document.removeEventListener('visibilitychange', onVisibility);
@@ -180,7 +185,7 @@ $('opencv').onclick = () => {
   worker.onerror = event => { record('opencv', 'fail', String(event.message)); worker.terminate(); };
   worker.postMessage('start');
 };
-$('photo').onchange = event => { const file = event.target.files[0]; if (file) cycles(file); };
+$('photo').onchange = event => { const files = [...event.target.files]; if (files.length) cycles(files); };
 $('share').onclick = async () => {
   const text = $('json').value;
   try { if (navigator.share) { await navigator.share({ title: 'NextStroke Hosting-Test', text }); return; } } catch (e) { if (e.name === 'AbortError') return; }
