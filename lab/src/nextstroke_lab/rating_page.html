@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bewertung</title>
+<style>
+  :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
+  body { margin: 0 auto; max-width: 1100px; padding: 16px; }
+  .images { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px; }
+  figure { margin: 0; } figure img { width: 100%; border: 1px solid #8884; }
+  fieldset { margin-top: 12px; } label { display: block; padding: 6px 0; min-height: 32px; }
+  nav { display: flex; gap: 8px; align-items: center; margin: 12px 0; flex-wrap: wrap; }
+  button { min-height: 44px; padding: 0 16px; font-size: 1rem; }
+  textarea { width: 100%; min-height: 4em; }
+</style>
+</head>
+<body>
+<h1>Kandidaten bewerten</h1>
+<p>Jedes Kriterium nur ankreuzen, wenn es klar erfüllt ist. Im Zweifel nicht ankreuzen und eine Notiz schreiben.</p>
+<nav>
+  <button id="prev">Zurück</button><span id="pos" aria-live="polite"></span><button id="next">Weiter</button>
+  <button id="export">Bewertungen exportieren</button>
+</nav>
+<section class="images" id="images"></section>
+<fieldset id="rubric"><legend>Kriterien</legend></fieldset>
+<label>Notiz <textarea id="notes"></textarea></label>
+<script>
+'use strict';
+const CRITERIA = [
+  ['on_task', 'Bezieht sich auf die gewünschte Änderung (nicht themenfremd)'],
+  ['readable', 'Lesbar / erkennbar'],
+  ['registered', 'Liegt passgenau auf dem Bild'],
+  ['correct_location', 'Richtige Stelle'],
+  ['matches_change', 'Entspricht der gewünschten kleinen Änderung'],
+  ['no_critical_contour_destruction', 'Keine kritische Kontur entfernt, gebrochen, verändert oder verdeckt'],
+  ['layer_clean', 'Ebene ohne Papiertextur, Farbstich, Schatten oder große deckende Flächen'],
+  ['fineliner_plausible', 'Mit schwarzem Fineliner plausibel'],
+  ['executable', 'Physisch ausführbar'],
+  ['understandable_in_isolation', 'Allein auf Weiß verständlich: was und wo zeichnen'],
+];
+const STORE = 'nextstroke-ratings';
+let items = [], index = 0, ratings = {};
+try { ratings = JSON.parse(localStorage.getItem(STORE) || '{}'); } catch (e) { ratings = {}; }
+const $ = id => document.getElementById(id);
+for (const [key, label] of CRITERIA) {
+  const l = document.createElement('label');
+  l.innerHTML = `<input type="checkbox" data-key="${key}"> ${label}`;
+  $('rubric').append(l);
+}
+function save() {
+  const item = items[index]; if (!item) return;
+  const rubric = {};
+  document.querySelectorAll('[data-key]').forEach(b => { rubric[b.dataset.key] = b.checked; });
+  ratings[item.id] = { rubric, notes: $('notes').value };
+  try { localStorage.setItem(STORE, JSON.stringify(ratings)); } catch (e) {}
+}
+function show() {
+  const item = items[index];
+  $('pos').textContent = `${index + 1} / ${items.length} · ${Object.keys(ratings).length} bewertet`;
+  $('images').innerHTML = '';
+  for (const [name, src] of Object.entries(item.images)) {
+    const f = document.createElement('figure');
+    f.innerHTML = `<img alt="${name}" src="${src}"><figcaption>${name}</figcaption>`;
+    $('images').append(f);
+  }
+  const saved = ratings[item.id];
+  document.querySelectorAll('[data-key]').forEach(b => { b.checked = !!saved?.rubric[b.dataset.key]; });
+  $('notes').value = saved?.notes || '';
+}
+$('next').onclick = () => { save(); index = Math.min(index + 1, items.length - 1); show(); };
+$('prev').onclick = () => { save(); index = Math.max(index - 1, 0); show(); };
+$('export').onclick = () => {
+  save();
+  const blob = new Blob([JSON.stringify(ratings, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = 'ratings.json'; a.click();
+};
+fetch('items.json').then(r => r.json()).then(data => { items = data; show(); });
+</script>
+</body>
+</html>
