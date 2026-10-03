@@ -217,3 +217,9 @@ def test_s1_can_never_screen_controlled(root: Path) -> None:
 def test_unknown_screens_are_refused(root: Path) -> None:
     with pytest.raises(ProtocolError, match="screen must be"):
         record_screening(root, "s2", "c01", attempt=1, screen="fine", note="")
+
+
+def test_a_refused_attempt_counts_as_not_controlled_without_screening(root: Path) -> None:
+    _run(root, FakeClient(error=ProviderError(400, "moderation_blocked", "blocked")))
+    summary = _run(root, FakeClient(), attempt=2)
+    assert summary["attempt"] == 2

@@ -101,6 +101,10 @@ def _check_protocol(root: Path, case_dir: Path, short: str, attempt: int) -> str
     if attempt > 1:
         earlier = _screens(root).get(short, {}).get(case_dir.name, [])
         done = {int(str(e["attempt"])): e["screen"] for e in earlier}
+        strategy = STRATEGIES[short]
+        for record in AttemptLog(root / "attempts.jsonl").read():
+            if (record.case_id, record.strategy) == (case_dir.name, strategy) and record.failure:
+                done.setdefault(record.attempt, "refused")
         if attempt - 1 not in done:
             raise ProtocolError(f"screen attempt {attempt - 1} before running attempt {attempt}")
         if "controlled" in done.values():
