@@ -5,7 +5,7 @@
 ## State when this was written
 
 - Corpus: 12 supplied images, 7 GO-eligible fineliner cases (c01–c07) plus comparison case c08, prepared and owner-approved (D-042, D-044). The case package (`cases/`, `manifest.json`, `review-sheet.jpg`, `prompts-per-case.md`, `outputs/`, `run/`, `attempts.jsonl`, `screening.json`) is private and is uploaded by the owner as a zip; it is never committed.
-- Ideas and S3 strokes are done via contextless Claude subagents (D-045): all 8 idea sets have exactly three ideas; S3 attempt 1 passed the boundary audit on all 8 cases. Orchestrator screening: c01–c07 controlled on attempt 1 (7/7 GO cases); comparison case c08 experimental on all 3 attempts because its extra-protected lantern box is too wide and clips the right-hand rays (annotation issue, not model). 10 S3 attempts logged. Owner ratings are still pending.
+- Ideas and S3 strokes are done via contextless Claude subagents (D-045): all 8 idea sets have exactly three ideas; S3 attempt 1 passed the boundary audit on all 8 cases. Orchestrator screening: c01–c07 controlled on attempt 1 (7/7 GO cases); comparison case c08 experimental on all 3 attempts because its extra-protected lantern box is too wide and clips the right-hand rays (annotation issue, not model). Corrected comparison case c08b (narrower lantern box, logged as a post-hoc correction) screened controlled on attempt 1. 11 S3 attempts logged. Run S1/S2 for c08b instead of c08; c08 keeps its S3 record. Owner ratings are still pending.
 - The OpenAI key is a proxy-injected credential in the new cloud environment for `api.openai.com`. It is never printed, requested, logged, or committed.
 
 ## Continuation prompt (paste into the new session)
