@@ -58,6 +58,8 @@ gezeichnet würden. Schwarze Fineliner-Linien. Kein Papier, keine vorhandenen Li
 kein Hintergrund, keine Farbe.
 ```
 
+API route (D-046): `nextstroke-lab openai-run` sends the same S1/S2 text via `/v1/images/edits`. S1 uses the editable region as the mask in place of the edit brush; S2 attaches the photo as reference.
+
 ## Recording
 
 For every attempt write one line to `private/attempts.jsonl` (see `AttemptRecord`): service, the model label shown in the app, prompt revision, start time, wall-clock seconds from sending to a usable result, output path and SHA-256, or the failure reason (refusal, wrong format, timeout).

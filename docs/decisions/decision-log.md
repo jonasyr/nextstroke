@@ -403,3 +403,18 @@
 - **Reason:** Manual runs were too slow for the owner; only an OpenAI key is available.
 - **Consequence:** S3 cost and latency are estimates (no API billing); subagents run on the session model rather than a pinned API model. S1/S2 cost and latency are measured. The orchestrator knows the masks, but subagents do not. Screening by the orchestrator is recorded per attempt so the owner can audit it.
 - **Reconsider when:** An Anthropic API key becomes available, or owner ratings disagree with the orchestrator's screening.
+
+## D-046 — OpenAI run parameters for Phase 0 S1/S2
+
+- **Date:** 2026-10-03
+- **Refines:** D-045.
+- **Selected:**
+  - Model `gpt-image-2.5-sunburst`, the GPT Image 2.5 variant OpenAI recommends when editing precision matters (the other variant, `-flare`, targets fast everyday generation). Quality `medium`, `moderation` left at the default `auto`, one image per call.
+  - Both strategies use `POST /v1/images/edits` with the case's working photo resized to the standard 3:2 size (`1536x1024` or `1024x1536`). S1 sends the editable region as the mask (transparent where the model may paint), `background=opaque`, prompt `s1-v1`. S2 sends no mask, `background=transparent`, prompt `s2-v1`. The frozen prompt text comes from the same functions that write `prompts-per-case.md`.
+  - Cost is computed from the response's `usage` at the published per-token prices (text input USD 5, image input USD 8, output USD 30 per million tokens, checked 2026-10-03). Cached input and text output are charged at the higher rate, so the measured cost never underestimates. Before every call the runner refuses if spend so far plus a reserve (max of USD 0.50 and 1.5 × the most expensive call) would exceed USD 5.
+  - A provider refusal is logged as a failed attempt and counts toward the three S2 attempts; it needs no screening.
+  - The post-hoc comparison case c08b, whose corrected mask is not owner-reviewed, runs only with `--allow-unreviewed`, which writes the caveat into the attempt notes.
+- **Alternatives:** `gpt-image-2.5-flare`; `moderation=low`; `high` quality; generations endpoint without a reference image for S2.
+- **Reason:** Placement precision is what S2 is judged on; medium quality matches the runbook's cost basis; the reference photo is required for S2 to know where to draw.
+- **Consequence:** Results describe this model variant and quality only. One benign case (c01, S2 attempt 1) was refused by moderation (`safety_violations=[abuse]`), so refusals on harmless art are a real provider risk to report.
+- **Reconsider when:** Owner ratings show S2 failing on placement in ways a different variant or quality might fix, or refusals recur.
