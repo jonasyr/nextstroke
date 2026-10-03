@@ -33,9 +33,9 @@ describe("homography from four point pairs (Task 4, legacy defect D4)", () => {
       { x: 30, y: 140 },
     ];
     const h = homographyFromPoints(square, target) as number[];
-    square.forEach((corner, i) =>
-      close(applyHomography(h, corner), target[i] as { x: number; y: number }),
-    );
+    square.forEach((corner, i) => {
+      close(applyHomography(h, corner), target[i] as { x: number; y: number });
+    });
   });
 
   it("inverts", () => {
