@@ -22,7 +22,7 @@ class AttemptRecord(BaseModel):
     case_id: Annotated[str, Field(min_length=1)]
     strategy: Strategy
     attempt: Annotated[int, Field(ge=1, le=MAX_ATTEMPTS)]
-    service: Literal["chatgpt", "claude", "local"]
+    service: Literal["chatgpt", "claude", "openai", "local"]
     model_label: Annotated[str, Field(min_length=1)]
     prompt_revision: Annotated[str, Field(min_length=1)]
     started_at: datetime
@@ -31,6 +31,8 @@ class AttemptRecord(BaseModel):
     output_sha256: Annotated[str, Field(pattern=r"^[0-9a-f]{64}$")] | None = None
     failure: str | None = None
     notes: str = ""
+    cost_usd: Annotated[float, Field(ge=0.0)] | None = None
+    usage: dict[str, int] | None = None
 
     @model_validator(mode="after")
     def _output_or_failure(self) -> AttemptRecord:

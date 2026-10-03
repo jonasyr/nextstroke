@@ -43,3 +43,10 @@ class RegionMasks:
     def shape(self) -> tuple[int, int]:
         height, width = self.editable.shape
         return height, width
+
+
+def provider_edit_mask(editable: BoolMask) -> NDArray[np.uint8]:
+    """RGBA mask for image-edit APIs: fully transparent where the model may paint."""
+    mask = np.zeros((*editable.shape, 4), dtype=np.uint8)
+    mask[..., 3] = np.where(editable, 0, 255)
+    return mask

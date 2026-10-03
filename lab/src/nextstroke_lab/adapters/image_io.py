@@ -67,6 +67,15 @@ def load_mask(path: Path, shape: tuple[int, int]) -> NDArray[np.bool_]:
     return np.asarray(gray) > 127
 
 
+def encode_png(pixels: NDArray[np.uint8], size: tuple[int, int]) -> bytes:
+    """Resize to (width, height) and encode; masks (RGBA) keep hard edges."""
+    mode = "RGBA" if pixels.shape[-1] == 4 else "RGB"
+    resample = Image.Resampling.NEAREST if mode == "RGBA" else Image.Resampling.LANCZOS
+    buffer = io.BytesIO()
+    Image.fromarray(pixels, mode).resize(size, resample).save(buffer, format="PNG")
+    return buffer.getvalue()
+
+
 def fit_overlay(path: Path, shape: tuple[int, int]) -> NDArray[np.uint8]:
     height, width = shape
     with Image.open(path) as raw:

@@ -11,9 +11,39 @@ DEFAULT_PEN = "Unbekannter schwarzer Fineliner"
 DEFAULT_PAPER = "Unbekanntes Papier"
 
 
+S1_REVISION = "s1-v1"
+S2_REVISION = "s2-v1"
+
+
+def orientation_label(width: int, height: int) -> str:
+    return "Querformat, 3:2" if width >= height else "Hochformat, 2:3"
+
+
 def _orientation(path: Path) -> str:
     with Image.open(path) as image:
-        return "Querformat, 3:2" if image.width >= image.height else "Hochformat, 2:3"
+        return orientation_label(image.width, image.height)
+
+
+def s2_prompt(change: str, orientation: str) -> str:
+    """Frozen `s2-v1` text (protocol/prompts.md)."""
+    return "\n".join(
+        [
+            "Erzeuge ein PNG mit transparentem Hintergrund im Seitenverhältnis dieses Fotos "
+            f"({orientation}).",
+            f"Es enthält NUR die neuen Striche für: {change}, an genau der Stelle, "
+            "an der sie auf diesem Foto",
+            "gezeichnet würden. Schwarze Fineliner-Linien. Kein Papier, keine vorhandenen Linien, "
+            "kein Schatten,",
+            "kein Hintergrund, keine Farbe.",
+        ]
+    )
+
+
+def s1_prompt(change: str) -> str:
+    """Frozen `s1-v1` text (protocol/prompts.md)."""
+    return f"""Ergänze nur im markierten Bereich: {change}.
+Schwarzer Fineliner, gleiche Strichstärke und gleicher Stil wie die vorhandenen Linien.
+Alles andere bleibt exakt unverändert. Keine neuen Farben, kein Weiß, kein Schatten."""
 
 
 def _case_block(case: Path, pen: str, paper: str) -> str:
@@ -43,19 +73,14 @@ Speichern: Teil 1 als `{case.name}-ideas.json`, Teil 2 als `{case.name}-s3-<Vers
 **ChatGPT S2 (`s2-v1`), neuer Chat, mit Bild:**
 
 ```text
-Erzeuge ein PNG mit transparentem Hintergrund im Seitenverhältnis dieses Fotos ({orientation}).
-Es enthält NUR die neuen Striche für: {change}, an genau der Stelle, an der sie auf diesem Foto
-gezeichnet würden. Schwarze Fineliner-Linien. Kein Papier, keine vorhandenen Linien, kein Schatten,
-kein Hintergrund, keine Farbe.
+{s2_prompt(change, orientation)}
 ```
 
 **ChatGPT S1 (`s1-v1`), neuer Chat, Bild hochladen, den grünen Bereich aus dem Prüfbogen
 mit dem Bearbeiten-Pinsel markieren, dann:**
 
 ```text
-Ergänze nur im markierten Bereich: {change}.
-Schwarzer Fineliner, gleiche Strichstärke und gleicher Stil wie die vorhandenen Linien.
-Alles andere bleibt exakt unverändert. Keine neuen Farben, kein Weiß, kein Schatten.
+{s1_prompt(change)}
 ```
 """
 
