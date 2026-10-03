@@ -25,7 +25,16 @@ Runner: `nextstroke-lab openai-run <private> <case> s1|s2 --attempt N` and `next
 
 Rebuild `candidates/` after unzipping: run the S3 loop above, then for every `openai` line in `attempts.jsonl` with an output run `uv run nextstroke-lab candidate private/cases/<case> <s1|s2> private/<output_path> --attempt <attempt> --out private/candidates`.
 
+## Owner rating, round 1 (2026-10-03)
+
+Rated on the phone through a private claude.ai page backed by the page database (same blinded IDs as `pack-1/`, plus the task text, a before image and the mask view; rendering only, the IDs and key are unchanged). Saved as `private/ratings-1.json`.
+
+- **Cases controlled on at least one attempt, GO corpus c01–c07:** S3 6 of 7 (c06 failed on correct location), S2 5 of 7 (c01 and c03 not controlled), S1 none (capped at experimental; c01–c03 rejected).
+- **Disagreements with the orchestrator screening:** 9 of 34 candidates. The owner was stricter on S2 c02 attempt 2, S2 c08b attempt 2 (rejected for registration) and S3 c06, and more lenient on S2 c02 attempt 1 and S2 c07 attempt 1.
+- **Protocol consequence:** stop-at-first-success (D-035) used the orchestrator screening, so S3 c06 got one attempt where the owner's rating would have allowed two more. Note this as a limitation, or run S3 c06 attempts 2–3 and rate them.
+- Both S3 and S2 meet the 5-of-7 bar after round 1. Round 2 (pack 2, next day) can still downgrade candidates.
+
 ## Open after the run
 
-- Owner rates pack 1, then pack 2 the next day (Task 5). Compare the ratings with `screening.json`; S2 is a GO candidate only if the owner's ratings confirm 5 of 7.
+- Owner rates pack 2 the next day (Task 5), built the same way as a phone page. Compare the ratings with `screening.json`; S2 is a GO candidate only if the owner's ratings confirm 5 of 7.
 - Beginner study (Task 7) and evidence file, then `nextstroke-lab decide --corpus-size 7`.

@@ -8,7 +8,7 @@
 
 **Implementation status:** Working legacy comparison prototype imported; disposable Phase 0 lab in progress under `lab/`; production rewrite not started
 
-**Active phase:** Phase 0 proof of feasibility, approved 2026-10-03 (D-041). Done: lab tooling, hosting probe, material sheet draft, corpus prepared and annotations owner-approved (8 cases incl. one comparison case). S3 and ideas done via subagents (D-045; orchestrator screening 7/7 GO cases controlled). S1/S2 done via OpenAI API (D-046; 24 calls, USD 0.53 measured; orchestrator screening S2 5/7 GO cases controlled, S1 all experimental by rule). Two blinded rating packs built. Next: owner rates pack 1, then pack 2 the next day; beginner study; `decide --corpus-size 7` (`docs/handoffs/2026-10-03-phase-0-openai-run.md`)
+**Active phase:** Phase 0 proof of feasibility, approved 2026-10-03 (D-041). Done: lab tooling, hosting probe, material sheet draft, corpus prepared and annotations owner-approved (8 cases incl. one comparison case). S3 and ideas done via subagents (D-045; orchestrator screening 7/7 GO cases controlled). S1/S2 done via OpenAI API (D-046; 24 calls, USD 0.53 measured; orchestrator screening S2 5/7 GO cases controlled, S1 all experimental by rule). Owner rating round 1 done (S3 6/7, S2 5/7 GO cases controlled). Next: owner rates pack 2 the next day; beginner study; `decide --corpus-size 7` (`docs/handoffs/2026-10-03-phase-0-openai-run.md`)
 
 **Latest review:** `docs/reviews/2026-10-03-documentation-readiness-review.md`
 
