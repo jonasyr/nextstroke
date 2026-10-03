@@ -1,0 +1,638 @@
+{
+  "schema_version": "1",
+  "subjects": [
+    {
+      "id": "pen-micron",
+      "kind": "fineliner",
+      "name": "Sakura Pigma Micron",
+      "generic": false
+    },
+    {
+      "id": "pen-staedtler-308",
+      "kind": "fineliner",
+      "name": "STAEDTLER pigment liner 308",
+      "generic": false
+    },
+    {
+      "id": "pen-uni-pin",
+      "kind": "fineliner",
+      "name": "uni PIN (Mitsubishi Pencil)",
+      "generic": false
+    },
+    {
+      "id": "pen-pitt-s",
+      "kind": "fineliner",
+      "name": "Faber-Castell Pitt Artist Pen Fineliner S",
+      "generic": false
+    },
+    {
+      "id": "pen-copic-multiliner",
+      "kind": "fineliner",
+      "name": "Copic Multiliner",
+      "generic": false
+    },
+    {
+      "id": "pen-stabilo-88",
+      "kind": "fineliner",
+      "name": "STABILO point 88 (Kontrastfall: nicht dokumentenecht)",
+      "generic": false
+    },
+    {
+      "id": "pen-generic",
+      "kind": "fineliner",
+      "name": "Unbekannter schwarzer Fineliner",
+      "generic": true
+    },
+    {
+      "id": "paper-strathmore-400",
+      "kind": "paper",
+      "name": "Strathmore 400 Series Bristol",
+      "generic": false
+    },
+    {
+      "id": "paper-canson-mix",
+      "kind": "paper",
+      "name": "Canson XL Mixed Media",
+      "generic": false
+    },
+    {
+      "id": "paper-canson-bristol",
+      "kind": "paper",
+      "name": "Canson XL Bristol",
+      "generic": false
+    },
+    {
+      "id": "paper-generic",
+      "kind": "paper",
+      "name": "Unbekanntes Papier",
+      "generic": true
+    }
+  ],
+  "sources": [
+    {
+      "id": "src-sakura-micron",
+      "title": "Pigma Micron",
+      "publisher": "Sakura of America",
+      "url": "https://www.sakuraofamerica.com/product/pigma-micron/",
+      "source_type": "manufacturer",
+      "retrieved_at": "2026-10-03",
+      "license_note": "Fakten paraphrasiert; kein Herstellertext, keine Bilder oder Tabellen kopiert"
+    },
+    {
+      "id": "src-staedtler-308",
+      "title": "pigment liner 308",
+      "publisher": "STAEDTLER",
+      "url": "https://www.staedtler.com/nz/en/products/products-for-colouring/fineliners/pigment-liner-308-fineliner-308-sb8/",
+      "source_type": "manufacturer",
+      "retrieved_at": "2026-10-03",
+      "license_note": "Fakten paraphrasiert; kein Herstellertext, keine Bilder oder Tabellen kopiert"
+    },
+    {
+      "id": "src-uni-pin-005",
+      "title": "uni PIN 005 line drawing pen",
+      "publisher": "uni-ball UK (Mitsubishi Pencil)",
+      "url": "https://uniball.co.uk/brands/pin/uni-pin-005-line-drawing-pen/",
+      "source_type": "manufacturer",
+      "retrieved_at": "2026-10-03",
+      "license_note": "Fakten paraphrasiert; kein Herstellertext, keine Bilder oder Tabellen kopiert"
+    },
+    {
+      "id": "src-pitt-s",
+      "title": "Pitt Artist Pen Fineliner S, black (167199)",
+      "publisher": "Faber-Castell",
+      "url": "https://www.faber-castell.com/products/PittArtistPenFinelinerSIndiainkpenblack/167199",
+      "source_type": "manufacturer",
+      "retrieved_at": "2026-10-03",
+      "license_note": "Fakten paraphrasiert; kein Herstellertext, keine Bilder oder Tabellen kopiert"
+    },
+    {
+      "id": "src-copic-multiliner",
+      "title": "Copic Multiliner",
+      "publisher": "Copic",
+      "url": "https://copicmarkers.com/products/copic-multiliner",
+      "source_type": "manufacturer",
+      "retrieved_at": "2026-10-03",
+      "license_note": "Fakten paraphrasiert; kein Herstellertext, keine Bilder oder Tabellen kopiert"
+    },
+    {
+      "id": "src-stabilo-88",
+      "title": "STABILO point 88, black 88/46",
+      "publisher": "STABILO",
+      "url": "https://www.stabilo.com/com/fineliner-stabilo-point-88/88-46",
+      "source_type": "manufacturer",
+      "retrieved_at": "2026-10-03",
+      "license_note": "Fakten paraphrasiert; kein Herstellertext, keine Bilder oder Tabellen kopiert"
+    },
+    {
+      "id": "src-strathmore-400",
+      "title": "400 Series Bristol",
+      "publisher": "Strathmore",
+      "url": "https://www.strathmoreartist.com/draw-bristol/400-series-bristol",
+      "source_type": "manufacturer",
+      "retrieved_at": "2026-10-03",
+      "license_note": "Fakten paraphrasiert; kein Herstellertext, keine Bilder oder Tabellen kopiert"
+    },
+    {
+      "id": "src-canson-xl-mix",
+      "title": "XL Mixed Media",
+      "publisher": "Canson",
+      "url": "https://en.canson.com/xlr-mixed-media",
+      "source_type": "manufacturer",
+      "retrieved_at": "2026-10-03",
+      "license_note": "Fakten paraphrasiert; kein Herstellertext, keine Bilder oder Tabellen kopiert"
+    },
+    {
+      "id": "src-canson-xl-bristol",
+      "title": "XL Bristol",
+      "publisher": "Canson",
+      "url": "https://en.canson.com/xlr-bristol",
+      "source_type": "manufacturer",
+      "retrieved_at": "2026-10-03",
+      "license_note": "Fakten paraphrasiert; kein Herstellertext, keine Bilder oder Tabellen kopiert"
+    }
+  ],
+  "claims": [
+    {
+      "id": "micron-ink",
+      "subject_id": "pen-micron",
+      "predicate": "Tinte",
+      "value": "pigmentbasiert, permanent",
+      "source_id": "src-sakura-micron",
+      "evidence_level": "B",
+      "confidence": "medium",
+      "verified_at": "2026-10-03"
+    },
+    {
+      "id": "micron-wet",
+      "subject_id": "pen-micron",
+      "predicate": "Verhalten bei Nässe",
+      "value": "verläuft nicht, wenn Flüssigkeit auf getrocknete Tinte kommt",
+      "source_id": "src-sakura-micron",
+      "evidence_level": "B",
+      "confidence": "medium",
+      "verified_at": "2026-10-03",
+      "conditions": "nach dem Trocknen"
+    },
+    {
+      "id": "micron-fade",
+      "subject_id": "pen-micron",
+      "predicate": "Lichtbeständigkeit",
+      "value": "als verblassungsbeständig beschrieben, ohne Skalenwert",
+      "source_id": "src-sakura-micron",
+      "evidence_level": "B",
+      "confidence": "medium",
+      "verified_at": "2026-10-03"
+    },
+    {
+      "id": "micron-archival",
+      "subject_id": "pen-micron",
+      "predicate": "Archivqualität",
+      "value": "archivfest",
+      "source_id": "src-sakura-micron",
+      "evidence_level": "B",
+      "confidence": "medium",
+      "verified_at": "2026-10-03",
+      "conditions": "auf ungestrichenem Papier"
+    },
+    {
+      "id": "micron-smear",
+      "subject_id": "pen-micron",
+      "predicate": "Verschmieren",
+      "value": "verschmiert und franst nach dem Trocknen nicht aus",
+      "source_id": "src-sakura-micron",
+      "evidence_level": "B",
+      "confidence": "medium",
+      "verified_at": "2026-10-03",
+      "conditions": "nach dem Trocknen"
+    },
+    {
+      "id": "micron-bleed",
+      "subject_id": "pen-micron",
+      "predicate": "Durchschlagen",
+      "value": "schlägt bei den meisten Papieren nicht durch",
+      "source_id": "src-sakura-micron",
+      "evidence_level": "B",
+      "confidence": "medium",
+      "verified_at": "2026-10-03",
+      "conditions": "die meisten Papiere, nicht alle"
+    },
+    {
+      "id": "micron-sizes",
+      "subject_id": "pen-micron",
+      "predicate": "Spitzengrößen",
+      "value": "mehrere Größen; Millimeterwerte auf der Herstellerseite nicht abrufbar",
+      "source_id": "src-sakura-micron",
+      "evidence_level": "B",
+      "confidence": "low",
+      "verified_at": "2026-10-03"
+    },
+    {
+      "id": "st308-ink",
+      "subject_id": "pen-staedtler-308",
+      "predicate": "Tinte",
+      "value": "Pigmenttinte, dokumentenecht (Seite nennt ISO 12757-2 und ISO 14145-2)",
+      "source_id": "src-staedtler-308",
+      "evidence_level": "B",
+      "confidence": "medium",
+      "verified_at": "2026-10-03"
+    },
+    {
+      "id": "st308-light",
+      "subject_id": "pen-staedtler-308",
+      "predicate": "Lichtbeständigkeit",
+      "value": "hoch laut Hersteller, ohne Skalenwert",
+      "source_id": "src-staedtler-308",
+      "evidence_level": "B",
+      "confidence": "medium",
+      "verified_at": "2026-10-03"
+    },
+    {
+      "id": "st308-water",
+      "subject_id": "pen-staedtler-308",
+      "predicate": "Wasserfestigkeit",
+      "value": "wasserfest",
+      "source_id": "src-staedtler-308",
+      "evidence_level": "B",
+      "confidence": "medium",
+      "verified_at": "2026-10-03",
+      "conditions": "auf Papier"
+    },
+    {
+      "id": "st308-capoff",
+      "subject_id": "pen-staedtler-308",
+      "predicate": "Kappe offen",
+      "value": "trocknet mindestens 12 Stunden nicht ein",
+      "source_id": "src-staedtler-308",
+      "evidence_level": "B",
+      "confidence": "medium",
+      "verified_at": "2026-10-03",
+      "unit": "h",
+      "conditions": "nur schwarze Tinte"
+    },
+    {
+      "id": "st308-erase",
+      "subject_id": "pen-staedtler-308",
+      "predicate": "Radierbarkeit",
+      "value": "radierbar nur auf Zeichenpapier für Technisches Zeichnen (Transparentpapier); sonst nicht",
+      "source_id": "src-staedtler-308",
+      "evidence_level": "B",
+      "confidence": "medium",
+      "verified_at": "2026-10-03",
+      "conditions": "nur schwarze Tinte"
+    },
+    {
+      "id": "st308-widths",
+      "subject_id": "pen-staedtler-308",
+      "predicate": "Strichstärken",
+      "value": "0.05, 0.1, 0.2, 0.3, 0.5, 0.7, 0.8, 1.0, 1.2",
+      "source_id": "src-staedtler-308",
+      "evidence_level": "B",
+      "confidence": "medium",
+      "verified_at": "2026-10-03",
+      "unit": "mm",
+      "conditions": "Strichstärke, nicht Spitzendurchmesser; teils als ca. angegeben"
+    },
+    {
+      "id": "unipin-ink",
+      "subject_id": "pen-uni-pin",
+      "predicate": "Tinte",
+      "value": "Pigmenttinte (uni Super Ink), lichtbeständig beschrieben",
+      "source_id": "src-uni-pin-005",
+      "evidence_level": "B",
+      "confidence": "medium",
+      "verified_at": "2026-10-03"
+    },
+    {
+      "id": "unipin-water",
+      "subject_id": "pen-uni-pin",
+      "predicate": "Wasserfestigkeit",
+      "value": "wasserresistent (nicht als wasserfest bezeichnet)",
+      "source_id": "src-uni-pin-005",
+      "evidence_level": "B",
+      "confidence": "medium",
+      "verified_at": "2026-10-03"
+    },
+    {
+      "id": "unipin-smudge",
+      "subject_id": "pen-uni-pin",
+      "predicate": "Verschmieren bei Nässe",
+      "value": "widersprüchlich: Text sagt verschmiert nicht, Datenblatt sagt nicht verschmierfest",
+      "source_id": "src-uni-pin-005",
+      "evidence_level": "B",
+      "confidence": "low",
+      "verified_at": "2026-10-03"
+    },
+    {
+      "id": "unipin-005",
+      "subject_id": "pen-uni-pin",
+      "predicate": "Spitzengröße",
+      "value": "0.05",
+      "source_id": "src-uni-pin-005",
+      "evidence_level": "B",
+      "confidence": "medium",
+      "verified_at": "2026-10-03",
+      "unit": "mm",
+      "conditions": "Variante 005"
+    },
+    {
+      "id": "unipin-erase",
+      "subject_id": "pen-uni-pin",
+      "predicate": "Radierbarkeit",
+      "value": "nicht radierbar",
+      "source_id": "src-uni-pin-005",
+      "evidence_level": "B",
+      "confidence": "medium",
+      "verified_at": "2026-10-03"
+    },
+    {
+      "id": "pitt-ink",
+      "subject_id": "pen-pitt-s",
+      "predicate": "Tinte",
+      "value": "pigmentierte Tusche (India ink)",
+      "source_id": "src-pitt-s",
+      "evidence_level": "B",
+      "confidence": "medium",
+      "verified_at": "2026-10-03"
+    },
+    {
+      "id": "pitt-water",
+      "subject_id": "pen-pitt-s",
+      "predicate": "Wasserfestigkeit",
+      "value": "wasserfest, permanent",
+      "source_id": "src-pitt-s",
+      "evidence_level": "B",
+      "confidence": "medium",
+      "verified_at": "2026-10-03"
+    },
+    {
+      "id": "pitt-acid",
+      "subject_id": "pen-pitt-s",
+      "predicate": "Säure",
+      "value": "säurefrei, pH-neutral",
+      "source_id": "src-pitt-s",
+      "evidence_level": "B",
+      "confidence": "medium",
+      "verified_at": "2026-10-03"
+    },
+    {
+      "id": "pitt-bleed",
+      "subject_id": "pen-pitt-s",
+      "predicate": "Durchschlagen",
+      "value": "schlägt nicht durch das Papier",
+      "source_id": "src-pitt-s",
+      "evidence_level": "B",
+      "confidence": "medium",
+      "verified_at": "2026-10-03"
+    },
+    {
+      "id": "pitt-light",
+      "subject_id": "pen-pitt-s",
+      "predicate": "Lichtbeständigkeit",
+      "value": "hoch laut Hersteller, ohne Skalenwert",
+      "source_id": "src-pitt-s",
+      "evidence_level": "B",
+      "confidence": "medium",
+      "verified_at": "2026-10-03"
+    },
+    {
+      "id": "pitt-width",
+      "subject_id": "pen-pitt-s",
+      "predicate": "Strichstärke",
+      "value": "0.3",
+      "source_id": "src-pitt-s",
+      "evidence_level": "B",
+      "confidence": "medium",
+      "verified_at": "2026-10-03",
+      "unit": "mm",
+      "conditions": "Größe S"
+    },
+    {
+      "id": "copic-ink",
+      "subject_id": "pen-copic-multiliner",
+      "predicate": "Tinte",
+      "value": "wasserbasierte Pigmenttinte, alkoholbeständig",
+      "source_id": "src-copic-multiliner",
+      "evidence_level": "B",
+      "confidence": "medium",
+      "verified_at": "2026-10-03"
+    },
+    {
+      "id": "copic-marker",
+      "subject_id": "pen-copic-multiliner",
+      "predicate": "Kombination mit Markern",
+      "value": "mit Copic-Markern kombinierbar; verläuft, wenn die Tinte noch nicht trocken ist",
+      "source_id": "src-copic-multiliner",
+      "evidence_level": "B",
+      "confidence": "medium",
+      "verified_at": "2026-10-03",
+      "conditions": "erst nach vollständigem Trocknen; Trockenzeit nicht angegeben"
+    },
+    {
+      "id": "copic-widths",
+      "subject_id": "pen-copic-multiliner",
+      "predicate": "Strichstärken (schwarz)",
+      "value": "0.03, 0.05, 0.1, 0.3, 0.5, 0.8, 1.0",
+      "source_id": "src-copic-multiliner",
+      "evidence_level": "B",
+      "confidence": "low",
+      "verified_at": "2026-10-03",
+      "unit": "mm",
+      "conditions": "Seite nennt 9 Größen, listet 7"
+    },
+    {
+      "id": "st88-width",
+      "subject_id": "pen-stabilo-88",
+      "predicate": "Strichstärke",
+      "value": "0.4",
+      "source_id": "src-stabilo-88",
+      "evidence_level": "B",
+      "confidence": "medium",
+      "verified_at": "2026-10-03",
+      "unit": "mm"
+    },
+    {
+      "id": "st88-water",
+      "subject_id": "pen-stabilo-88",
+      "predicate": "Wasserfestigkeit",
+      "value": "nicht wasserresistent",
+      "source_id": "src-stabilo-88",
+      "evidence_level": "B",
+      "confidence": "medium",
+      "verified_at": "2026-10-03"
+    },
+    {
+      "id": "st88-indelible",
+      "subject_id": "pen-stabilo-88",
+      "predicate": "Dokumentenecht",
+      "value": "nein",
+      "source_id": "src-stabilo-88",
+      "evidence_level": "B",
+      "confidence": "medium",
+      "verified_at": "2026-10-03"
+    },
+    {
+      "id": "st88-erase",
+      "subject_id": "pen-stabilo-88",
+      "predicate": "Radierbarkeit",
+      "value": "nicht radierbar",
+      "source_id": "src-stabilo-88",
+      "evidence_level": "B",
+      "confidence": "medium",
+      "verified_at": "2026-10-03"
+    },
+    {
+      "id": "sm400-weight",
+      "subject_id": "paper-strathmore-400",
+      "predicate": "Gewicht",
+      "value": "270 (2-lagig), 405 (3-lagig), 540 (4-lagig)",
+      "source_id": "src-strathmore-400",
+      "evidence_level": "B",
+      "confidence": "medium",
+      "verified_at": "2026-10-03",
+      "unit": "g/m²"
+    },
+    {
+      "id": "sm400-surface",
+      "subject_id": "paper-strathmore-400",
+      "predicate": "Oberfläche",
+      "value": "glatt oder Vellum (mittel)",
+      "source_id": "src-strathmore-400",
+      "evidence_level": "B",
+      "confidence": "medium",
+      "verified_at": "2026-10-03"
+    },
+    {
+      "id": "sm400-pen",
+      "subject_id": "paper-strathmore-400",
+      "predicate": "Eignung Fineliner",
+      "value": "glatte Variante ausdrücklich für feine Linien mit Feder/Tinte und Marker",
+      "source_id": "src-strathmore-400",
+      "evidence_level": "B",
+      "confidence": "medium",
+      "verified_at": "2026-10-03",
+      "conditions": "glatte Oberfläche"
+    },
+    {
+      "id": "sm400-water",
+      "subject_id": "paper-strathmore-400",
+      "predicate": "Aquarell",
+      "value": "für klassisches Aquarell nicht empfohlen",
+      "source_id": "src-strathmore-400",
+      "evidence_level": "B",
+      "confidence": "medium",
+      "verified_at": "2026-10-03"
+    },
+    {
+      "id": "cmix-weight",
+      "subject_id": "paper-canson-mix",
+      "predicate": "Gewicht",
+      "value": "160",
+      "source_id": "src-canson-xl-mix",
+      "evidence_level": "B",
+      "confidence": "medium",
+      "verified_at": "2026-10-03",
+      "unit": "g/m²"
+    },
+    {
+      "id": "cmix-surface",
+      "subject_id": "paper-canson-mix",
+      "predicate": "Oberfläche",
+      "value": "leichte Körnung",
+      "source_id": "src-canson-xl-mix",
+      "evidence_level": "B",
+      "confidence": "medium",
+      "verified_at": "2026-10-03"
+    },
+    {
+      "id": "cmix-use",
+      "subject_id": "paper-canson-mix",
+      "predicate": "Eignung",
+      "value": "u. a. Tinte, Marker, Aquarell",
+      "source_id": "src-canson-xl-mix",
+      "evidence_level": "B",
+      "confidence": "medium",
+      "verified_at": "2026-10-03"
+    },
+    {
+      "id": "cmix-acid",
+      "subject_id": "paper-canson-mix",
+      "predicate": "Säure",
+      "value": "säurefrei",
+      "source_id": "src-canson-xl-mix",
+      "evidence_level": "B",
+      "confidence": "medium",
+      "verified_at": "2026-10-03"
+    },
+    {
+      "id": "cbr-weight",
+      "subject_id": "paper-canson-bristol",
+      "predicate": "Gewicht",
+      "value": "180",
+      "source_id": "src-canson-xl-bristol",
+      "evidence_level": "B",
+      "confidence": "medium",
+      "verified_at": "2026-10-03",
+      "unit": "g/m²"
+    },
+    {
+      "id": "cbr-surface",
+      "subject_id": "paper-canson-bristol",
+      "predicate": "Oberfläche",
+      "value": "sehr glatt",
+      "source_id": "src-canson-xl-bristol",
+      "evidence_level": "B",
+      "confidence": "medium",
+      "verified_at": "2026-10-03"
+    },
+    {
+      "id": "cbr-erase",
+      "subject_id": "paper-canson-bristol",
+      "predicate": "Radieren/Schaben",
+      "value": "sehr widerstandsfähig gegen wiederholtes Radieren und Schaben",
+      "source_id": "src-canson-xl-bristol",
+      "evidence_level": "B",
+      "confidence": "medium",
+      "verified_at": "2026-10-03"
+    },
+    {
+      "id": "cbr-acid",
+      "subject_id": "paper-canson-bristol",
+      "predicate": "Säure",
+      "value": "säurefrei",
+      "source_id": "src-canson-xl-bristol",
+      "evidence_level": "B",
+      "confidence": "medium",
+      "verified_at": "2026-10-03"
+    }
+  ],
+  "generic_rules": [
+    {
+      "id": "g-black",
+      "text": "Nur schwarze Linien: kein Weiß, keine Farbe, keine Lavierung, kein Wasser."
+    },
+    {
+      "id": "g-no-erase",
+      "text": "Tinte als nicht radierbar behandeln; vorhandene Linien weder übermalen noch korrigieren."
+    },
+    {
+      "id": "g-test",
+      "text": "Vor jedem Schritt einen Probestrich auf einem Reststück desselben Papiers machen."
+    },
+    {
+      "id": "g-dry",
+      "text": "Für keinen Stift ist eine Trockenzeit belegt: vor dem Darüberzeichnen oder Berühren warten und mit dem Probestrich prüfen."
+    },
+    {
+      "id": "g-pressure",
+      "text": "Mit leichtem Druck zeichnen; Strichstärke über die Stiftgröße steuern, nicht über Druck."
+    },
+    {
+      "id": "g-small",
+      "text": "Kleine Schritte: lieber zu wenig als zu viel, jederzeit stoppen können."
+    },
+    {
+      "id": "g-unknown",
+      "text": "Bei unbekanntem Stift oder Papier: dünnste vorhandene Spitze wählen und Durchschlagen am Probestück prüfen."
+    }
+  ]
+}

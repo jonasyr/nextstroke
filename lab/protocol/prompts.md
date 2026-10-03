@@ -2,7 +2,7 @@
 
 **Revision:** `ideas-s3-v1`, `s1-v1`, `s2-v1` (frozen 2026-10-03). Any change gets a new revision and is recorded in the attempt log; never edit a template mid-run.
 
-Placeholders in `{braces}` are filled from the case manifest. The model-facing text is German because the `v0.1` product is German (D-040).
+Placeholders in `{braces}` are filled from the case manifest. `{material_sheet}` is the output of `uv run nextstroke-lab material-sheet protocol/material-sheet.json`; `{stroke_plan_schema}` is `protocol/stroke-plan.schema.json`. The model-facing text is German because the `v0.1` product is German (D-040).
 
 ## Claude Project instructions: ideas and S3 strokes (`ideas-s3-v1`)
 
