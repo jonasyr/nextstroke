@@ -69,6 +69,7 @@
 ## Exit gate
 
 - Core flow works offline on current and oldest supported real iPhone.
+- Carried over from Phase 0 (D-043): background/resume during processing, a 48 MP photo, a HEIC photo, and the `persist()` result are tested on a real iPhone.
 - Ten repeated sessions show no crash/reload under defined test images.
 - Manual alignment always recovers from failed automatic alignment.
 - Original reveal works by tap and press/hold without hiding controls unexpectedly.

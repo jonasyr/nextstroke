@@ -34,6 +34,8 @@
 
 ## Still open
 
+The owner accepted this run as the Phase 0 device evidence without a second run (D-043). The items below move to the Phase 2 real-device exit gate.
+
 1. Repeat the ten cycles while sending the app to the background once (`backgrounds` was 0). The probe now accepts several images at once and cycles through them; include at least one full-resolution camera photo next to Pinterest images, ideally 48 MP or HEIC.
 2. Share the JSON again so the `persist()` answer is captured.
 3. The device is an iPhone 13 mini (A15), newer than the iPhone 11 class (A13). The iPhone 11-class risk in D-034 stays open until the Phase 2 exit gate.

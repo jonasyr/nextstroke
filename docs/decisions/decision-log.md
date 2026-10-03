@@ -371,3 +371,12 @@
 - **Reason:** Owner choice; the owner has no own fineliner works and wants to start quickly.
 - **Consequence:** The artists have not consented, so these images are never committed, never used as test fixtures, never shown in the report, and are deleted with the other study data. Pinterest images are usually finished, clean, or edited and often small, while the product targets ordinary handheld photos of started works; GO evidence from them is therefore weaker. Mitigations: mark `source: web` in the manifest, report results split by source, prefer printing some pins on drawing paper and photographing them by hand, and rely on the Phase 4 holdout of real, consented photos before any public beta. Standardized study starters may be printed web drawings on real drawing paper.
 - **Reconsider when:** Results differ strongly between web and photographed cases, or consented real photos become available.
+
+## D-043 — First probe run accepted as Phase 0 device evidence
+
+- **Date:** 2026-10-03
+- **Selected:** The first ChatGPT Sites probe run on the owner's iPhone 13 mini (iOS 26.5.2, Home Screen app; ten 12 MP cycles without crash or reload) satisfies the Phase 0 device criterion. No second run.
+- **Alternatives:** Redeploy the multi-image probe and repeat with background/resume, a 48 MP or HEIC photo, and the `persist()` answer.
+- **Reason:** Owner choice; the ChatGPT Sites usage credits for redeployment are used up.
+- **Consequence:** Background/resume during processing, 24/48 MP and HEIC decoding, the `persist()` answer, and the iPhone 11 class are untested and move to the Phase 2 real-device exit gate. The Phase 0 report lists them as limitations.
+- **Reconsider when:** Sites credits are available again before Phase 2, or a later test crashes on large photos.
