@@ -1,5 +1,5 @@
 import { type Homography, homographyFromPoints, type Point, type Quad } from "./homography.ts";
-import type { Layer, View } from "./state.ts";
+import { IMAGE_CORNERS, type Layer, type View } from "./state.ts";
 import { apply, layerMatrix, viewMatrix } from "./transform.ts";
 
 /**
@@ -12,7 +12,13 @@ interface Dimensions {
   height: number;
 }
 
-export function cornersFromLayer(layer: Layer, original: Dimensions, reference: Dimensions): Quad {
+/** Where `refCorners` (normalized on the reference) land on the original under the affine layer. */
+export function cornersFromLayer(
+  layer: Layer,
+  original: Dimensions,
+  reference: Dimensions,
+  refCorners: Quad = IMAGE_CORNERS,
+): Quad {
   const m = layerMatrix(layer, original, reference);
   const toNormalized = (p: Point): Point => {
     const q = apply(m, p);
@@ -21,33 +27,25 @@ export function cornersFromLayer(layer: Layer, original: Dimensions, reference: 
       y: (q.y + original.height / 2) / original.height,
     };
   };
-  return [
-    toNormalized({ x: 0, y: 0 }),
-    toNormalized({ x: reference.width, y: 0 }),
-    toNormalized({ x: reference.width, y: reference.height }),
-    toNormalized({ x: 0, y: reference.height }),
-  ];
+  return refCorners.map((c) =>
+    toNormalized({ x: c.x * reference.width, y: c.y * reference.height }),
+  ) as unknown as Quad;
 }
 
-/** Reference pixels → original pixels (top-left origin); null for a folded arrangement. */
+const toPixels = (q: Quad, size: Dimensions) =>
+  q.map((c) => ({ x: c.x * size.width, y: c.y * size.height })) as unknown as Quad;
+
+/**
+ * Reference pixels → original pixels (top-left origin), mapping the paper corners on the
+ * reference onto the paper corners on the original; null for a folded arrangement.
+ */
 export function referenceHomography(
   corners: Quad,
   original: Dimensions,
   reference: Dimensions,
+  refCorners: Quad = IMAGE_CORNERS,
 ): Homography | null {
-  const px = corners.map((c) => ({
-    x: c.x * original.width,
-    y: c.y * original.height,
-  })) as unknown as Quad;
-  return homographyFromPoints(
-    [
-      { x: 0, y: 0 },
-      { x: reference.width, y: 0 },
-      { x: reference.width, y: reference.height },
-      { x: 0, y: reference.height },
-    ],
-    px,
-  );
+  return homographyFromPoints(toPixels(refCorners, reference), toPixels(corners, original));
 }
 
 function toScreen(c: Point, view: View, original: Dimensions, viewport: Dimensions): Point {

@@ -68,58 +68,39 @@ function pick(label: string, file: File) {
 async function loadBoth(deps: CompareDeps) {
   render(<QuickCompare deps={deps} />);
   pick("Original wählen", png("original.png"));
-  await screen.findByText("Bild geladen. Automatisch oder manuell ausrichten.");
+  await screen.findByText("Bild geladen. Jetzt das zweite Bild wählen.");
   pick("Referenz wählen", png("referenz.png"));
   await screen.findByText("ÜBERLAGERUNG");
 }
 
-describe("Quick Compare page", () => {
-  it("starts with two pickers and no account, network or AI", () => {
+const workspace = () => screen.getByLabelText(/Vergleichsfläche/);
+
+function drag(id: number, from: [number, number], to: [number, number]) {
+  fireEvent.pointerDown(workspace(), { pointerId: id, clientX: from[0], clientY: from[1] });
+  fireEvent.pointerMove(workspace(), { pointerId: id, clientX: to[0], clientY: to[1] });
+  fireEvent.pointerUp(workspace(), { pointerId: id });
+}
+
+describe("Quick Compare import screen", () => {
+  it("starts with two image cards and no account, network or AI", () => {
     render(<QuickCompare deps={makeDeps()} />);
     expect(screen.getByLabelText("Original wählen")).toBeTruthy();
+    expect(screen.getByLabelText("Referenz wählen")).toBeTruthy();
     expect(screen.getByText(/bleiben auf diesem Gerät/)).toBeTruthy();
+    expect(screen.queryByRole("dialog")).toBeNull();
   });
 
-  it("shows the comparison once both images are loaded and follows the opacity controls", async () => {
+  it("opens the editor once both images are loaded and returns to the cards", async () => {
     await loadBoth(makeDeps());
-    fireEvent.click(screen.getByRole("button", { name: "Referenz" }));
-    expect(screen.getByText("REFERENZ")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Original" }));
-    expect(screen.getByText("ORIGINAL · TIPPEN ZUM VERGLEICH")).toBeTruthy();
-    fireEvent.change(screen.getByLabelText(/Deckkraft der Referenz/), { target: { value: "30" } });
-    expect(screen.getByText("ÜBERLAGERUNG")).toBeTruthy();
-    fireEvent.pointerDown(screen.getByRole("button", { name: "Original halten" }));
-    expect(screen.getByText("ORIGINAL · TIPPEN ZUM VERGLEICH")).toBeTruthy();
-    fireEvent.pointerUp(screen.getByRole("button", { name: "Original halten" }));
-    expect(screen.getByText("ÜBERLAGERUNG")).toBeTruthy();
-  });
-
-  it("toggles the original with a tap on the workspace and with Space", async () => {
-    await loadBoth(makeDeps());
-    const workspace = screen.getByLabelText(/Vergleichsfläche/);
-    fireEvent.pointerDown(workspace, { pointerId: 1, clientX: 10, clientY: 10 });
-    fireEvent.pointerUp(workspace, { pointerId: 1 });
-    expect(screen.getByText("ORIGINAL · TIPPEN ZUM VERGLEICH")).toBeTruthy();
-    fireEvent.keyDown(workspace, { key: " " });
-    expect(screen.getByText("ÜBERLAGERUNG")).toBeTruthy();
-  });
-
-  it("aligns manually with buttons and resets", async () => {
-    await loadBoth(makeDeps());
-    fireEvent.click(screen.getByRole("button", { name: "Ausrichten" }));
-    fireEvent.click(screen.getByRole("tab", { name: "Drehung" }));
-    fireEvent.click(screen.getByRole("button", { name: "Mehr" }));
-    expect(screen.getByText("0.05°")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Zurücksetzen" }));
-    expect(screen.getByText("0.00°")).toBeTruthy();
-    expect(screen.getByText("Ausrichtung zurückgesetzt.")).toBeTruthy();
-  });
-
-  it("keeps the user's alignment when auto-align finds no safe match", async () => {
-    await loadBoth(makeDeps());
-    fireEvent.click(screen.getByRole("button", { name: "Ausrichten" }));
-    fireEvent.click(screen.getByRole("button", { name: "Automatisch ausrichten" }));
-    await screen.findByText("Kein sicherer Abgleich. Bitte manuell ausrichten.");
+    expect(screen.getByRole("dialog", { name: "Vergleich" })).toBeTruthy();
+    expect(screen.getByText(/Tippe aufs Bild für das Original/)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "‹ Bilder" }));
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(screen.getByText("✓ original.png")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Vergleichen" }));
+    expect(screen.getByRole("dialog", { name: "Vergleich" })).toBeTruthy();
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(screen.queryByRole("dialog")).toBeNull();
   });
 
   it("refuses oversized and unsupported files with an explanation", async () => {
@@ -166,117 +147,6 @@ describe("Quick Compare page", () => {
     expect(await screen.findByText("Laden abgebrochen.")).toBeTruthy();
   });
 
-  it("exports the comparison and the untouched original through share", async () => {
-    const deps = makeDeps();
-    await loadBoth(deps);
-    fireEvent.click(screen.getByRole("button", { name: "Speichern" }));
-    fireEvent.click(screen.getByRole("button", { name: "Vergleich als JPEG" }));
-    await waitFor(() => expect(deps.share).toHaveBeenCalled());
-    const shared = vi.mocked(deps.share).mock.calls[0]?.[0] as File;
-    expect(shared.name).toBe("Vergleich.jpg");
-    const dialog = screen.getByRole("dialog", { name: "Speichern oder teilen" });
-    fireEvent.click(within(dialog).getByRole("button", { name: "Original" }));
-    await waitFor(() => expect(vi.mocked(deps.share).mock.calls.length).toBe(2));
-    const [second] = vi.mocked(deps.share).mock.calls[1] ?? [];
-    expect((second as File).name).toBe("original.png");
-    fireEvent.click(screen.getByRole("button", { name: "Schließen" }));
-    expect(screen.queryByRole("dialog")).toBeNull();
-  });
-
-  it("reports an export the browser cannot encode", async () => {
-    await loadBoth(
-      makeDeps({ renderBlob: vi.fn(async () => Promise.reject(new Error("encode"))) }),
-    );
-    fireEvent.click(screen.getByRole("button", { name: "Speichern" }));
-    fireEvent.click(screen.getByRole("button", { name: "Vergleich als PNG" }));
-    expect(await screen.findByText(/Speichern nicht möglich/)).toBeTruthy();
-  });
-
-  it("keeps settings when entering and leaving immersive mode", async () => {
-    await loadBoth(makeDeps());
-    fireEvent.click(screen.getByRole("button", { name: "Referenz" }));
-    fireEvent.click(screen.getByRole("button", { name: "Vollbild" }));
-    expect(screen.getByRole("dialog", { name: "Vollbild" })).toBeTruthy();
-    expect(screen.getByText("REFERENZ")).toBeTruthy();
-    fireEvent.keyDown(window, { key: "Escape" });
-    expect(screen.queryByRole("dialog")).toBeNull();
-    expect(screen.getByText("REFERENZ")).toBeTruthy();
-  });
-
-  it("ends a hold when the window loses focus", async () => {
-    await loadBoth(makeDeps());
-    fireEvent.pointerDown(screen.getByRole("button", { name: "Original halten" }));
-    await act(async () => window.dispatchEvent(new Event("blur")));
-    expect(screen.getByText("ÜBERLAGERUNG")).toBeTruthy();
-  });
-});
-
-describe("Quick Compare view and alignment controls", () => {
-  it("zooms with buttons, wheel and keys, and fits back", async () => {
-    await loadBoth(makeDeps());
-    const workspace = screen.getByLabelText(/Vergleichsfläche/);
-    fireEvent.click(screen.getByRole("button", { name: "Vergrößern" }));
-    fireEvent.click(screen.getByRole("button", { name: "Verkleinern" }));
-    fireEvent.wheel(workspace, { deltaY: -1 });
-    fireEvent.wheel(workspace, { deltaY: 1 });
-    for (const key of ["+", "=", "-", "0", "x"]) fireEvent.keyDown(workspace, { key });
-    fireEvent.click(screen.getByRole("button", { name: "Einpassen" }));
-    expect(screen.getByText("ÜBERLAGERUNG")).toBeTruthy();
-  });
-
-  it("pans with one finger and ends a cancelled pointer without a tap", async () => {
-    await loadBoth(makeDeps());
-    const workspace = screen.getByLabelText(/Vergleichsfläche/);
-    fireEvent.pointerDown(workspace, { pointerId: 1, clientX: 10, clientY: 10 });
-    fireEvent.pointerMove(workspace, { pointerId: 1, clientX: 60, clientY: 40 });
-    fireEvent.pointerCancel(workspace, { pointerId: 1 });
-    expect(screen.getByText("ÜBERLAGERUNG")).toBeTruthy();
-  });
-
-  it("moves the reference by gesture while aligning, and can switch that off", async () => {
-    await loadBoth(makeDeps());
-    fireEvent.click(screen.getByRole("button", { name: "Ausrichten" }));
-    const workspace = screen.getByLabelText(/Vergleichsfläche/);
-    fireEvent.pointerDown(workspace, { pointerId: 1, clientX: 10, clientY: 10 });
-    fireEvent.pointerMove(workspace, { pointerId: 1, clientX: 60, clientY: 10 });
-    fireEvent.pointerUp(workspace, { pointerId: 1 });
-    expect(
-      screen.getByRole("tab", { name: "Horizontale Position" }).getAttribute("aria-selected"),
-    ).toBe("true");
-    expect(screen.queryByText("0.00 %")).toBeNull();
-    fireEvent.click(screen.getByLabelText("Gesten verschieben die Referenz"));
-    expect(
-      (screen.getByLabelText("Gesten verschieben die Referenz") as HTMLInputElement).checked,
-    ).toBe(false);
-  });
-
-  it("sets a parameter with its slider and formats each unit", async () => {
-    await loadBoth(makeDeps());
-    fireEvent.click(screen.getByRole("button", { name: "Ausrichten" }));
-    fireEvent.click(screen.getByRole("tab", { name: "Größe" }));
-    fireEvent.change(screen.getByRole("slider", { name: "Größe" }), { target: { value: "1.5" } });
-    expect(screen.getByText("150.0 %")).toBeTruthy();
-    expect(screen.getByText("Größe angepasst.")).toBeTruthy();
-    fireEvent.click(screen.getByRole("tab", { name: "Vertikale Position" }));
-    fireEvent.click(screen.getByRole("button", { name: "Weniger" }));
-    expect(screen.getByText("-0.05 %")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Vergleich" }));
-    expect(screen.queryByRole("tab")).toBeNull();
-  });
-
-  it("applies an accepted auto-alignment", async () => {
-    const pattern = (w: number, h: number) => {
-      const data = new Float32Array(w * h);
-      for (let y = 0; y < h; y++)
-        for (let x = 0; x < w; x++) data[y * w + x] = 0.5 + 0.4 * Math.sin(x / 5) * Math.cos(y / 7);
-      return { data, width: w, height: h };
-    };
-    await loadBoth(makeDeps({ gray: vi.fn((_img, w: number, h: number) => pattern(w, h)) }));
-    fireEvent.click(screen.getByRole("button", { name: "Ausrichten" }));
-    fireEvent.click(screen.getByRole("button", { name: "Automatisch ausrichten" }));
-    expect(await screen.findByText("Abgeglichen. Prüfe die Kanten bei 50 %.")).toBeTruthy();
-  });
-
   it("guards a second import while one is running", async () => {
     let finish: (value: never) => void = () => {};
     const decode = vi.fn(
@@ -290,18 +160,6 @@ describe("Quick Compare view and alignment controls", () => {
     await screen.findByText("Datei wird auf deinem Gerät geladen …");
     expect((screen.getByLabelText("Original wählen") as HTMLInputElement).disabled).toBe(true);
     finish(undefined as never);
-  });
-
-  it("shows the original from inside immersive mode and holds with the keyboard", async () => {
-    await loadBoth(makeDeps());
-    const hold = screen.getByRole("button", { name: "Original halten" });
-    fireEvent.keyDown(hold, { key: "Enter" });
-    expect(screen.getByText("ORIGINAL · TIPPEN ZUM VERGLEICH")).toBeTruthy();
-    fireEvent.keyUp(hold, { key: "Enter" });
-    fireEvent.click(screen.getByRole("button", { name: "Vollbild" }));
-    const immersive = screen.getByRole("dialog", { name: "Vollbild" });
-    fireEvent.click(within(immersive).getByRole("button", { name: "Original" }));
-    expect(within(immersive).getByRole("button", { name: "Vergleich" })).toBeTruthy();
   });
 
   it("replaces an image and releases the previous bitmap", async () => {
@@ -331,79 +189,244 @@ describe("Quick Compare view and alignment controls", () => {
   });
 });
 
-describe("four-point perspective (Task 4)", () => {
-  it("starts from the current layer, moves a corner with buttons and warps the reference", async () => {
-    const deps = makeDeps();
-    await loadBoth(deps);
-    fireEvent.click(screen.getByRole("button", { name: "Ausrichten" }));
-    fireEvent.click(screen.getByRole("button", { name: "Perspektive (4 Ecken)" }));
-    expect(screen.getByText(/Ziehe die vier Ecken/)).toBeTruthy();
-    await waitFor(() => expect(deps.fromRgba).toHaveBeenCalled());
-    fireEvent.click(screen.getByRole("button", { name: "Ecke unten rechts" }));
-    expect(
-      screen.getByRole("button", { name: "Ecke unten rechts" }).getAttribute("aria-pressed"),
-    ).toBe("true");
-    fireEvent.click(screen.getByRole("button", { name: "Ecke nach links" }));
-    fireEvent.click(screen.getByRole("button", { name: "Ecke nach oben" }));
-    fireEvent.click(screen.getByRole("button", { name: "Ecke nach rechts" }));
-    fireEvent.click(screen.getByRole("button", { name: "Ecke nach unten" }));
-    await waitFor(() => expect(vi.mocked(deps.fromRgba).mock.calls.length).toBeGreaterThan(1));
-    fireEvent.click(screen.getByRole("button", { name: "Perspektive entfernen" }));
-    expect(screen.getByRole("button", { name: "Perspektive (4 Ecken)" })).toBeTruthy();
+describe("Quick Compare editor: viewing", () => {
+  it("follows the opacity controls and reveals the original while held", async () => {
+    await loadBoth(makeDeps());
+    fireEvent.click(screen.getByRole("button", { name: "Referenz" }));
+    expect(screen.getByText("REFERENZ")).toBeTruthy();
+    fireEvent.change(screen.getByLabelText(/Deckkraft der Referenz/), { target: { value: "30" } });
+    expect(screen.getByText("ÜBERLAGERUNG")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "50 %" }));
+    expect(screen.getByText(/Deckkraft der Referenz: 50 %/)).toBeTruthy();
+    const hold = screen.getByRole("button", { name: "Original halten" });
+    fireEvent.pointerDown(hold);
+    expect(screen.getByText("ORIGINAL · TIPPEN ZUM VERGLEICH")).toBeTruthy();
+    fireEvent.pointerUp(hold);
+    expect(screen.getByText("ÜBERLAGERUNG")).toBeTruthy();
+    fireEvent.keyDown(hold, { key: "Enter" });
+    expect(screen.getByText("ORIGINAL · TIPPEN ZUM VERGLEICH")).toBeTruthy();
+    fireEvent.keyUp(hold, { key: "Enter" });
+    expect(screen.getByText("ÜBERLAGERUNG")).toBeTruthy();
   });
 
-  it("warns instead of warping when corners cross", async () => {
-    const deps = makeDeps();
-    await loadBoth(deps);
-    fireEvent.click(screen.getByRole("button", { name: "Ausrichten" }));
-    fireEvent.click(screen.getByRole("button", { name: "Perspektive (4 Ecken)" }));
-    await waitFor(() => expect(deps.fromRgba).toHaveBeenCalledTimes(1));
-    const workspace = screen.getByLabelText(/Vergleichsfläche/);
-    // The 100 × 50 original fills the 400 × 200 workspace: drag top-left past bottom-right.
-    fireEvent.pointerDown(workspace, { pointerId: 3, clientX: 1, clientY: 1 });
-    fireEvent.pointerMove(workspace, { pointerId: 3, clientX: 420, clientY: 220 });
-    fireEvent.pointerUp(workspace, { pointerId: 3 });
-    expect(await screen.findByText(/Ecken überkreuzen sich/)).toBeTruthy();
-    expect(deps.fromRgba).toHaveBeenCalledTimes(1);
+  it("toggles the original with a tap on the image and with Space", async () => {
+    await loadBoth(makeDeps());
+    fireEvent.pointerDown(workspace(), { pointerId: 1, clientX: 10, clientY: 10 });
+    fireEvent.pointerUp(workspace(), { pointerId: 1 });
+    expect(screen.getByText("ORIGINAL · TIPPEN ZUM VERGLEICH")).toBeTruthy();
+    fireEvent.keyDown(workspace(), { key: " " });
+    expect(screen.getByText("ÜBERLAGERUNG")).toBeTruthy();
   });
 
-  it("drags a corner handle on the workspace", async () => {
-    const deps = makeDeps();
-    await loadBoth(deps);
-    fireEvent.click(screen.getByRole("button", { name: "Ausrichten" }));
-    fireEvent.click(screen.getByRole("button", { name: "Perspektive (4 Ecken)" }));
-    await waitFor(() => expect(deps.fromRgba).toHaveBeenCalledTimes(1));
-    const workspace = screen.getByLabelText(/Vergleichsfläche/);
-    fireEvent.pointerDown(workspace, { pointerId: 7, clientX: 2, clientY: 2 });
-    fireEvent.pointerMove(workspace, { pointerId: 7, clientX: 40, clientY: 20 });
-    fireEvent.pointerUp(workspace, { pointerId: 7 });
-    await waitFor(() => expect(vi.mocked(deps.fromRgba).mock.calls.length).toBeGreaterThan(1));
+  it("zooms with wheel and keys and offers fitting back", async () => {
+    await loadBoth(makeDeps());
+    expect(screen.queryByRole("button", { name: "Einpassen" })).toBeNull();
+    fireEvent.wheel(workspace(), { deltaY: -1 });
+    fireEvent.wheel(workspace(), { deltaY: 1 });
+    for (const key of ["+", "=", "-", "0", "x", "+"]) fireEvent.keyDown(workspace(), { key });
+    fireEvent.click(screen.getByRole("button", { name: "Einpassen" }));
+    expect(screen.queryByRole("button", { name: "Einpassen" })).toBeNull();
   });
-});
 
-describe("split view (Task 3)", () => {
+  it("pans with one finger and ends a cancelled pointer without a tap", async () => {
+    await loadBoth(makeDeps());
+    fireEvent.pointerDown(workspace(), { pointerId: 1, clientX: 10, clientY: 10 });
+    fireEvent.pointerMove(workspace(), { pointerId: 1, clientX: 60, clientY: 40 });
+    fireEvent.pointerCancel(workspace(), { pointerId: 1 });
+    expect(screen.getByText("ÜBERLAGERUNG")).toBeTruthy();
+  });
+
   it("splits the image, moves the divider by slider and by drag, and ends", async () => {
     await loadBoth(makeDeps());
-    const toggle = screen.getByRole("button", { name: "Geteilt" });
-    fireEvent.click(toggle);
-    expect(toggle.getAttribute("aria-pressed")).toBe("true");
+    fireEvent.click(screen.getByRole("button", { name: "Geteilt" }));
+    expect(screen.getByRole("button", { name: "Geteilt" }).getAttribute("aria-pressed")).toBe(
+      "true",
+    );
     expect(screen.getByText("LINKS ORIGINAL · RECHTS REFERENZ")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "50 %" })).toBeNull();
     const slider = screen.getByLabelText(/Teilung/) as HTMLInputElement;
     expect(slider.value).toBe("50");
     fireEvent.change(slider, { target: { value: "20" } });
     expect(slider.value).toBe("20");
     // The 1000 × 500 original fills the 400 × 200 workspace: the divider sits at x = 80.
-    const workspace = screen.getByLabelText(/Vergleichsfläche/);
-    fireEvent.pointerDown(workspace, { pointerId: 4, clientX: 85, clientY: 150 });
-    fireEvent.pointerMove(workspace, { pointerId: 4, clientX: 300, clientY: 150 });
-    fireEvent.pointerUp(workspace, { pointerId: 4 });
+    drag(4, [85, 150], [300, 150]);
     expect(slider.value).toBe("75");
-    expect(screen.getByText("LINKS ORIGINAL · RECHTS REFERENZ")).toBeTruthy();
-    // A tap away from the divider still reveals the original.
-    fireEvent.pointerDown(workspace, { pointerId: 5, clientX: 10, clientY: 10 });
-    fireEvent.pointerUp(workspace, { pointerId: 5 });
+    fireEvent.pointerDown(workspace(), { pointerId: 5, clientX: 10, clientY: 10 });
+    fireEvent.pointerUp(workspace(), { pointerId: 5 });
     expect(screen.getByText("ORIGINAL · TIPPEN ZUM VERGLEICH")).toBeTruthy();
-    fireEvent.click(toggle);
+    fireEvent.click(screen.getByRole("button", { name: "Überlagern" }));
     expect(screen.queryByLabelText(/Teilung/)).toBeNull();
+  });
+
+  it("exports the comparison and the untouched original through share", async () => {
+    const deps = makeDeps();
+    await loadBoth(deps);
+    fireEvent.click(screen.getByRole("button", { name: "Speichern" }));
+    fireEvent.click(screen.getByRole("button", { name: "Vergleich als JPEG" }));
+    await waitFor(() => expect(deps.share).toHaveBeenCalled());
+    const shared = vi.mocked(deps.share).mock.calls[0]?.[0] as File;
+    expect(shared.name).toBe("Vergleich.jpg");
+    const dialog = screen.getByRole("dialog", { name: "Speichern oder teilen" });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Original" }));
+    await waitFor(() => expect(vi.mocked(deps.share).mock.calls.length).toBe(2));
+    const [second] = vi.mocked(deps.share).mock.calls[1] ?? [];
+    expect((second as File).name).toBe("original.png");
+    fireEvent.click(screen.getByRole("button", { name: "Schließen" }));
+    expect(screen.queryByRole("dialog", { name: "Speichern oder teilen" })).toBeNull();
+  });
+
+  it("reports an export the browser cannot encode", async () => {
+    await loadBoth(
+      makeDeps({ renderBlob: vi.fn(async () => Promise.reject(new Error("encode"))) }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Speichern" }));
+    fireEvent.click(screen.getByRole("button", { name: "Vergleich als PNG" }));
+    expect(await screen.findByText(/Speichern nicht möglich/)).toBeTruthy();
+  });
+
+  it("ends a hold when the window loses focus", async () => {
+    await loadBoth(makeDeps());
+    fireEvent.pointerDown(screen.getByRole("button", { name: "Original halten" }));
+    await act(async () => window.dispatchEvent(new Event("blur")));
+    expect(screen.getByText("ÜBERLAGERUNG")).toBeTruthy();
+  });
+
+  it("fades messages over the image", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      await loadBoth(makeDeps());
+      expect(screen.getByText(/Tippe aufs Bild für das Original/)).toBeTruthy();
+      await act(async () => vi.advanceTimersByTime(4100));
+      expect(screen.queryByText(/Tippe aufs Bild für das Original/)).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
+
+describe("Quick Compare editor: alignment", () => {
+  it("aligns with buttons and resets", async () => {
+    await loadBoth(makeDeps());
+    fireEvent.click(screen.getByRole("button", { name: "Ausrichten" }));
+    fireEvent.click(screen.getByRole("tab", { name: "Drehung" }));
+    fireEvent.click(screen.getByRole("button", { name: "Mehr" }));
+    expect(screen.getByText("0.05°")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Zurücksetzen" }));
+    expect(screen.getByText("0.00°")).toBeTruthy();
+    expect(screen.getByText("Ausrichtung zurückgesetzt.")).toBeTruthy();
+  });
+
+  it("sets a parameter with its slider, formats each unit, and closes", async () => {
+    await loadBoth(makeDeps());
+    fireEvent.click(screen.getByRole("button", { name: "Ausrichten" }));
+    fireEvent.click(screen.getByRole("tab", { name: "Größe" }));
+    fireEvent.change(screen.getByRole("slider", { name: "Größe" }), { target: { value: "1.5" } });
+    expect(screen.getByText("150.0 %")).toBeTruthy();
+    expect(screen.getByText("Größe angepasst.")).toBeTruthy();
+    fireEvent.click(screen.getByRole("tab", { name: "Vertikale Position" }));
+    fireEvent.click(screen.getByRole("button", { name: "Weniger" }));
+    expect(screen.getByText("-0.05 %")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Fertig" }));
+    expect(screen.queryByRole("tab")).toBeNull();
+  });
+
+  it("moves the reference by gesture while aligning, and can switch that off", async () => {
+    await loadBoth(makeDeps());
+    fireEvent.click(screen.getByRole("button", { name: "Ausrichten" }));
+    drag(1, [10, 10], [60, 10]);
+    expect(screen.queryByText("0.00 %")).toBeNull();
+    fireEvent.click(screen.getByLabelText("Gesten verschieben die Referenz"));
+    expect(
+      (screen.getByLabelText("Gesten verschieben die Referenz") as HTMLInputElement).checked,
+    ).toBe(false);
+  });
+
+  it("keeps the user's alignment when auto-align finds no safe match", async () => {
+    await loadBoth(makeDeps());
+    fireEvent.click(screen.getByRole("button", { name: "Ausrichten" }));
+    fireEvent.click(screen.getByRole("button", { name: "Automatisch ausrichten" }));
+    await screen.findByText("Kein sicherer Abgleich. Bitte manuell ausrichten.");
+  });
+
+  it("applies an accepted auto-alignment", async () => {
+    const pattern = (w: number, h: number) => {
+      const data = new Float32Array(w * h);
+      for (let y = 0; y < h; y++)
+        for (let x = 0; x < w; x++) data[y * w + x] = 0.5 + 0.4 * Math.sin(x / 5) * Math.cos(y / 7);
+      return { data, width: w, height: h };
+    };
+    await loadBoth(makeDeps({ gray: vi.fn((_img, w: number, h: number) => pattern(w, h)) }));
+    fireEvent.click(screen.getByRole("button", { name: "Ausrichten" }));
+    fireEvent.click(screen.getByRole("button", { name: "Automatisch ausrichten" }));
+    expect(await screen.findByText("Abgeglichen. Prüfe die Kanten bei 50 %.")).toBeTruthy();
+  });
+});
+
+describe("Quick Compare editor: paper corners on both images", () => {
+  async function toOriginalStep(deps: CompareDeps) {
+    await loadBoth(deps);
+    fireEvent.click(screen.getByRole("button", { name: "Blattecken setzen" }));
+    expect(screen.getByText("Blattecken 1/2: Referenz")).toBeTruthy();
+    expect(screen.getByText("Blattecken 1/2: Referenz")).toBeTruthy();
+  }
+
+  it("places corners on the reference, then on the original, and warps", async () => {
+    const deps = makeDeps();
+    await toOriginalStep(deps);
+    // At 0.85× the 400 × 200 image spans (30, 15)–(370, 185): the top-left ring is at (30, 15).
+    drag(2, [32, 17], [60, 40]);
+    fireEvent.click(screen.getByRole("button", { name: "Ecke unten rechts" }));
+    expect(
+      screen.getByRole("button", { name: "Ecke unten rechts" }).getAttribute("aria-pressed"),
+    ).toBe("true");
+    for (const name of ["links", "oben", "rechts", "unten"])
+      fireEvent.click(screen.getByRole("button", { name: `Ecke nach ${name}` }));
+    expect(deps.fromRgba).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Weiter" }));
+    expect(screen.getByText("Blattecken 2/2: Original")).toBeTruthy();
+    await waitFor(() => expect(deps.fromRgba).toHaveBeenCalledTimes(1));
+    drag(3, [368, 17], [340, 40]);
+    await waitFor(() => expect(deps.fromRgba).toHaveBeenCalledTimes(2));
+    fireEvent.click(screen.getByRole("button", { name: "Zurück" }));
+    expect(screen.getByText("Blattecken 1/2: Referenz")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Weiter" }));
+    fireEvent.click(screen.getByRole("button", { name: "Fertig" }));
+    expect(screen.getByText("ÜBERLAGERUNG")).toBeTruthy();
+    expect(screen.getByText(/Deckkraft der Referenz: 50 %/)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Ausrichten" }));
+    expect(screen.getByText(/Die Blattecken bestimmen/)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Blattecken entfernen" }));
+    expect(screen.getByRole("tab", { name: "Drehung" })).toBeTruthy();
+  });
+
+  it("pans instead of tapping while placing corners", async () => {
+    await toOriginalStep(makeDeps());
+    fireEvent.pointerDown(workspace(), { pointerId: 1, clientX: 200, clientY: 100 });
+    fireEvent.pointerUp(workspace(), { pointerId: 1 });
+    fireEvent.keyDown(workspace(), { key: " " });
+    expect(screen.getByText("Blattecken 1/2: Referenz")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Einpassen" })).toBeNull();
+    fireEvent.wheel(workspace(), { deltaY: -1 });
+    fireEvent.click(screen.getByRole("button", { name: "Einpassen" }));
+    expect(screen.queryByRole("button", { name: "Einpassen" })).toBeNull();
+  });
+
+  it("warns instead of warping when corners cross", async () => {
+    const deps = makeDeps();
+    await toOriginalStep(deps);
+    fireEvent.click(screen.getByRole("button", { name: "Weiter" }));
+    await waitFor(() => expect(deps.fromRgba).toHaveBeenCalledTimes(1));
+    // Drag the original's top-left ring past its bottom-right one.
+    drag(3, [32, 17], [420, 220]);
+    expect(await screen.findByText(/Ecken überkreuzen sich/)).toBeTruthy();
+    expect(deps.fromRgba).toHaveBeenCalledTimes(1);
+  });
+
+  it("cancels back to the alignment from before", async () => {
+    await toOriginalStep(makeDeps());
+    fireEvent.click(screen.getByRole("button", { name: "Weiter" }));
+    fireEvent.click(screen.getByRole("button", { name: "Abbrechen" }));
+    expect(screen.getByText("ÜBERLAGERUNG")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Blattecken setzen" })).toBeTruthy();
   });
 });

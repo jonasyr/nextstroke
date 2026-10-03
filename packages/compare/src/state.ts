@@ -24,7 +24,18 @@ interface Point {
 /** Reference corners on the original (TL, TR, BR, BL), normalized; see corners.ts. */
 export type Corners = readonly [Point, Point, Point, Point];
 
-/** One button step for a corner: 0.2 % of the original's width or height. */
+/** The corners of a whole image, normalized. */
+export const IMAGE_CORNERS: Corners = [
+  { x: 0, y: 0 },
+  { x: 1, y: 0 },
+  { x: 1, y: 1 },
+  { x: 0, y: 1 },
+];
+
+/** Which image the paper corners are being placed on. */
+export type CornerStep = "reference" | "original";
+
+/** One button step for a corner: 0.2 % of the image's width or height. */
 export const CORNER_STEP = 0.002;
 
 export interface CompareState {
@@ -36,8 +47,17 @@ export interface CompareState {
   aligning: boolean;
   alignGestures: boolean;
   activeParam: Param;
-  /** Four-point perspective; when set it replaces the affine layer for drawing. */
+  /**
+   * Paper corners on the original; when set, a perspective warp that maps `refCorners` onto
+   * them replaces the affine layer for drawing.
+   */
   corners: Corners | null;
+  /** Paper corners on the reference, normalized to the reference; null means its image corners. */
+  refCorners: Corners | null;
+  /** The corner step in progress, if any. */
+  cornerStep: CornerStep | null;
+  /** Corners from before the current corner steps, restored on cancel. */
+  cornersBefore: { corners: Corners | null; refCorners: Corners | null } | null;
   activeCorner: number;
   /** Split view divider as a fraction of the original's width; null for overlay mode. */
   split: number | null;
@@ -50,7 +70,7 @@ export const PARAMS: Record<Param, { min: number; max: number; step: number }> =
   rotation: { min: -30, max: 30, step: 0.05 },
 };
 
-export const ZOOM = { min: 1, max: 8 } as const;
+export const ZOOM = { min: 0.8, max: 8 } as const;
 const DEFAULT_OPACITY = 0.65;
 
 export const clamp = (value: number, min: number, max: number) =>
@@ -58,6 +78,8 @@ export const clamp = (value: number, min: number, max: number) =>
 
 const IDENTITY: Layer = { x: 0, y: 0, scale: 1, rotationDeg: 0 };
 const FIT: View = { zoom: 1, x: 0, y: 0 };
+/** Slightly zoomed out while placing corners, so rings at the image edge stay visible. */
+export const CORNER_VIEW: View = { zoom: 0.85, x: 0, y: 0 };
 
 export function initialState(): CompareState {
   return {
@@ -70,6 +92,9 @@ export function initialState(): CompareState {
     alignGestures: true,
     activeParam: "x",
     corners: null,
+    refCorners: null,
+    cornerStep: null,
+    cornersBefore: null,
     activeCorner: 0,
     split: null,
   };
@@ -93,7 +118,11 @@ export type CompareAction =
   | { type: "set-view"; view: View }
   | { type: "fit" }
   | { type: "image-replaced" }
-  | { type: "corners-start"; corners: Corners }
+  | { type: "corners-begin" }
+  | { type: "corners-next"; corners: Corners }
+  | { type: "corners-back" }
+  | { type: "corners-done" }
+  | { type: "corners-cancel" }
   | { type: "select-corner"; index: number }
   | { type: "corner-set"; index: number; point: Point }
   | { type: "corner-nudge"; dx: number; dy: number }
@@ -101,8 +130,20 @@ export type CompareAction =
   | { type: "split"; on: boolean }
   | { type: "split-set"; value: number };
 
-function replaceCorner(corners: Corners, index: number, point: Point): Corners {
-  return corners.map((c, i) => (i === index ? point : c)) as unknown as Corners;
+const NO_CORNERS = { corners: null, refCorners: null, cornerStep: null, cornersBefore: null };
+
+/** Move one corner of the quad the current corner step edits. */
+function withCorner(
+  state: CompareState,
+  index: number,
+  move: (corner: Point) => Point,
+): CompareState {
+  const key = state.cornerStep === "reference" ? "refCorners" : "corners";
+  const quad = state.cornerStep ? state[key] : null;
+  const corner = quad?.[index];
+  if (!quad || !corner) return state;
+  const next = quad.map((c, i) => (i === index ? move(corner) : c)) as unknown as Corners;
+  return { ...state, [key]: next };
 }
 
 const LAYER_KEY: Record<Param, keyof Layer> = {
@@ -160,7 +201,7 @@ export function compare(state: CompareState, action: CompareAction): CompareStat
     case "set-layer":
       return { ...state, layer: action.layer };
     case "reset-layer":
-      return { ...state, layer: IDENTITY, corners: null };
+      return { ...state, layer: IDENTITY, ...NO_CORNERS };
     case "zoom": {
       const zoom = clamp(state.view.zoom * action.factor, ZOOM.min, ZOOM.max);
       const f = zoom / state.view.zoom;
@@ -169,7 +210,7 @@ export function compare(state: CompareState, action: CompareAction): CompareStat
     case "set-view":
       return { ...state, view: action.view };
     case "fit":
-      return { ...state, view: FIT };
+      return { ...state, view: state.cornerStep ? CORNER_VIEW : FIT };
     case "image-replaced":
       return {
         ...state,
@@ -177,24 +218,55 @@ export function compare(state: CompareState, action: CompareAction): CompareStat
         layer: IDENTITY,
         tapReveal: false,
         holdReveal: false,
-        corners: null,
+        ...NO_CORNERS,
       };
-    case "corners-start":
-      return { ...state, corners: action.corners, activeCorner: 0 };
+    case "corners-begin":
+      return {
+        ...state,
+        cornersBefore: { corners: state.corners, refCorners: state.refCorners },
+        refCorners: state.refCorners ?? IMAGE_CORNERS,
+        cornerStep: "reference",
+        activeCorner: 0,
+        view: CORNER_VIEW,
+        aligning: false,
+        split: null,
+        tapReveal: false,
+        holdReveal: false,
+      };
+    case "corners-next":
+      return state.cornerStep === "reference"
+        ? {
+            ...state,
+            corners: state.corners ?? action.corners,
+            cornerStep: "original",
+            activeCorner: 0,
+            view: CORNER_VIEW,
+          }
+        : state;
+    case "corners-back":
+      return { ...state, cornerStep: "reference", activeCorner: 0, view: CORNER_VIEW };
+    case "corners-done":
+      return { ...setOpacity(state, 0.5), cornerStep: null, cornersBefore: null, view: FIT };
+    case "corners-cancel":
+      return {
+        ...state,
+        corners: state.cornersBefore?.corners ?? null,
+        refCorners: state.cornersBefore?.refCorners ?? null,
+        cornerStep: null,
+        cornersBefore: null,
+        view: FIT,
+      };
     case "select-corner":
       return { ...state, activeCorner: action.index };
     case "corner-set":
-      return state.corners
-        ? { ...state, corners: replaceCorner(state.corners, action.index, action.point) }
-        : state;
-    case "corner-nudge": {
-      const c = state.corners?.[state.activeCorner];
-      if (!state.corners || !c) return state;
-      const point = { x: c.x + action.dx * CORNER_STEP, y: c.y + action.dy * CORNER_STEP };
-      return { ...state, corners: replaceCorner(state.corners, state.activeCorner, point) };
-    }
+      return withCorner(state, action.index, () => action.point);
+    case "corner-nudge":
+      return withCorner(state, state.activeCorner, (c) => ({
+        x: c.x + action.dx * CORNER_STEP,
+        y: c.y + action.dy * CORNER_STEP,
+      }));
     case "corners-clear":
-      return { ...state, corners: null };
+      return { ...state, ...NO_CORNERS };
     case "split":
       return action.on
         ? { ...state, split: 0.5, tapReveal: false, aligning: false }
@@ -215,9 +287,13 @@ export type BadgeKey =
   | "compare.badge.original"
   | "compare.badge.reference"
   | "compare.badge.overlay"
-  | "compare.badge.split";
+  | "compare.badge.split"
+  | "compare.badge.cornersReference"
+  | "compare.badge.cornersOriginal";
 
 export function badge(state: CompareState): BadgeKey {
+  if (state.cornerStep === "reference") return "compare.badge.cornersReference";
+  if (state.cornerStep === "original") return "compare.badge.cornersOriginal";
   if (state.tapReveal || state.holdReveal) return "compare.badge.reveal";
   if (state.aligning) return "compare.badge.align";
   if (state.split !== null) return "compare.badge.split";

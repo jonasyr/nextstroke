@@ -67,4 +67,41 @@ describe("perspective corners", () => {
     expect(next[2]).toEqual({ x: 1.01, y: 0.99 });
     expect(next[0]).toEqual(corners[0]);
   });
+
+  it("maps chosen reference corners onto chosen original corners", () => {
+    const paper = [
+      { x: 0.1, y: 0.2 },
+      { x: 0.9, y: 0.2 },
+      { x: 0.9, y: 0.8 },
+      { x: 0.1, y: 0.8 },
+    ] as const;
+    const target = [
+      { x: 0.2, y: 0.1 },
+      { x: 0.8, y: 0.15 },
+      { x: 0.85, y: 0.9 },
+      { x: 0.15, y: 0.85 },
+    ] as const;
+    const h = referenceHomography(target, original, reference, paper) as number[];
+    // reference pixel of the paper's top-left (200, 200) → original (200, 50)
+    const p = applyHomography(h, { x: 200, y: 200 });
+    expect(p.x).toBeCloseTo(200);
+    expect(p.y).toBeCloseTo(50);
+  });
+
+  it("starts the original corners from the layer applied to the reference corners", () => {
+    const paper = [
+      { x: 0.25, y: 0.25 },
+      { x: 0.75, y: 0.25 },
+      { x: 0.75, y: 0.75 },
+      { x: 0.25, y: 0.75 },
+    ] as const;
+    const guess = cornersFromLayer(
+      { x: 0, y: 0, scale: 1, rotationDeg: 0 },
+      original,
+      reference,
+      paper,
+    );
+    expect(guess[0]?.x).toBeCloseTo(0.25);
+    expect(guess[2]?.y).toBeCloseTo(0.75);
+  });
 });

@@ -1,6 +1,7 @@
 import {
   autoAlign,
   badge,
+  CORNER_VIEW,
   type CompareState,
   compare,
   cornersFromLayer,
@@ -13,28 +14,25 @@ import {
   idleGesture,
   initialState,
   invertHomography,
-  PARAMS,
-  type Param,
-  paramValue,
   referenceHomography,
   screenToOriginal,
   splitFromScreen,
 } from "@nextstroke/compare";
 import { classifyFile, exportSize, type Rgba, warpPerspective } from "@nextstroke/imaging";
-import { type MessageKey, t } from "@nextstroke/ui";
-import {
-  type ChangeEvent,
-  type PointerEvent,
-  useCallback,
-  useEffect,
-  useReducer,
-  useRef,
-  useState,
-} from "react";
-import { Immersive } from "../Immersive.tsx";
+import { t } from "@nextstroke/ui";
+import { type PointerEvent, useCallback, useEffect, useReducer, useRef, useState } from "react";
 import type { Decoded } from "./decode.ts";
+import { ExportDialog, type ExportKind, PdfDialog } from "./dialogs.tsx";
+import { ImportScreen, type Slot } from "./ImportScreen.tsx";
+import { AlignPanel, CornersPanel, ViewPanel } from "./panels.tsx";
 import { PdfPasswordError, type renderPdfPage } from "./pdf.ts";
-import { drawArtwork, drawComparison, type renderToBlob, type toGray } from "./render.ts";
+import {
+  drawArtwork,
+  drawComparison,
+  drawSingle,
+  type renderToBlob,
+  type toGray,
+} from "./render.ts";
 
 export interface Loaded extends Decoded {
   name: string;
@@ -56,22 +54,25 @@ export interface CompareDeps {
   now(): number;
 }
 
-const HANDLE_RADIUS = 28;
+/** Touch radius of corner handles and the split divider, in CSS pixels. */
+const HANDLE_RADIUS = 32;
+/** How long a status message stays over the image. */
+const TOAST_MS = 4000;
 
-const PARAM_LABEL: Record<Param, MessageKey> = {
-  x: "compare.param.x",
-  y: "compare.param.y",
-  scale: "compare.param.scale",
-  rotation: "compare.param.rotation",
-};
-
-function formatParam(param: Param, value: number): string {
-  if (param === "scale") return `${(value * 100).toFixed(1)} %`;
-  if (param === "rotation") return `${value.toFixed(2)}°`;
-  return `${(value * 100).toFixed(2)} %`;
+/** A corner (index) or the split divider under a pointer, with the grab offset. */
+interface Dragging {
+  pointer: number;
+  target: number | "split";
+  dx: number;
+  dy: number;
 }
 
-type Slot = "original" | "reference";
+/** The quad the current corner step edits. */
+function stepQuad(s: CompareState) {
+  if (s.cornerStep === "reference") return s.refCorners;
+  if (s.cornerStep === "original") return s.corners;
+  return null;
+}
 
 export function QuickCompare({ deps }: { deps: CompareDeps }) {
   const [state, dispatch] = useReducer(compare, undefined, initialState);
@@ -79,19 +80,15 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
   const [status, setStatus] = useState<string>("");
   const [importing, setImporting] = useState(false);
   const [aligningAuto, setAligningAuto] = useState(false);
-  const [immersive, setImmersive] = useState(false);
+  const [editor, setEditor] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [pdfAsk, setPdfAsk] = useState<{
     count: number;
     resolve: (n: number | null) => void;
   } | null>(null);
-  const [pdfPage, setPdfPage] = useState(1);
   const [size, setSize] = useState({ width: 0, height: 0 });
   const [warped, setWarped] = useState<ImageBitmap | null>(null);
-  /** A corner handle (index) or the split divider under a pointer. */
-  const [dragging, setDragging] = useState<{ pointer: number; target: number | "split" } | null>(
-    null,
-  );
+  const [dragging, setDragging] = useState<Dragging | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const workspaceRef = useRef<HTMLDivElement | null>(null);
   const [workspaceEl, setWorkspaceEl] = useState<HTMLDivElement | null>(null);
@@ -104,8 +101,11 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
   const { original, reference } = images;
   const ready = Boolean(original && reference);
   const busy = importing || aligningAuto;
+  const open = editor && ready;
+  /** The image under the workspace: the reference while its corners are placed. */
+  const base = state.cornerStep === "reference" ? reference : original;
 
-  // Track the workspace size (the canvas follows it, including in immersive mode).
+  // Track the workspace size; the canvas follows it.
   useEffect(() => {
     if (!workspaceEl || typeof ResizeObserver === "undefined") return;
     const observer = new ResizeObserver(() => {
@@ -116,14 +116,36 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
     return () => observer.disconnect();
   }, [workspaceEl]);
 
+  // Messages over the image fade; on the import screen they stay.
+  useEffect(() => {
+    if (!open || !status) return;
+    const timer = setTimeout(() => setStatus(""), TOAST_MS);
+    return () => clearTimeout(timer);
+  }, [open, status]);
+
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || !original || !reference || size.width === 0) return;
+    if (!canvas || !original || !reference || !base || size.width === 0) return;
     const dpr = Math.min(window.devicePixelRatio || 1, 3);
     canvas.width = Math.round(size.width * dpr);
     canvas.height = Math.round(size.height * dpr);
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
+    const quad = stepQuad(state);
+    if (quad) {
+      drawSingle(ctx, {
+        image: base.bitmap,
+        view: state.view,
+        viewport: size,
+        dpr,
+        overlay: {
+          handles: cornersOnScreen(quad, state.view, base, size),
+          active: state.activeCorner,
+          loupe: typeof dragging?.target === "number",
+        },
+      });
+      return;
+    }
     drawComparison(ctx, {
       original: original.bitmap,
       reference: reference.bitmap,
@@ -131,19 +153,14 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
       viewport: size,
       dpr,
       warped,
-      handles:
-        state.aligning && state.corners
-          ? cornersOnScreen(state.corners, state.view, original, size)
-          : [],
-      activeHandle: state.activeCorner,
     });
   });
 
   // Warp the reference into the original's grid once corners settle (not while dragging).
-  const corners = state.corners;
+  const { corners, refCorners } = state;
   useEffect(() => {
     if (!corners || !original || !reference || dragging) return;
-    const h = referenceHomography(corners, original, reference);
+    const h = referenceHomography(corners, original, reference, refCorners ?? undefined);
     const toSource = h && invertHomography(h);
     if (!toSource) {
       setStatus(t("compare.status.perspectiveFolded"));
@@ -166,14 +183,13 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
     return () => {
       cancelled = true;
     };
-  }, [corners, original, reference, dragging, deps]);
+  }, [corners, refCorners, original, reference, dragging, deps]);
 
   useEffect(() => () => abortRef.current?.abort(), []);
 
   const choosePage = useCallback(
     (count: number) =>
       new Promise<number | null>((resolve) => {
-        setPdfPage(1);
         setPdfAsk({ count, resolve });
       }),
     [],
@@ -206,7 +222,9 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
         return { ...prev, [slot]: { ...decoded, name: file.name + suffix, blob: file } };
       });
       dispatch({ type: "image-replaced" });
-      setStatus(t("compare.status.loaded"));
+      const other = slot === "original" ? images.reference : images.original;
+      setStatus(t(other ? "compare.status.ready" : "compare.status.loaded"));
+      if (other) setEditor(true);
     } catch (error) {
       setStatus(
         error instanceof PdfPasswordError
@@ -220,32 +238,27 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
     }
   }
 
-  const onPick = (slot: Slot) => (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    event.target.value = "";
-    void load(slot, file);
-  };
-
   function feed(event: GestureEvent) {
-    if (!original) return;
+    if (!base) return;
     const rect = workspaceRef.current?.getBoundingClientRect();
     const width = rect?.width || 1;
     const height = rect?.height || 1;
     const s = stateRef.current;
     const step = gestures(gestureRef.current, event, {
       center: { x: (rect?.left ?? 0) + width / 2, y: (rect?.top ?? 0) + height / 2 },
-      scale: Math.min(width / original.width, height / original.height),
+      scale: Math.min(width / base.width, height / base.height),
       view: s.view,
       layer: s.layer,
-      moveLayer: s.aligning && s.alignGestures && !immersive && !s.corners,
-      originalWidth: original.width,
+      moveLayer: s.aligning && s.alignGestures && !s.corners && !s.cornerStep,
+      originalWidth: base.width,
     });
     gestureRef.current = step.state;
     for (const out of step.outputs) {
-      if (out.type === "tap") dispatch({ type: "toggle-reveal" });
-      else if (out.type === "hold") dispatch({ type: "hold", active: out.active });
-      else if (out.type === "view") dispatch({ type: "set-view", view: out.view });
-      else dispatch({ type: "set-layer", layer: out.layer });
+      if (out.type === "view") dispatch({ type: "set-view", view: out.view });
+      else if (out.type === "layer") dispatch({ type: "set-layer", layer: out.layer });
+      else if (s.cornerStep) continue;
+      else if (out.type === "tap") dispatch({ type: "toggle-reveal" });
+      else dispatch({ type: "hold", active: out.active });
     }
   }
 
@@ -255,23 +268,27 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
   }
 
   function onPointerDown(event: PointerEvent<HTMLDivElement>) {
-    if (!ready || busy || !original) return;
+    if (!ready || busy || !base || !original) return;
     event.currentTarget.setPointerCapture?.(event.pointerId);
     const s = stateRef.current;
-    if (s.aligning && s.corners && !dragging) {
-      const corner = hitCorner(s.corners, local(event), s.view, original, size, HANDLE_RADIUS);
-      if (corner !== null) {
+    const p = local(event);
+    const quad = stepQuad(s);
+    if (quad && !dragging) {
+      const corner = hitCorner(quad, p, s.view, base, size, HANDLE_RADIUS);
+      const at = corner === null ? null : cornersOnScreen(quad, s.view, base, size)[corner];
+      if (corner !== null && at) {
         dispatch({ type: "select-corner", index: corner });
-        setDragging({ pointer: event.pointerId, target: corner });
+        setDragging({ pointer: event.pointerId, target: corner, dx: at.x - p.x, dy: at.y - p.y });
         return;
       }
     }
     if (
+      !s.cornerStep &&
       s.split !== null &&
       !dragging &&
-      hitSplit(s.split, local(event), s.view, original, size, HANDLE_RADIUS)
+      hitSplit(s.split, p, s.view, original, size, HANDLE_RADIUS)
     ) {
-      setDragging({ pointer: event.pointerId, target: "split" });
+      setDragging({ pointer: event.pointerId, target: "split", dx: 0, dy: 0 });
       return;
     }
     feed({ type: "down", id: event.pointerId, x: event.clientX, y: event.clientY, t: deps.now() });
@@ -280,12 +297,18 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
   }
 
   function onPointerMove(event: PointerEvent<HTMLDivElement>) {
-    if (dragging?.pointer === event.pointerId && original) {
+    if (dragging?.pointer === event.pointerId && base) {
       const view = stateRef.current.view;
+      const p = local(event);
       if (dragging.target === "split") {
-        dispatch({ type: "split-set", value: splitFromScreen(local(event), view, original, size) });
+        dispatch({ type: "split-set", value: splitFromScreen(p, view, base, size) });
       } else {
-        const point = screenToOriginal(local(event), view, original, size);
+        const point = screenToOriginal(
+          { x: p.x + dragging.dx, y: p.y + dragging.dy },
+          view,
+          base,
+          size,
+        );
         dispatch({ type: "corner-set", index: dragging.target, point });
       }
       return;
@@ -313,6 +336,24 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
     window.addEventListener("blur", onBlur);
     return () => window.removeEventListener("blur", onBlur);
   }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setEditor(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+
+  function nextCornerStep() {
+    if (!original || !reference) return;
+    const s = stateRef.current;
+    dispatch({
+      type: "corners-next",
+      corners: cornersFromLayer(s.layer, original, reference, s.refCorners ?? undefined),
+    });
+  }
 
   async function runAutoAlign() {
     if (!original || !reference || busy) return;
@@ -350,7 +391,7 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
     }
   }
 
-  async function save(kind: "original" | "reference" | "png" | "jpeg") {
+  async function save(kind: ExportKind) {
     if (!original || !reference) return;
     try {
       let file: File;
@@ -380,347 +421,109 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
     else if (event.key === "0") dispatch({ type: "fit" });
     else if (event.key === " ") {
       event.preventDefault();
-      dispatch({ type: "toggle-reveal" });
-    } else return;
+      if (!state.cornerStep) dispatch({ type: "toggle-reveal" });
+    }
   }
 
-  const opacityPercent = Math.round(state.opacity * 100);
-  const param = state.activeParam;
-  const opacitySlider = (id: string) => (
-    <label className="ns-field" htmlFor={id}>
-      {t("compare.opacity")}: {opacityPercent} %
-      <input
-        id={id}
-        type="range"
-        min={0}
-        max={100}
-        value={opacityPercent}
-        onChange={(e) => dispatch({ type: "opacity", percent: Number(e.target.value) })}
-      />
-    </label>
-  );
+  const home = state.cornerStep ? CORNER_VIEW : { zoom: 1, x: 0, y: 0 };
+  const zoomed =
+    state.view.zoom !== home.zoom || state.view.x !== home.x || state.view.y !== home.y;
 
-  const workspace = (
-    <div
-      ref={(el) => {
-        workspaceRef.current = el;
-        setWorkspaceEl(el);
+  const panel = state.cornerStep ? (
+    <CornersPanel state={state} dispatch={dispatch} onNext={nextCornerStep} />
+  ) : state.aligning ? (
+    <AlignPanel
+      state={state}
+      dispatch={dispatch}
+      busy={busy}
+      onAuto={() => void runAutoAlign()}
+      onStatus={setStatus}
+    />
+  ) : (
+    <ViewPanel
+      state={state}
+      dispatch={dispatch}
+      onCorners={() => {
+        setStatus("");
+        dispatch({ type: "corners-begin" });
       }}
-      role="application"
-      className="ns-workspace"
-      // biome-ignore lint/a11y/noNoninteractiveTabindex: the gesture surface takes keyboard shortcuts (+, -, 0, Space; legacy V1)
-      tabIndex={0}
-      aria-label={t("compare.workspace")}
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={endPointer("up")}
-      onPointerCancel={endPointer("cancel")}
-      onLostPointerCapture={endPointer("cancel")}
-      onContextMenu={(e) => e.preventDefault()}
-      onWheel={(e) => dispatch({ type: "zoom", factor: e.deltaY < 0 ? 1.1 : 1 / 1.1 })}
-      onKeyDown={onKeyDown}
-    >
-      <canvas ref={canvasRef} className="ns-canvas" />
-      <span className="ns-badge">{t(badge(state))}</span>
-    </div>
-  );
-
-  const pickers = (
-    <div className="ns-row">
-      {(["original", "reference"] as const).map((slot) => (
-        <label key={slot} className="ns-file">
-          {t(slot === "original" ? "compare.pick.original" : "compare.pick.reference")}
-          {images[slot] ? `: ${images[slot]?.name}` : ""}
-          <input
-            type="file"
-            accept="image/jpeg,image/png,image/webp,image/heic,image/heif,application/pdf,.heic,.pdf"
-            onChange={onPick(slot)}
-            disabled={busy}
-          />
-        </label>
-      ))}
-    </div>
+    />
   );
 
   return (
     <section className="ns-compare">
-      {pickers}
-      {!ready && <p>{t("compare.empty")}</p>}
-      <p className="ns-status" role="status" aria-live="polite">
-        {status}
-      </p>
-      {ready && !immersive && workspace}
-      {ready && (
-        <>
-          {opacitySlider("ns-opacity")}
-          <div className="ns-row">
-            <button type="button" onClick={() => dispatch({ type: "show-original" })}>
-              {t("compare.original")}
-            </button>
-            <button
-              type="button"
-              onPointerDown={() => dispatch({ type: "hold", active: true })}
-              onPointerUp={() => dispatch({ type: "hold", active: false })}
-              onPointerCancel={() => dispatch({ type: "hold", active: false })}
-              onKeyDown={(e) =>
-                (e.key === " " || e.key === "Enter") && dispatch({ type: "hold", active: true })
-              }
-              onKeyUp={() => dispatch({ type: "hold", active: false })}
-            >
-              {t("compare.hold")}
-            </button>
-            <button type="button" onClick={() => dispatch({ type: "half" })}>
-              {t("compare.half")}
-            </button>
-            <button type="button" onClick={() => dispatch({ type: "reference" })}>
-              {t("compare.reference")}
-            </button>
-            <button
-              type="button"
-              aria-pressed={state.split !== null}
-              onClick={() => dispatch({ type: "split", on: state.split === null })}
-            >
-              {t("compare.split")}
-            </button>
-          </div>
-          {state.split !== null && (
-            <label className="ns-field" htmlFor="ns-split">
-              {t("compare.splitPosition")}: {Math.round(state.split * 100)} %
-              <input
-                id="ns-split"
-                type="range"
-                min={0}
-                max={100}
-                value={Math.round(state.split * 100)}
-                onChange={(e) =>
-                  dispatch({ type: "split-set", value: Number(e.target.value) / 100 })
-                }
-              />
-            </label>
-          )}
-          <div className="ns-row">
-            <button type="button" onClick={() => dispatch({ type: "zoom", factor: 1.5 })}>
-              {t("compare.zoomIn")}
-            </button>
-            <button type="button" onClick={() => dispatch({ type: "zoom", factor: 1 / 1.5 })}>
-              {t("compare.zoomOut")}
-            </button>
-            <button type="button" onClick={() => dispatch({ type: "fit" })}>
-              {t("compare.fit")}
-            </button>
-            <button
-              type="button"
-              onClick={() => dispatch({ type: "alignment", open: !state.aligning })}
-            >
-              {t(state.aligning ? "compare.compare" : "compare.align")}
-            </button>
-            <button type="button" onClick={() => setImmersive(true)}>
-              {t("immersive.open")}
+      {!open && (
+        <ImportScreen
+          names={{ original: original?.name, reference: reference?.name }}
+          busy={busy}
+          status={status}
+          onPick={(slot, file) => void load(slot, file)}
+          onOpen={() => {
+            setStatus("");
+            setEditor(true);
+          }}
+        />
+      )}
+      {open && (
+        <div className="ns-editor" role="dialog" aria-modal="true" aria-label={t("compare.editor")}>
+          <div className="ns-editor-top">
+            <button type="button" onClick={() => setEditor(false)}>
+              {t("compare.back")}
             </button>
             <button type="button" onClick={() => setExportOpen(true)}>
               {t("compare.save")}
             </button>
           </div>
-          {state.aligning && (
-            <fieldset className="ns-align">
-              <legend>{t("compare.align")}</legend>
-              <div className="ns-row" role="tablist">
-                {(Object.keys(PARAMS) as Param[]).map((p) => (
-                  <button
-                    key={p}
-                    type="button"
-                    role="tab"
-                    aria-selected={p === param}
-                    onClick={() => dispatch({ type: "select-param", param: p })}
-                  >
-                    {t(PARAM_LABEL[p])}
-                  </button>
-                ))}
-              </div>
-              <div className="ns-row">
-                <button
-                  type="button"
-                  aria-label={t("compare.less")}
-                  onClick={() => dispatch({ type: "nudge", direction: -1 })}
-                >
-                  −
-                </button>
-                <input
-                  type="range"
-                  aria-label={t(PARAM_LABEL[param])}
-                  min={PARAMS[param].min}
-                  max={PARAMS[param].max}
-                  step={PARAMS[param].step}
-                  value={paramValue(state)}
-                  onChange={(e) => {
-                    dispatch({ type: "set-param", value: Number(e.target.value) });
-                    setStatus(t("compare.status.adjusted", { label: t(PARAM_LABEL[param]) }));
-                  }}
-                />
-                <button
-                  type="button"
-                  aria-label={t("compare.more")}
-                  onClick={() => dispatch({ type: "nudge", direction: 1 })}
-                >
-                  +
-                </button>
-                <output>{formatParam(param, paramValue(state))}</output>
-              </div>
-              <label className="ns-field">
-                <input
-                  type="checkbox"
-                  checked={state.alignGestures}
-                  onChange={(e) => dispatch({ type: "align-gestures", enabled: e.target.checked })}
-                />
-                {t("compare.alignGestures")}
-              </label>
-              <div className="ns-row">
-                {state.corners ? (
-                  <button type="button" onClick={() => dispatch({ type: "corners-clear" })}>
-                    {t("compare.perspective.clear")}
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (!original || !reference) return;
-                      dispatch({
-                        type: "corners-start",
-                        corners: cornersFromLayer(state.layer, original, reference),
-                      });
-                      setStatus(t("compare.perspective.hint"));
-                    }}
-                  >
-                    {t("compare.perspective.start")}
-                  </button>
-                )}
-              </div>
-              {state.corners && (
-                <div className="ns-row">
-                  {([0, 1, 2, 3] as const).map((i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      aria-pressed={state.activeCorner === i}
-                      onClick={() => dispatch({ type: "select-corner", index: i })}
-                    >
-                      {t(`compare.corner.${i}`)}
-                    </button>
-                  ))}
-                  {(
-                    [
-                      ["left", -1, 0, "←"],
-                      ["up", 0, -1, "↑"],
-                      ["right", 1, 0, "→"],
-                      ["down", 0, 1, "↓"],
-                    ] as const
-                  ).map(([name, dx, dy, arrow]) => (
-                    <button
-                      key={name}
-                      type="button"
-                      aria-label={t(`compare.corner.${name}`)}
-                      onClick={() => dispatch({ type: "corner-nudge", dx, dy })}
-                    >
-                      {arrow}
-                    </button>
-                  ))}
-                </div>
-              )}
-              <div className="ns-row">
-                <button
-                  type="button"
-                  onClick={() => {
-                    dispatch({ type: "reset-layer" });
-                    setStatus(t("compare.status.reset"));
-                  }}
-                >
-                  {t("compare.reset")}
-                </button>
-                <button type="button" onClick={() => void runAutoAlign()} disabled={busy}>
-                  {t("compare.auto")}
-                </button>
-              </div>
-            </fieldset>
-          )}
-        </>
-      )}
-      {ready && immersive && (
-        <Immersive onClose={() => setImmersive(false)}>
-          {workspace}
-          <div className="ns-immersive-controls">
-            {opacitySlider("ns-opacity-immersive")}
-            <button type="button" onClick={() => dispatch({ type: "toggle-reveal" })}>
-              {t(state.tapReveal ? "compare.compare" : "compare.original")}
-            </button>
+          <div
+            ref={(el) => {
+              workspaceRef.current = el;
+              setWorkspaceEl(el);
+            }}
+            role="application"
+            className="ns-workspace"
+            // biome-ignore lint/a11y/noNoninteractiveTabindex: the gesture surface takes keyboard shortcuts (+, -, 0, Space; legacy V1)
+            tabIndex={0}
+            aria-label={t("compare.workspace")}
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={endPointer("up")}
+            onPointerCancel={endPointer("cancel")}
+            onLostPointerCapture={endPointer("cancel")}
+            onContextMenu={(e) => e.preventDefault()}
+            onWheel={(e) => dispatch({ type: "zoom", factor: e.deltaY < 0 ? 1.1 : 1 / 1.1 })}
+            onKeyDown={onKeyDown}
+          >
+            <canvas ref={canvasRef} className="ns-canvas" />
+            {/* While placing corners the panel title names the step; the badge would hide a ring. */}
+            {!state.cornerStep && <span className="ns-badge">{t(badge(state))}</span>}
+            {zoomed && (
+              <button
+                type="button"
+                className="ns-fit"
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={() => dispatch({ type: "fit" })}
+              >
+                {t("compare.fit")}
+              </button>
+            )}
+            <p className="ns-toast" role="status" aria-live="polite">
+              {status}
+            </p>
           </div>
-        </Immersive>
+          <div className="ns-panel">{panel}</div>
+        </div>
       )}
       {pdfAsk && (
-        <div
-          className="ns-dialog"
-          role="dialog"
-          aria-modal="true"
-          aria-label={t("compare.pdf.title")}
-        >
-          <h2>{t("compare.pdf.title")}</h2>
-          <label className="ns-field">
-            {t("compare.pdf.page", { count: String(pdfAsk.count) })}
-            <input
-              type="number"
-              min={1}
-              max={pdfAsk.count}
-              value={pdfPage}
-              onChange={(e) => setPdfPage(Number(e.target.value))}
-            />
-          </label>
-          <div className="ns-row">
-            <button
-              type="button"
-              onClick={() => {
-                pdfAsk.resolve(Math.min(Math.max(1, Math.round(pdfPage) || 1), pdfAsk.count));
-                setPdfAsk(null);
-              }}
-            >
-              {t("compare.pdf.load")}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                pdfAsk.resolve(null);
-                setPdfAsk(null);
-              }}
-            >
-              {t("compare.pdf.cancel")}
-            </button>
-          </div>
-        </div>
+        <PdfDialog
+          count={pdfAsk.count}
+          onChoose={(page) => {
+            pdfAsk.resolve(page);
+            setPdfAsk(null);
+          }}
+        />
       )}
-      {exportOpen && (
-        <div
-          className="ns-dialog"
-          role="dialog"
-          aria-modal="true"
-          aria-label={t("compare.export.title")}
-        >
-          <h2>{t("compare.export.title")}</h2>
-          <div className="ns-row">
-            <button type="button" onClick={() => void save("original")}>
-              {t("compare.export.original")}
-            </button>
-            <button type="button" onClick={() => void save("reference")}>
-              {t("compare.export.reference")}
-            </button>
-            <button type="button" onClick={() => void save("png")}>
-              {t("compare.export.png")}
-            </button>
-            <button type="button" onClick={() => void save("jpeg")}>
-              {t("compare.export.jpeg")}
-            </button>
-            <button type="button" onClick={() => setExportOpen(false)}>
-              {t("compare.export.close")}
-            </button>
-          </div>
-        </div>
+      {open && exportOpen && (
+        <ExportDialog onSave={(kind) => void save(kind)} onClose={() => setExportOpen(false)} />
       )}
     </section>
   );

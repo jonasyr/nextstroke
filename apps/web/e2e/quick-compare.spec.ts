@@ -27,7 +27,7 @@ test("compares two photos, aligns, and exports a bounded comparison", async ({ p
     seed: 1,
   });
   await page.getByLabel(/^Original wählen/).setInputFiles(original);
-  await expect(page.getByText("Bild geladen. Automatisch oder manuell ausrichten.")).toBeVisible();
+  await expect(page.getByText("Bild geladen. Jetzt das zweite Bild wählen.")).toBeVisible();
   await page.getByLabel(/^Referenz wählen/).setInputFiles(reference);
   await expect(page.getByText("ÜBERLAGERUNG")).toBeVisible();
   await expect.poll(() => canvasHasInk(page)).toBe(true);
@@ -79,13 +79,13 @@ test("works offline after the first visit", async ({ page, context }) => {
     seed: 2,
   });
   await page.getByLabel(/^Original wählen/).setInputFiles(original);
-  await expect(page.getByText("Bild geladen. Automatisch oder manuell ausrichten.")).toBeVisible();
+  await expect(page.getByText("Bild geladen. Jetzt das zweite Bild wählen.")).toBeVisible();
   await page.getByLabel(/^Referenz wählen/).setInputFiles({ ...original, name: "b.png" });
   await expect(page.getByText("ÜBERLAGERUNG")).toBeVisible();
   await expect(page.getByRole("status").filter({ hasText: "Offline" })).toBeVisible();
 });
 
-test("aligns a perspective-distorted reference with four corner handles", async ({ page }) => {
+test("places paper corners on both images and warps the reference", async ({ page }) => {
   await page.goto("#/compare");
   const original = await syntheticImage(page, {
     width: 1200,
@@ -100,11 +100,9 @@ test("aligns a perspective-distorted reference with four corner handles", async 
     seed: 4,
   });
   await page.getByLabel(/^Original wählen/).setInputFiles(original);
-  await expect(page.getByText("Bild geladen. Automatisch oder manuell ausrichten.")).toBeVisible();
+  await expect(page.getByText("Bild geladen. Jetzt das zweite Bild wählen.")).toBeVisible();
   await page.getByLabel(/^Referenz wählen/).setInputFiles(reference);
   await expect(page.getByText("ÜBERLAGERUNG")).toBeVisible();
-  await page.getByRole("button", { name: "Ausrichten" }).click();
-  await page.getByRole("button", { name: "Perspektive (4 Ecken)" }).click();
 
   const snapshot = () =>
     page.evaluate(() => {
@@ -116,28 +114,38 @@ test("aligns a perspective-distorted reference with four corner handles", async 
       return sum;
     });
   await page.waitForTimeout(300);
-  const before = await snapshot();
+  const plain = await snapshot();
 
-  // Drag the top-right handle inwards: a keystone the affine layer cannot express.
-  await page.locator(".ns-workspace").scrollIntoViewIfNeeded();
   const box = (await page.locator(".ns-workspace").boundingBox()) as {
     x: number;
     y: number;
     width: number;
     height: number;
   };
-  const fit = Math.min(box.width / 1200, box.height / 800);
+  // Both images are 1200 × 800 and shown at 0.85× while placing corners, so their rings sit
+  // at the same screen positions.
+  const fit = Math.min(box.width / 1200, box.height / 800) * 0.85;
   const left = box.x + (box.width - 1200 * fit) / 2;
   const top = box.y + (box.height - 800 * fit) / 2;
-  await page.mouse.move(left + 1200 * fit - 2, top + 2);
-  await page.mouse.down();
-  await page.mouse.move(left + 1200 * fit * 0.8, top + 800 * fit * 0.15, { steps: 5 });
-  await page.mouse.up();
+  const at = (fx: number, fy: number) => [left + 1200 * fit * fx, top + 800 * fit * fy] as const;
+  async function drag(from: readonly [number, number], to: readonly [number, number]) {
+    await page.mouse.move(...from);
+    await page.mouse.down();
+    await page.mouse.move(...to, { steps: 5 });
+    await page.mouse.up();
+  }
 
-  await expect.poll(snapshot, { timeout: 5_000 }).not.toBe(before);
-  await page.getByRole("button", { name: "Ecke unten links" }).click();
-  await page.getByRole("button", { name: "Ecke nach rechts" }).click();
-  await expect(page.getByRole("button", { name: "Perspektive entfernen" })).toBeVisible();
+  await page.getByRole("button", { name: "Blattecken setzen" }).click();
+  await expect(page.getByText("Blattecken 1/2: Referenz")).toBeVisible();
+  await drag([at(0, 0)[0] + 2, at(0, 0)[1] + 2], at(0.1, 0.1));
+  await page.getByRole("button", { name: "Weiter" }).click();
+  await expect(page.getByText("Blattecken 2/2: Original")).toBeVisible();
+  // A keystone the affine layer cannot express: pull the top-right corner inwards.
+  await drag([at(1, 0)[0] - 2, at(1, 0)[1] + 2], at(0.8, 0.15));
+  await page.getByRole("button", { name: "Fertig" }).click();
+  await expect(page.getByText("ÜBERLAGERUNG")).toBeVisible();
+  await expect.poll(snapshot, { timeout: 5_000 }).not.toBe(plain);
+  await expect(page.getByRole("button", { name: "Blattecken ändern" })).toBeVisible();
 });
 
 test("splits original and reference and drags the divider", async ({ page }) => {
@@ -155,7 +163,7 @@ test("splits original and reference and drags the divider", async ({ page }) => 
     seed: 6,
   });
   await page.getByLabel(/^Original wählen/).setInputFiles(original);
-  await expect(page.getByText("Bild geladen. Automatisch oder manuell ausrichten.")).toBeVisible();
+  await expect(page.getByText("Bild geladen. Jetzt das zweite Bild wählen.")).toBeVisible();
   await page.getByLabel(/^Referenz wählen/).setInputFiles(reference);
   await expect(page.getByText("ÜBERLAGERUNG")).toBeVisible();
   await page.getByRole("button", { name: "Geteilt" }).click();
@@ -163,7 +171,6 @@ test("splits original and reference and drags the divider", async ({ page }) => 
   const slider = page.getByLabel(/Teilung/);
   await expect(slider).toHaveValue("50");
 
-  await page.locator(".ns-workspace").scrollIntoViewIfNeeded();
   const box = (await page.locator(".ns-workspace").boundingBox()) as {
     x: number;
     y: number;

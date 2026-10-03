@@ -2,9 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   badge,
   CORNER_STEP,
+  CORNER_VIEW,
   type CompareState,
   compare,
   effectiveOpacity,
+  IMAGE_CORNERS,
   initialState,
   PARAMS,
 } from "./state.ts";
@@ -62,14 +64,14 @@ describe("comparison state (legacy C1–C6, V3–V5)", () => {
     expect(s.layer).toEqual(initialState().layer);
   });
 
-  it("zooms between 1× and 8× around the centre and fits back", () => {
+  it("zooms between 0.8× and 8× around the centre and fits back", () => {
     let s = run({ type: "zoom", factor: 1.5 });
     expect(s.view.zoom).toBe(1.5);
     s = compare(s, { type: "set-view", view: { zoom: 2, x: 40, y: -20 } });
     s = compare(s, { type: "zoom", factor: 100 });
     expect(s.view).toEqual({ zoom: 8, x: 160, y: -80 });
     s = compare(s, { type: "zoom", factor: 0.001 });
-    expect(s.view.zoom).toBe(1);
+    expect(s.view.zoom).toBe(0.8);
     expect(compare(s, { type: "fit" }).view).toEqual({ zoom: 1, x: 0, y: 0 });
   });
 
@@ -91,36 +93,88 @@ describe("comparison state (legacy C1–C6, V3–V5)", () => {
   });
 });
 
-describe("perspective corners in the state", () => {
-  const corners = [
-    { x: 0, y: 0 },
-    { x: 1, y: 0 },
-    { x: 1, y: 1 },
-    { x: 0, y: 1 },
+describe("paper corners in the state (two steps: reference, then original)", () => {
+  const guess = [
+    { x: 0.1, y: 0.1 },
+    { x: 0.9, y: 0.1 },
+    { x: 0.9, y: 0.9 },
+    { x: 0.1, y: 0.9 },
   ] as const;
 
-  it("starts, selects, moves and nudges corners", () => {
-    let s = run({ type: "corners-start", corners });
-    expect(s.corners).toEqual(corners);
-    expect(s.activeCorner).toBe(0);
-    s = compare(s, { type: "select-corner", index: 2 });
-    s = compare(s, { type: "corner-nudge", dx: 1, dy: 0 });
-    expect(s.corners?.[2]?.x).toBeCloseTo(1 + CORNER_STEP);
-    s = compare(s, { type: "corner-set", index: 0, point: { x: 0.1, y: 0.2 } });
-    expect(s.corners?.[0]).toEqual({ x: 0.1, y: 0.2 });
+  it("starts on the reference with its image corners and a fitted view", () => {
+    const s = run(
+      { type: "zoom", factor: 2 },
+      { type: "split", on: true },
+      { type: "corners-begin" },
+    );
+    expect(s.cornerStep).toBe("reference");
+    expect(s.refCorners).toEqual(IMAGE_CORNERS);
+    expect(s.view).toEqual(CORNER_VIEW);
+    expect(compare(s, { type: "fit" }).view).toEqual(CORNER_VIEW);
+    expect(s.split).toBeNull();
+    expect(badge(s)).toBe("compare.badge.cornersReference");
   });
 
-  it("ignores corner edits without corners", () => {
+  it("edits the quad of the current step", () => {
+    let s = run({ type: "corners-begin" }, { type: "select-corner", index: 2 });
+    s = compare(s, { type: "corner-nudge", dx: -1, dy: 0 });
+    expect(s.refCorners?.[2]?.x).toBeCloseTo(1 - CORNER_STEP);
+    s = compare(s, { type: "corner-set", index: 0, point: { x: 0.05, y: 0.04 } });
+    expect(s.refCorners?.[0]).toEqual({ x: 0.05, y: 0.04 });
+    s = compare(s, { type: "corners-next", corners: guess });
+    expect(s.cornerStep).toBe("original");
+    expect(s.corners).toEqual(guess);
+    expect(badge(s)).toBe("compare.badge.cornersOriginal");
+    s = compare(s, { type: "corner-set", index: 1, point: { x: 0.8, y: 0.2 } });
+    expect(s.corners?.[1]).toEqual({ x: 0.8, y: 0.2 });
+    expect(s.refCorners?.[1]).toEqual({ x: 1, y: 0 });
+  });
+
+  it("keeps earlier original corners instead of the new guess", () => {
+    const done = run(
+      { type: "corners-begin" },
+      { type: "corners-next", corners: guess },
+      { type: "corners-done" },
+    );
+    expect(done.cornerStep).toBeNull();
+    expect(effectiveOpacity(done)).toBe(0.5);
+    const again = compare(compare(done, { type: "corners-begin" }), {
+      type: "corners-next",
+      corners: IMAGE_CORNERS,
+    });
+    expect(again.corners).toEqual(guess);
+    expect(compare(again, { type: "corners-back" }).cornerStep).toBe("reference");
+  });
+
+  it("cancels back to the corners from before", () => {
+    const s = run(
+      { type: "corners-begin" },
+      { type: "corner-set", index: 0, point: { x: 0.2, y: 0.2 } },
+      { type: "corners-next", corners: guess },
+      { type: "corners-cancel" },
+    );
+    expect(s.cornerStep).toBeNull();
+    expect(s.corners).toBeNull();
+    expect(s.refCorners).toBeNull();
+  });
+
+  it("ignores corner edits outside the corner steps", () => {
     const s = initialState();
     expect(compare(s, { type: "corner-nudge", dx: 1, dy: 0 })).toBe(s);
     expect(compare(s, { type: "corner-set", index: 0, point: { x: 0, y: 0 } })).toBe(s);
+    expect(compare(s, { type: "corners-next", corners: guess })).toBe(s);
   });
 
   it("clears corners on request, on reset and on a new image", () => {
-    const s = run({ type: "corners-start", corners });
-    expect(compare(s, { type: "corners-clear" }).corners).toBeNull();
-    expect(compare(s, { type: "reset-layer" }).corners).toBeNull();
-    expect(compare(s, { type: "image-replaced" }).corners).toBeNull();
+    const s = run({ type: "corners-begin" }, { type: "corners-next", corners: guess });
+    for (const action of [
+      { type: "corners-clear" },
+      { type: "reset-layer" },
+      { type: "image-replaced" },
+    ] as const) {
+      const cleared = compare(s, action);
+      expect([cleared.corners, cleared.refCorners, cleared.cornerStep]).toEqual([null, null, null]);
+    }
   });
 });
 

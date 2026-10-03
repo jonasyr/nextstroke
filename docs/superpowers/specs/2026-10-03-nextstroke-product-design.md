@@ -108,9 +108,9 @@ Beginners and hobby artists with a started fineliner artwork and an iPhone.
 1. Choose original.
 2. Choose reference or checkpoint.
 3. Normalize both to a bounded working size.
-4. Accept automatic alignment or adjust four points/transform manually.
+4. Accept automatic alignment, or place the four paper corners on the reference and then on the original, or adjust the transform manually (D-054).
 5. Compare using opacity, split, original reveal, zoom, and pan.
-6. Enter CSS immersive mode with current settings preserved.
+6. Compare in the full-screen editor, which is the CSS immersive mode; going back to the images keeps the current settings (D-054).
 7. Export the current comparison or return without creating a project.
 
 Quick Compare must remain usable offline after the PWA shell is installed.
