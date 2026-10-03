@@ -1,6 +1,6 @@
 import { initialState } from "@nextstroke/compare";
 import { describe, expect, it } from "vitest";
-import { drawComparison, renderToBlob, toGray, toRgba } from "./render.ts";
+import { drawComparison, drawSingle, renderToBlob, toGray, toRgba } from "./render.ts";
 
 function recorder() {
   const calls: string[] = [];
@@ -138,7 +138,7 @@ describe("perspective drawing", () => {
     { x: 0, y: 1 },
   ] as const;
 
-  it("draws the warped reference instead of the affine layer and the corner handles", () => {
+  it("draws the warped reference instead of the affine layer", () => {
     const { ctx, calls } = recorder();
     const state = { ...initialState(), corners };
     const warped = { width: 1000, height: 500 } as ImageBitmap;
@@ -149,17 +149,8 @@ describe("perspective drawing", () => {
       viewport: { width: 400, height: 200 },
       dpr: 1,
       warped,
-      handles: [
-        { x: 1, y: 2 },
-        { x: 3, y: 4 },
-      ],
-      activeHandle: 1,
     });
     expect(calls).toContain("drawImage(img,-500,-250,1000,500)");
-    expect(calls.filter((c) => c.startsWith("arc("))).toEqual([
-      "arc(1,2,11,0,6.283)",
-      "arc(3,4,14,0,6.283)",
-    ]);
   });
 
   it("falls back to the affine layer until the warp is ready", () => {
@@ -201,5 +192,56 @@ describe("drawComparison split view", () => {
     expect(calls).toContain("globalAlpha=1");
     expect(calls).toContain("moveTo(100,0)");
     expect(calls).toContain("lineTo(100,200)");
+  });
+});
+
+describe("drawSingle (paper corner steps)", () => {
+  const handles = [
+    { x: 100, y: 150 },
+    { x: 300, y: 150 },
+    { x: 300, y: 190 },
+    { x: 100, y: 190 },
+  ];
+
+  it("draws one image with the corner quad and ring handles", () => {
+    const { ctx, calls } = recorder();
+    drawSingle(ctx, {
+      image: reference,
+      view: { zoom: 1, x: 0, y: 0 },
+      viewport: { width: 400, height: 200 },
+      dpr: 1,
+      overlay: { handles, active: 1 },
+    });
+    expect(calls.filter((c) => c.startsWith("drawImage"))).toEqual(["drawImage(img,-1000,-500)"]);
+    expect(calls).toContain("moveTo(100,150)");
+    expect(calls).toContain("lineTo(300,150)");
+    expect(calls).toContain("closePath()");
+    expect(calls.filter((c) => c.startsWith("arc(300,150,"))).toEqual(["arc(300,150,16,0,6.283)"]);
+    expect(calls.filter((c) => c.startsWith("arc(100,150,"))).toEqual(["arc(100,150,12,0,6.283)"]);
+  });
+
+  it("magnifies the active corner above the finger, or below it near the top", () => {
+    const { ctx, calls } = recorder();
+    drawSingle(ctx, {
+      image: reference,
+      view: { zoom: 1, x: 0, y: 0 },
+      viewport: { width: 400, height: 200 },
+      dpr: 1,
+      overlay: { handles, active: 2, loupe: true },
+    });
+    // The scene is drawn again, three times larger, inside a circle 110 px above the corner.
+    expect(calls.filter((c) => c.startsWith("drawImage"))).toHaveLength(2);
+    expect(calls).toContain("arc(300,80,56,0,6.283)");
+    expect(calls).toContain("scale(3,3)");
+
+    const top = recorder();
+    drawSingle(top.ctx, {
+      image: reference,
+      view: { zoom: 1, x: 0, y: 0 },
+      viewport: { width: 400, height: 300 },
+      dpr: 1,
+      overlay: { handles: [{ x: 390, y: 20 }], active: 0, loupe: true },
+    });
+    expect(top.calls).toContain("arc(344,130,56,0,6.283)");
   });
 });

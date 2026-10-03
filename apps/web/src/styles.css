@@ -94,25 +94,75 @@ button {
   outline: 3px solid var(--accent);
   outline-offset: 2px;
 }
-/* CSS immersive container: no element Fullscreen API on iPhone. */
-.ns-immersive {
-  position: fixed;
-  inset: 0;
-  z-index: 10;
-  background: #000;
-  color: #fff;
-  padding: calc(env(safe-area-inset-top, 0px) + 12px) calc(env(safe-area-inset-right, 0px) + 12px)
-    calc(env(safe-area-inset-bottom, 0px) + 12px) calc(env(safe-area-inset-left, 0px) + 12px);
-}
-.ns-immersive-close {
-  position: absolute;
-  top: calc(env(safe-area-inset-top, 0px) + 12px);
-  right: calc(env(safe-area-inset-right, 0px) + 12px);
-}
-/* Quick Compare: the workspace sets the size; the canvas fills it and never feeds back. */
+/* Quick Compare import screen: one card per image. */
 .ns-compare {
   display: grid;
   gap: 12px;
+}
+.ns-import {
+  display: grid;
+  gap: 12px;
+}
+.ns-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--sheet);
+  border: 1px solid var(--line);
+}
+.ns-card[data-loaded] {
+  border-color: var(--accent);
+}
+.ns-card-text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.ns-card-title {
+  font-weight: 600;
+}
+.ns-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--sheet);
+  color: var(--ink);
+  cursor: pointer;
+}
+.ns-button:focus-within {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+.ns-hidden-input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  width: 100%;
+  cursor: pointer;
+}
+.ns-primary,
+.ns-button.ns-primary,
+.ns-seg button[aria-pressed="true"],
+.ns-seg [role="tab"][aria-selected="true"],
+.ns-icon[aria-pressed="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--sheet);
+  font-weight: 600;
+}
+.ns-wide {
+  width: 100%;
+  min-height: 52px;
 }
 .ns-row {
   display: flex;
@@ -120,40 +170,66 @@ button {
   gap: 8px;
   align-items: center;
 }
+.ns-fill > button {
+  flex: 1 1 0;
+}
 .ns-field {
   display: grid;
   gap: 4px;
 }
-.ns-field input[type="range"] {
+.ns-field input[type="range"],
+.ns-stepper input[type="range"] {
   width: 100%;
+  min-height: 32px;
 }
-.ns-file {
-  display: inline-grid;
-  gap: 4px;
-  padding: 10px 12px;
-  border: 1px dashed var(--line);
-  border-radius: 8px;
+.ns-check {
+  display: flex;
+  gap: 8px;
+  align-items: center;
   min-height: 44px;
 }
 .ns-status:empty {
   display: none;
 }
+.ns-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+/* Comparison editor: fixed to the viewport (no Fullscreen API on iPhone), image first. */
+.ns-editor {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  background: var(--paper);
+  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) 0
+    env(safe-area-inset-left, 0px);
+}
+.ns-editor-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 8px;
+}
+.ns-editor-top button {
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font-weight: 600;
+}
 .ns-workspace {
   position: relative;
-  height: min(62dvh, 640px);
+  flex: 1 1 auto;
+  min-height: 0;
   overflow: hidden;
-  border-radius: 8px;
-  background: var(--sheet);
-  border: 1px solid var(--line);
+  background: #000;
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
   -webkit-touch-callout: none;
-}
-.ns-immersive .ns-workspace {
-  height: calc(100dvh - 140px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
-  border: 0;
-  background: #000;
 }
 .ns-canvas {
   position: absolute;
@@ -174,30 +250,127 @@ button {
   letter-spacing: 0.04em;
   pointer-events: none;
 }
-.ns-align {
+.ns-fit {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  border: 0;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+}
+.ns-toast {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: 44px;
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.75);
+  color: #fff;
+  font-size: 0.9rem;
+  text-align: center;
+  pointer-events: none;
+}
+.ns-toast:empty {
+  display: none;
+}
+.ns-panel {
+  flex: none;
+  display: grid;
+  gap: 10px;
+  max-height: 46dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 12px 12px calc(12px + env(safe-area-inset-bottom, 0px));
+  background: var(--sheet);
+  border-top: 1px solid var(--line);
+}
+.ns-panel button,
+.ns-panel .ns-field,
+.ns-panel .ns-check {
+  font-size: 15px;
+}
+.ns-panel button {
+  padding: 0 10px;
+  white-space: nowrap;
+}
+.ns-panel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.ns-panel-head h2 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+.ns-seg {
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  border-radius: 10px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+}
+.ns-seg button {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0 6px;
+  border: 0;
+  background: transparent;
+}
+.ns-stepper {
+  display: grid;
+  grid-template-columns: 44px 1fr 44px auto;
+  gap: 8px;
+  align-items: center;
+}
+.ns-stepper button {
+  padding: 0;
+}
+.ns-stepper output {
+  min-width: 4.5em;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.ns-fine {
+  margin: 0;
+  padding: 8px;
   border: 1px solid var(--line);
   border-radius: 8px;
+}
+.ns-fine legend {
+  padding: 0 4px;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+.ns-fine .ns-row {
+  flex-wrap: nowrap;
+  gap: 4px;
+}
+.ns-panel .ns-icon {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0;
+  font-size: 1.1rem;
+}
+.ns-gap {
+  flex: 0 0 6px;
+}
+.ns-list {
   display: grid;
   gap: 8px;
-}
-.ns-align [role="tab"][aria-selected="true"] {
-  background: var(--ink);
-  color: var(--sheet);
-}
-.ns-immersive-controls {
-  display: grid;
-  gap: 8px;
-  margin-top: 8px;
 }
 .ns-dialog {
   position: fixed;
-  inset: auto 16px calc(16px + env(safe-area-inset-bottom, 0px)) 16px;
+  inset: auto 12px calc(12px + env(safe-area-inset-bottom, 0px)) 12px;
   z-index: 20;
   padding: 16px;
-  border-radius: 12px;
+  border-radius: 14px;
   background: var(--sheet);
   border: 1px solid var(--line);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
 }
 .ns-dialog h2 {
   margin-top: 0;

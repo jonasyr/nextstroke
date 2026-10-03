@@ -46,7 +46,7 @@
 
 - [x] Define finite source-normalized transforms and viewport projection.
 - [x] Implement opacity, split comparison (own canvas clip, D-053), original reveal, fit/reset, and layered render.
-- [ ] Verify current settings survive route and immersive-mode transitions.
+- [ ] Verify current settings survive route and immersive-mode transitions. (Editor ↔ image screen: done, D-054; leaving the route: open.)
 
 ## Task 3: Touch and controls
 
@@ -68,14 +68,15 @@
 
 ## Status (2026-10-03)
 
-Done and tested (unit tests plus Playwright in CI): legacy checklist (`docs/research/legacy-behavior.md`), bounded worker decode, HEIC native decode with an explained fallback message, single-page PDF via the pdf.js legacy build, renderer with opacity and tap/hold reveal, pinch/pan, alignment with button alternatives, cancellable correlation auto-align, four-point perspective with draggable corners and button nudges, PNG/JPEG export with share fallback, offline route, split view with a draggable divider and a slider (D-053).
+Done and tested (unit tests plus Playwright in CI): legacy checklist (`docs/research/legacy-behavior.md`), bounded worker decode, HEIC native decode with an explained fallback message, single-page PDF via the pdf.js legacy build, renderer with opacity and tap/hold reveal, pinch/pan, alignment with button alternatives, cancellable correlation auto-align, four-point perspective with draggable corners and button nudges, PNG/JPEG export with share fallback, offline route, split view with a draggable divider and a slider (D-053), full-screen editor with paper corners on both images, a corner magnifier, and a compact bottom panel (D-054).
 
 Open:
 - opencv.js automatic homography: waits for fixtures (Task 4).
-- Settings survive immersive mode, but not leaving the compare route: the state lives in the page and is lost on navigation. Keep it in a module-level store or accept it; decide with the iPhone review.
+- Settings survive the editor and the image screen, but not leaving the compare route: the state lives in the page and is lost on navigation. Keep it in a module-level store or accept it; decide with the iPhone review.
 - HEIC decoding where the browser cannot: `heic-to` fallback not added; Safari decodes HEIC natively, so this is measured on the iPhone first.
 - Perspective warp runs on the main thread (about 3 MP of bilinear sampling); move it to the worker if the iPhone shows a stall.
-- UX on small screens: the alignment panel sits below the image, so button adjustments are made without seeing the image. Review on the iPhone.
+- Automatic paper-corner suggestion (opencv.js, jscanify as reference) for the two corner steps: after fixtures.
+- Owner review of the new editor on the iPhone (first test 2026-10-03 rated the old page unusable).
 - Exit gate items below need real iPhones.
 
 ## Exit gate

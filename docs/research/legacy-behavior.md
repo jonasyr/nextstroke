@@ -41,7 +41,7 @@ Source: `legacy/fineliner-lupe/dist/app.js` (import commit `7473fa2`), read 2026
 | D1 | Imports up to 40 MP are decoded and exported at full size; 24 MP photos exceed the ~16.7 MP iOS canvas area and `toBlob` can return null silently | Working image capped by a pixel budget (spec §12: canvases ≤ 4096 × 4096, default 2048 px edge); export size bounded; a null blob is a visible error |
 | D2 | `contextmenu` and `selectstart` suppressed document-wide | Suppression scoped to the workspace element |
 | D3 | No manifest or service worker | Done in Phase 1 (installable, offline shell) |
-| D4 | Auto-align misses perspective differences | Manual four-point perspective alignment (done: draggable corners and button nudges, warp by homography); opencv.js homography later |
+| D4 | Auto-align misses perspective differences | Paper corners on both images, mapped by a homography (done, D-054: draggable rings with magnifier and button nudges); opencv.js suggestion later |
 | D5 | Element Fullscreen API requested | CSS immersive container only (spec §12) |
 
 ## Decision: WebMCP tool hook

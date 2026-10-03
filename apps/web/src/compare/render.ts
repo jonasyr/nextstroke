@@ -5,6 +5,7 @@ import {
   layerMatrix,
   type Matrix,
   splitOnScreen,
+  type View,
   viewMatrix,
 } from "@nextstroke/compare";
 
@@ -52,28 +53,135 @@ export function drawArtwork(
   ctx.restore();
 }
 
+interface Viewport {
+  width: number;
+  height: number;
+}
+
+interface Point {
+  x: number;
+  y: number;
+}
+
+/** Corner handles on screen, the one being moved, and whether to magnify it. */
+export interface CornerOverlay {
+  handles: readonly Point[];
+  active: number;
+  loupe?: boolean;
+}
+
+const HANDLE = 12;
+const HANDLE_ACTIVE = 16;
+const LOUPE_RADIUS = 56;
+const LOUPE_ZOOM = 3;
+const LOUPE_OFFSET = 110;
+
+/** Clear, draw the scene in screen coordinates, then the overlay. */
+function frame(
+  ctx: CanvasRenderingContext2D,
+  viewport: Viewport,
+  dpr: number,
+  scene: () => void,
+  overlay?: CornerOverlay,
+  extra?: () => void,
+) {
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, viewport.width, viewport.height);
+  ctx.save();
+  scene();
+  ctx.restore();
+  extra?.();
+  if (overlay) drawOverlay(ctx, viewport, scene, overlay);
+}
+
+function drawOverlay(
+  ctx: CanvasRenderingContext2D,
+  viewport: Viewport,
+  scene: () => void,
+  { handles, active, loupe }: CornerOverlay,
+) {
+  if (handles.length === 4) {
+    // The quad: a dark line under a light one, visible on any paper.
+    for (const [width, color] of [
+      [3, "rgba(0,0,0,0.55)"],
+      [1.5, "rgba(255,255,255,0.95)"],
+    ] as const) {
+      ctx.beginPath();
+      handles.forEach((p, i) => {
+        if (i === 0) ctx.moveTo(p.x, p.y);
+        else ctx.lineTo(p.x, p.y);
+      });
+      ctx.closePath();
+      ctx.lineWidth = width;
+      ctx.strokeStyle = color;
+      ctx.stroke();
+    }
+  }
+  for (const [i, p] of handles.entries()) {
+    // Rings, not dots: the corner itself stays visible inside the handle.
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, i === active ? HANDLE_ACTIVE : HANDLE, 0, Math.PI * 2);
+    ctx.lineWidth = i === active ? 4 : 3;
+    ctx.strokeStyle = i === active ? "#4f7cff" : "rgba(255,255,255,0.95)";
+    ctx.stroke();
+  }
+  const target = handles[active];
+  if (loupe && target) drawLoupe(ctx, viewport, scene, target);
+}
+
+/** The scene around `p`, magnified in a circle away from the finger. */
+function drawLoupe(ctx: CanvasRenderingContext2D, viewport: Viewport, scene: () => void, p: Point) {
+  const r = LOUPE_RADIUS;
+  const above = p.y - LOUPE_OFFSET;
+  const at = {
+    x: Math.min(Math.max(p.x, r), viewport.width - r),
+    y: Math.min(above - r >= 0 ? above : p.y + LOUPE_OFFSET, viewport.height - r),
+  };
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(at.x, at.y, r, 0, Math.PI * 2);
+  ctx.clip();
+  ctx.fillStyle = "#000";
+  ctx.fillRect(at.x - r, at.y - r, 2 * r, 2 * r);
+  ctx.translate(at.x, at.y);
+  ctx.scale(LOUPE_ZOOM, LOUPE_ZOOM);
+  ctx.translate(-p.x, -p.y);
+  scene();
+  ctx.restore();
+  ctx.beginPath();
+  ctx.moveTo(at.x - 10, at.y);
+  ctx.lineTo(at.x + 10, at.y);
+  ctx.moveTo(at.x, at.y - 10);
+  ctx.lineTo(at.x, at.y + 10);
+  ctx.lineWidth = 1.5;
+  ctx.strokeStyle = "#4f7cff";
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(at.x, at.y, r, 0, Math.PI * 2);
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = "rgba(255,255,255,0.95)";
+  ctx.stroke();
+}
+
 export function drawComparison(
   ctx: CanvasRenderingContext2D,
   input: {
     original: Drawable;
     reference: Drawable;
     state: CompareState;
-    viewport: { width: number; height: number };
+    viewport: Viewport;
     dpr: number;
     warped?: Drawable | null;
-    handles?: readonly { x: number; y: number }[];
-    activeHandle?: number;
   },
 ) {
   const { original, reference, state, viewport, dpr } = input;
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.clearRect(0, 0, viewport.width, viewport.height);
-  ctx.save();
   const fit = Math.min(viewport.width / original.width, viewport.height / original.height);
-  transform(ctx, viewMatrix(state.view, fit, viewport));
-  drawArtwork(ctx, original, reference, state, input.warped ?? null);
-  ctx.restore();
-  if (state.split !== null && effectiveOpacity(state) > 0) {
+  const scene = () => {
+    transform(ctx, viewMatrix(state.view, fit, viewport));
+    drawArtwork(ctx, original, reference, state, input.warped ?? null);
+  };
+  frame(ctx, viewport, dpr, scene, undefined, () => {
+    if (state.split === null || effectiveOpacity(state) === 0) return;
     const x = splitOnScreen(state.split, state.view, original, viewport);
     ctx.beginPath();
     ctx.moveTo(x, 0);
@@ -87,16 +195,29 @@ export function drawComparison(
     ctx.fill();
     ctx.strokeStyle = "#1d2329";
     ctx.stroke();
-  }
-  for (const [i, p] of (input.handles ?? []).entries()) {
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, i === input.activeHandle ? 14 : 11, 0, Math.PI * 2);
-    ctx.fillStyle = i === input.activeHandle ? "rgba(43,74,139,0.9)" : "rgba(255,255,255,0.85)";
-    ctx.fill();
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = "#1d2329";
-    ctx.stroke();
-  }
+  });
+}
+
+/** One image alone, for placing its paper corners. */
+export function drawSingle(
+  ctx: CanvasRenderingContext2D,
+  input: {
+    image: Drawable;
+    view: View;
+    viewport: Viewport;
+    dpr: number;
+    overlay?: CornerOverlay;
+  },
+) {
+  const { image, view, viewport, dpr } = input;
+  const fit = Math.min(viewport.width / image.width, viewport.height / image.height);
+  const scene = () => {
+    ctx.save();
+    transform(ctx, viewMatrix(view, fit, viewport));
+    ctx.drawImage(image, -image.width / 2, -image.height / 2);
+    ctx.restore();
+  };
+  frame(ctx, viewport, dpr, scene, input.overlay);
 }
 
 /** Pixels of an image, for the perspective warp. */
