@@ -57,7 +57,8 @@
 ## Task 4: Alignment
 
 - [x] Implement manual four-point perspective alignment first.
-- [ ] Add automatic feature/homography proposal (opencv.js AKAZE/ORB + RANSAC, ECC refinement, in a worker; D-036) with confidence and cancellation only after fixtures exist. Keep the legacy correlation search as a cheap first guess if tests show it helps.
+- [x] Add automatic feature/homography proposal (opencv.js ORB + RANSAC in a worker, D-055; AKAZE is not in the prebuilt build) with confidence, owner-approved before real fixtures, tested on synthetic ones. The legacy correlation search is the fallback. ECC refinement is still open.
+- [x] Suggest paper corners for both corner steps (own opencv.js detector, jscanify approach, D-055).
 - [x] Reject low-confidence results without moving the user's layer.
 
 ## Task 5: Offline route and export
@@ -68,14 +69,13 @@
 
 ## Status (2026-10-03)
 
-Done and tested (unit tests plus Playwright in CI): legacy checklist (`docs/research/legacy-behavior.md`), bounded worker decode, HEIC native decode with an explained fallback message, single-page PDF via the pdf.js legacy build, renderer with opacity and tap/hold reveal, pinch/pan, alignment with button alternatives, cancellable correlation auto-align, four-point perspective with draggable corners and button nudges, PNG/JPEG export with share fallback, offline route, split view with a draggable divider and a slider (D-053), full-screen editor with paper corners on both images, a corner magnifier, and a compact bottom panel (D-054).
+Done and tested (unit tests plus Playwright in CI): legacy checklist (`docs/research/legacy-behavior.md`), bounded worker decode, HEIC native decode with an explained fallback message, single-page PDF via the pdf.js legacy build, renderer with opacity and tap/hold reveal, pinch/pan, alignment with button alternatives, cancellable correlation auto-align, four-point perspective with draggable corners and button nudges, PNG/JPEG export with share fallback, offline route, split view with a draggable divider and a slider (D-053), full-screen editor with paper corners on both images, a corner magnifier, and a compact bottom panel (D-054), opencv.js in a worker for paper-corner suggestions and ORB + RANSAC auto-align with the correlation search as fallback, precached for offline use (D-055).
 
 Open:
-- opencv.js automatic homography: waits for fixtures (Task 4).
+- opencv.js (D-055) on the iPhone: load time, memory, and detection and alignment on real photos; ECC refinement; a trimmed build if the 13 MB precache or memory hurts.
 - Settings survive the editor and the image screen, but not leaving the compare route: the state lives in the page and is lost on navigation. Keep it in a module-level store or accept it; decide with the iPhone review.
 - HEIC decoding where the browser cannot: `heic-to` fallback not added; Safari decodes HEIC natively, so this is measured on the iPhone first.
 - Perspective warp runs on the main thread (about 3 MP of bilinear sampling); move it to the worker if the iPhone shows a stall.
-- Automatic paper-corner suggestion (opencv.js, jscanify as reference) for the two corner steps: after fixtures.
 - Owner review of the new editor on the iPhone (first test 2026-10-03 rated the old page unusable).
 - Exit gate items below need real iPhones.
 

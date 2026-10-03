@@ -13,6 +13,7 @@ export default defineConfig({
         "apps/web/src/main.tsx",
         "apps/web/src/compare/browser.ts",
         "apps/web/src/compare/decode.worker.ts",
+        "apps/web/src/compare/vision.worker.ts",
       ],
       thresholds: { lines: 90, branches: 90, functions: 90, statements: 90 },
     },

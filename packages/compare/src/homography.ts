@@ -35,7 +35,7 @@ function solve(a: number[][], b: number[]): number[] | null {
 }
 
 /** True when the quad is convex with a consistent winding (no fold, no collinear corners). */
-function isConvex(q: Quad): boolean {
+export function isConvex(q: Quad): boolean {
   let sign = 0;
   for (let i = 0; i < 4; i++) {
     const a = q[i] as Point;

@@ -9,6 +9,7 @@ import { type PdfLib, renderPdfPage } from "./pdf.ts";
 import type { CompareDeps } from "./QuickCompare.tsx";
 import { renderToBlob, toGray, toRgba } from "./render.ts";
 import { type ShareDeps, shareOrDownload } from "./share.ts";
+import { createVisionClient } from "./visionClient.ts";
 
 export const createBitmap: BitmapFactory = (source, options) => createImageBitmap(source, options);
 
@@ -60,6 +61,15 @@ const share: ShareDeps = {
   download,
 };
 
+/** opencv.js in a classic worker (importScripts, as in the iPhone probe), loaded on first use (D-055). */
+const vision =
+  typeof Worker !== "undefined" && typeof OffscreenCanvas !== "undefined"
+    ? createVisionClient(
+        () => new Worker(new URL("./vision.worker.ts", import.meta.url)),
+        (image) => createImageBitmap(image),
+      )
+    : null;
+
 export const browserDeps: CompareDeps = {
   decode,
   renderPdf: (data, choose) =>
@@ -71,4 +81,5 @@ export const browserDeps: CompareDeps = {
   fromRgba: (rgba) =>
     createImageBitmap(new ImageData(new Uint8ClampedArray(rgba.data), rgba.width, rgba.height)),
   now: () => performance.now(),
+  ...(vision ? { vision } : {}),
 };

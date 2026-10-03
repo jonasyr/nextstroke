@@ -306,8 +306,8 @@ Every build must deploy to ChatGPT Sites. The web app therefore:
 
 | Need | Library | License |
 | --- | --- | --- |
-| Warp, homography, ECC alignment, edges | opencv.js (`@techstark/opencv-js`, later trimmed), in a Web Worker; the manual four-point warp is own code (D-053) | Apache-2.0 |
-| Paper corner detection | Own detector on opencv.js, jscanify as reference; manual corners always available | MIT |
+| Feature homography, contours, later ECC alignment | opencv.js (`@techstark/opencv-js` 5.0.0, prebuilt, later trimmed), lazy-loaded in a classic Web Worker and precached for offline use: ORB + RANSAC alignment with the correlation search as fallback (D-055); the four-point warp is own code (D-053) | Apache-2.0 |
+| Paper corner detection | Own detector on opencv.js (D-055), jscanify as reference only; manual corners always available | Own code (jscanify MIT, not bundled) |
 | Natural strokes for structured overlays | perfect-freehand | MIT |
 | Pinch and pan | Own pointer state machine in `packages/compare` (D-053) | — |
 | Split comparison | Own canvas clip in the comparison renderer (D-053) | — |

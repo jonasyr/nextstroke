@@ -176,6 +176,69 @@ describe("paper corners in the state (two steps: reference, then original)", () 
       expect([cleared.corners, cleared.refCorners, cleared.cornerStep]).toEqual([null, null, null]);
     }
   });
+
+  const detected = [
+    { x: 0.2, y: 0.15 },
+    { x: 0.8, y: 0.1 },
+    { x: 0.85, y: 0.9 },
+    { x: 0.15, y: 0.85 },
+  ] as const;
+
+  it("places detected paper corners on a step the user has not touched yet", () => {
+    let s = run({ type: "corners-begin" });
+    expect(compare(s, { type: "corners-suggest", step: "original", corners: detected })).toBe(s);
+    s = compare(s, { type: "corners-suggest", step: "reference", corners: detected });
+    expect(s.refCorners).toEqual(detected);
+    s = compare(s, { type: "corners-next", corners: guess });
+    s = compare(s, { type: "corners-suggest", step: "original", corners: detected });
+    expect(s.corners).toEqual(detected);
+    expect(s.refCorners).toEqual(detected);
+  });
+
+  it("never replaces corners the user moved or placed earlier", () => {
+    const moved = run(
+      { type: "corners-begin" },
+      { type: "corner-nudge", dx: 1, dy: 0 },
+      { type: "corners-suggest", step: "reference", corners: detected },
+    );
+    expect(moved.refCorners?.[0]?.x).toBeCloseTo(CORNER_STEP);
+    const set = run(
+      { type: "corners-begin" },
+      { type: "corners-next", corners: guess },
+      { type: "corner-set", index: 0, point: { x: 0.3, y: 0.3 } },
+      { type: "corners-suggest", step: "original", corners: detected },
+    );
+    expect(set.corners?.[0]).toEqual({ x: 0.3, y: 0.3 });
+    const back = compare(set, { type: "corners-back" });
+    expect(compare(back, { type: "corners-suggest", step: "reference", corners: detected })).toBe(
+      back,
+    );
+    const again = run(
+      { type: "corners-begin" },
+      { type: "corners-next", corners: guess },
+      { type: "corners-done" },
+      { type: "corners-begin" },
+    );
+    expect(compare(again, { type: "corners-suggest", step: "reference", corners: detected })).toBe(
+      again,
+    );
+    const next = compare(again, { type: "corners-next", corners: IMAGE_CORNERS });
+    expect(compare(next, { type: "corners-suggest", step: "original", corners: detected })).toBe(
+      next,
+    );
+  });
+
+  it("applies an automatic alignment as corners of the whole reference", () => {
+    const s = run(
+      { type: "corners-begin" },
+      { type: "corners-next", corners: guess },
+      { type: "corners-done" },
+      { type: "corners-set", corners: detected },
+    );
+    expect(s.corners).toEqual(detected);
+    expect(s.refCorners).toBeNull();
+    expect(s.cornerStep).toBeNull();
+  });
 });
 
 describe("split view", () => {
