@@ -11,6 +11,9 @@ dependencies = [
   "pydantic>=2.9",
 ]
 
+[project.scripts]
+nextstroke-lab = "nextstroke_lab.cli:main"
+
 [dependency-groups]
 dev = [
   "hypothesis>=6.100",
