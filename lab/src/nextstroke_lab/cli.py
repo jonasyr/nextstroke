@@ -8,9 +8,13 @@ import sys
 from collections.abc import Sequence
 from pathlib import Path
 
+import numpy as np
+
 from nextstroke_lab.adapters.attempt_log import AttemptLog
+from nextstroke_lab.adapters.image_io import load_working_image, save_png
 from nextstroke_lab.domain.classification import Strategy, Trust
 from nextstroke_lab.domain.decision import DeviceEvidence, StudyEvidence, decide
+from nextstroke_lab.domain.geometry import crop_box_3_2
 from nextstroke_lab.evaluation import (
     EvaluationError,
     build_outcomes,
@@ -30,6 +34,29 @@ def _cost(value: str) -> tuple[Strategy, float]:
         return SHORT[name], float(amount)
     except (KeyError, ValueError) as error:
         raise argparse.ArgumentTypeError(f"expected s1|s2|s3=USD, got {value!r}") from error
+
+
+def _prepare(args: argparse.Namespace) -> int:
+    working = load_working_image(args.source)
+    height, width = working.pixels.shape[:2]
+    left, top, right, bottom = crop_box_3_2(width, height)
+    cropped = working.pixels[top:bottom, left:right]
+    case: Path = args.case_dir
+    save_png(np.ascontiguousarray(cropped), case / "original.png")
+    blank = np.zeros(cropped.shape[:2], dtype=np.uint8)
+    for name in ("editable.png", "protected.png"):
+        if not (case / name).exists():
+            save_png(blank, case / name)
+    print(
+        json.dumps(
+            {
+                "case": str(case),
+                "size": [right - left, bottom - top],
+                "source_sha256": working.source_sha256,
+            }
+        )
+    )
+    return 0
 
 
 def _candidate(args: argparse.Namespace) -> int:
@@ -103,6 +130,11 @@ def _decide(args: argparse.Namespace) -> int:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="nextstroke-lab", description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
+
+    prep = sub.add_parser("prepare", help="orient, scale, crop to 3:2, and add blank masks")
+    prep.add_argument("source", type=Path)
+    prep.add_argument("--case-dir", type=Path, required=True)
+    prep.set_defaults(run=_prepare)
 
     cand = sub.add_parser("candidate", help="composite and audit one provider output")
     cand.add_argument("case_dir", type=Path)
