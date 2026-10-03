@@ -306,11 +306,11 @@ Every build must deploy to ChatGPT Sites. The web app therefore:
 
 | Need | Library | License |
 | --- | --- | --- |
-| Warp, homography, ECC alignment, edges | opencv.js (`@techstark/opencv-js`, later trimmed), in a Web Worker | Apache-2.0 |
+| Warp, homography, ECC alignment, edges | opencv.js (`@techstark/opencv-js`, later trimmed), in a Web Worker; the manual four-point warp is own code (D-053) | Apache-2.0 |
 | Paper corner detection | Own detector on opencv.js, jscanify as reference; manual corners always available | MIT |
 | Natural strokes for structured overlays | perfect-freehand | MIT |
-| Pinch and pan | `@use-gesture` or `@panzoom/panzoom` | MIT |
-| Split comparison | img-comparison-slider | MIT |
+| Pinch and pan | Own pointer state machine in `packages/compare` (D-053) | — |
+| Split comparison | Own canvas clip in the comparison renderer (D-053) | — |
 | PDF page render | pdfjs-dist | Apache-2.0 |
 | HEIC fallback | heic-to, unmodified and lazy-loaded | LGPL-3.0 |
 | Accessible UI primitives | Radix UI | MIT |

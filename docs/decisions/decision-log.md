@@ -489,3 +489,13 @@
 - **Reason:** Current stable releases (D-037, D-039) with every quality gate fully working.
 - **Consequence:** Upgrade to TypeScript 7 once dependency-cruiser supports it. zod is a general runtime dependency, not one of the spec §13.2 reused libraries; the license check covers it like the rest.
 - **Reconsider when:** dependency-cruiser supports TypeScript 7, or Node 26 becomes LTS.
+
+## D-053 — Quick Compare draws split, gestures and manual warp itself
+
+- **Date:** 2026-10-03
+- **Refines:** D-036 for three Phase 2 parts: split view, pinch and pan, and the manual four-point warp.
+- **Selected:** One canvas renderer draws everything. The split view clips the reference to the right of a divider stored as a fraction of the original's width, so it follows pan and zoom and appears in exports. Pinch, pan, tap and hold come from the pure state machine in `packages/compare/src/gestures.ts`. The manual four-point warp uses an own homography from four points and a bilinear inverse-mapping warp (`packages/imaging/src/warp.ts`).
+- **Alternatives:** img-comparison-slider (a web component that compares two DOM images), `@use-gesture` or `@panzoom/panzoom`, opencv.js `warpPerspective` for the manual warp.
+- **Reason:** The comparison is one canvas with an aligned, possibly warped reference layer. A DOM slider over two images cannot show that layer without a second render path. The gesture libraries move DOM elements, while the canvas needs pointer events turned into view and layer changes; that state machine is small and tested without a browser. A four-point homography plus bilinear sampling is about 100 lines with tests and avoids loading opencv.js (about 10 MB) before it is needed.
+- **Consequence:** No new dependency. opencv.js stays planned for automatic homography (AKAZE/ORB + RANSAC, ECC) once fixtures exist, and can take over the warp in a worker if the iPhone shows the main-thread warp stalling. Spec §13.2 lists the own implementations for these rows.
+- **Reconsider when:** The split view needs a DOM element (for example, comparing two plain images without a layer), or gesture edge cases on the iPhone exceed the state machine.

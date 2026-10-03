@@ -45,12 +45,12 @@
 ## Task 2: Deterministic renderer
 
 - [x] Define finite source-normalized transforms and viewport projection.
-- [ ] Implement opacity, split comparison (img-comparison-slider), original reveal, fit/reset, and layered render.
+- [x] Implement opacity, split comparison (own canvas clip, D-053), original reveal, fit/reset, and layered render.
 - [ ] Verify current settings survive route and immersive-mode transitions.
 
 ## Task 3: Touch and controls
 
-- [x] Implement pan/pinch with explicit pointer lifecycle and cancellation, using `@use-gesture` or `@panzoom/panzoom` (D-036).
+- [x] Implement pan/pinch with explicit pointer lifecycle and cancellation, using an own pointer state machine (D-053; D-036 had named `@use-gesture` or `@panzoom/panzoom`).
 - [x] Provide button alternatives for position, scale, rotation, opacity, fit, and reset.
 - [x] Scope selection/drag/long-press suppression to the workspace.
 
@@ -68,11 +68,11 @@
 
 ## Status (2026-10-03)
 
-Done and tested (unit tests plus Playwright in CI): legacy checklist (`docs/research/legacy-behavior.md`), bounded worker decode, HEIC native decode with an explained fallback message, single-page PDF via the pdf.js legacy build, renderer with opacity and tap/hold reveal, pinch/pan, alignment with button alternatives, cancellable correlation auto-align, four-point perspective with draggable corners and button nudges, PNG/JPEG export with share fallback, offline route.
+Done and tested (unit tests plus Playwright in CI): legacy checklist (`docs/research/legacy-behavior.md`), bounded worker decode, HEIC native decode with an explained fallback message, single-page PDF via the pdf.js legacy build, renderer with opacity and tap/hold reveal, pinch/pan, alignment with button alternatives, cancellable correlation auto-align, four-point perspective with draggable corners and button nudges, PNG/JPEG export with share fallback, offline route, split view with a draggable divider and a slider (D-053).
 
 Open:
-- Split comparison: not built yet. The renderer is canvas-based, so a canvas clip is planned instead of img-comparison-slider (D-036 listed it); needs a decision entry when built.
 - opencv.js automatic homography: waits for fixtures (Task 4).
+- Settings survive immersive mode, but not leaving the compare route: the state lives in the page and is lost on navigation. Keep it in a module-level store or accept it; decide with the iPhone review.
 - HEIC decoding where the browser cannot: `heic-to` fallback not added; Safari decodes HEIC natively, so this is measured on the iPhone first.
 - Perspective warp runs on the main thread (about 3 MP of bilinear sampling); move it to the worker if the iPhone shows a stall.
 - UX on small screens: the alignment panel sits below the image, so button adjustments are made without seeing the image. Review on the iPhone.

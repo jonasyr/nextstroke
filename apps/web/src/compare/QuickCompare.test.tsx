@@ -380,3 +380,30 @@ describe("four-point perspective (Task 4)", () => {
     await waitFor(() => expect(vi.mocked(deps.fromRgba).mock.calls.length).toBeGreaterThan(1));
   });
 });
+
+describe("split view (Task 3)", () => {
+  it("splits the image, moves the divider by slider and by drag, and ends", async () => {
+    await loadBoth(makeDeps());
+    const toggle = screen.getByRole("button", { name: "Geteilt" });
+    fireEvent.click(toggle);
+    expect(toggle.getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getByText("LINKS ORIGINAL · RECHTS REFERENZ")).toBeTruthy();
+    const slider = screen.getByLabelText(/Teilung/) as HTMLInputElement;
+    expect(slider.value).toBe("50");
+    fireEvent.change(slider, { target: { value: "20" } });
+    expect(slider.value).toBe("20");
+    // The 1000 × 500 original fills the 400 × 200 workspace: the divider sits at x = 80.
+    const workspace = screen.getByLabelText(/Vergleichsfläche/);
+    fireEvent.pointerDown(workspace, { pointerId: 4, clientX: 85, clientY: 150 });
+    fireEvent.pointerMove(workspace, { pointerId: 4, clientX: 300, clientY: 150 });
+    fireEvent.pointerUp(workspace, { pointerId: 4 });
+    expect(slider.value).toBe("75");
+    expect(screen.getByText("LINKS ORIGINAL · RECHTS REFERENZ")).toBeTruthy();
+    // A tap away from the divider still reveals the original.
+    fireEvent.pointerDown(workspace, { pointerId: 5, clientX: 10, clientY: 10 });
+    fireEvent.pointerUp(workspace, { pointerId: 5 });
+    expect(screen.getByText("ORIGINAL · TIPPEN ZUM VERGLEICH")).toBeTruthy();
+    fireEvent.click(toggle);
+    expect(screen.queryByLabelText(/Teilung/)).toBeNull();
+  });
+});

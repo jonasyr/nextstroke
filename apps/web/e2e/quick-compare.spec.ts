@@ -139,3 +139,45 @@ test("aligns a perspective-distorted reference with four corner handles", async 
   await page.getByRole("button", { name: "Ecke nach rechts" }).click();
   await expect(page.getByRole("button", { name: "Perspektive entfernen" })).toBeVisible();
 });
+
+test("splits original and reference and drags the divider", async ({ page }) => {
+  await page.goto("#/compare");
+  const original = await syntheticImage(page, {
+    width: 1200,
+    height: 800,
+    type: "image/png",
+    seed: 5,
+  });
+  const reference = await syntheticImage(page, {
+    width: 1200,
+    height: 800,
+    type: "image/png",
+    seed: 6,
+  });
+  await page.getByLabel(/^Original wählen/).setInputFiles(original);
+  await expect(page.getByText("Bild geladen. Automatisch oder manuell ausrichten.")).toBeVisible();
+  await page.getByLabel(/^Referenz wählen/).setInputFiles(reference);
+  await expect(page.getByText("ÜBERLAGERUNG")).toBeVisible();
+  await page.getByRole("button", { name: "Geteilt" }).click();
+  await expect(page.getByText("LINKS ORIGINAL · RECHTS REFERENZ")).toBeVisible();
+  const slider = page.getByLabel(/Teilung/);
+  await expect(slider).toHaveValue("50");
+
+  await page.locator(".ns-workspace").scrollIntoViewIfNeeded();
+  const box = (await page.locator(".ns-workspace").boundingBox()) as {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+  const midY = box.y + box.height / 2;
+  await page.mouse.move(box.x + box.width / 2, midY);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.4, midY, { steps: 5 });
+  await page.mouse.move(box.x + box.width * 0.3, midY, { steps: 5 });
+  await page.mouse.up();
+  const value = Number(await slider.inputValue());
+  expect(value).toBeLessThan(45);
+  expect(value).toBeGreaterThan(0);
+  await expect(page.getByText("LINKS ORIGINAL · RECHTS REFERENZ")).toBeVisible();
+});

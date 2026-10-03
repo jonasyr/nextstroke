@@ -123,3 +123,28 @@ describe("perspective corners in the state", () => {
     expect(compare(s, { type: "image-replaced" }).corners).toBeNull();
   });
 });
+
+describe("split view", () => {
+  it("shows the original left and the full reference right of the divider", () => {
+    const split = run({ type: "split", on: true });
+    expect(split.split).toBe(0.5);
+    expect(effectiveOpacity(split)).toBe(1);
+    expect(badge(split)).toBe("compare.badge.split");
+    expect(effectiveOpacity(compare(split, { type: "hold", active: true }))).toBe(0);
+    expect(run({ type: "split", on: true }, { type: "split", on: false }).split).toBeNull();
+  });
+
+  it("moves the divider within the original", () => {
+    expect(run({ type: "split", on: true }, { type: "split-set", value: 0.2 }).split).toBe(0.2);
+    expect(run({ type: "split", on: true }, { type: "split-set", value: 1.4 }).split).toBe(1);
+    expect(run({ type: "split-set", value: 0.2 }).split).toBeNull();
+  });
+
+  it("ends when an opacity is chosen or alignment opens", () => {
+    expect(run({ type: "split", on: true }, { type: "half" }).split).toBeNull();
+    expect(run({ type: "split", on: true }, { type: "alignment", open: true }).split).toBeNull();
+    expect(run({ type: "alignment", open: true }, { type: "split", on: true }).aligning).toBe(
+      false,
+    );
+  });
+});
