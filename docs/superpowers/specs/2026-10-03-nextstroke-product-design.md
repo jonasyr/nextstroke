@@ -290,6 +290,22 @@ After Phase 0, the retained product may use a TypeScript workspace with:
 
 Phase 0 is allowed to use disposable scripts and a thin server endpoint. It must not prematurely freeze production interfaces.
 
+### 13.1 Reused libraries (D-036)
+
+| Need | Library | License |
+| --- | --- | --- |
+| Warp, homography, ECC alignment, edges | opencv.js (`@techstark/opencv-js`, later trimmed), in a Web Worker | Apache-2.0 |
+| Paper corner detection | Own detector on opencv.js, jscanify as reference; manual corners always available | MIT |
+| Natural strokes for structured overlays | perfect-freehand | MIT |
+| Pinch and pan | `@use-gesture` or `@panzoom/panzoom` | MIT |
+| Split comparison | img-comparison-slider | MIT |
+| PDF page render | pdfjs-dist | Apache-2.0 |
+| HEIC fallback | heic-to, unmodified and lazy-loaded | LGPL-3.0 |
+| Accessible UI primitives | Radix UI | MIT |
+| Project-package zip | fflate (JSZip as alternative) | MIT |
+| Optional mask handles | Konva | MIT |
+| Later, if Phase 0 shows need | TEED contours; SlimSAM-77 via transformers.js | MIT; Apache-2.0 |
+
 ## 14. Failure behavior
 
 | Failure | Required behavior |

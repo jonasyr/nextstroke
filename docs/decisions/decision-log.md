@@ -303,3 +303,12 @@
 - **Reason:** The manual budget route (D-031) made Phase 0 about 15–25 hours of manual generation. These rules cut it to roughly 6–9 hours without changing GO thresholds. All rules are pre-registered, and every attempt is still reported.
 - **Consequence:** S1 evidence is thinner but S1 cannot satisfy GO. Printed toner is not fineliner ink, so printed cases are reported separately. A next-day downgrade of a first-attempt success is not retried, which makes the gate slightly stricter.
 - **Reconsider when:** A budget for scripted API runs becomes available.
+
+## D-036 — Reuse existing open-source libraries
+
+- **Date:** 2026-10-03
+- **Selected:** Build on existing libraries instead of writing equivalents: opencv.js (Apache-2.0; prebuilt `@techstark/opencv-js` first, trimmed build later, in a Web Worker) for perspective warp, AKAZE/ORB + RANSAC homography, ECC refinement, and edges; jscanify (MIT) as reference for an own corner detector with manual fallback; perfect-freehand (MIT) for stroke rendering; `@use-gesture` or `@panzoom/panzoom` (MIT) for pinch and pan; img-comparison-slider (MIT) for split view; pdfjs-dist (Apache-2.0); native HEIC with heic-to (LGPL-3.0, unmodified, lazy-loaded) as fallback; Radix UI primitives (MIT) for accessible controls; fflate (MIT) for project-package zip export, with JSZip (MIT/GPL-3.0 dual) as alternative; Konva (MIT) only if mask handles need it. Later, only if Phase 0 shows a need: TEED (MIT) for contour suggestions and SlimSAM-77 (Apache-2.0) via transformers.js for region suggestions.
+- **Alternatives:** Writing these components ourselves; commercial scanner SDKs.
+- **Reason:** These libraries already solve the hard platform and math problems, are maintained, and are compatible with AGPL-3.0 distribution. Commercial SDKs cost money and conflict with the license.
+- **Consequence:** Masks stay in framework-independent bitmaps of our own. Every dependency's license is checked again when it is added. Avoid PiDiNet (research-only rider), heic2any (stale decoder), jsfeat and tracking.js (unmaintained), and full SAM/SAM2 or DexiNed on device (too large). Model weights need provenance checks before use.
+- **Reconsider when:** A library becomes unmaintained, changes license, or fails real-iPhone memory tests.

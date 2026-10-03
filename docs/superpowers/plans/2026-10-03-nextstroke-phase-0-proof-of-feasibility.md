@@ -34,7 +34,7 @@
 - [ ] Two to three standardized starter drawings exist on real drawing paper, made by the owner and licensed for the study.
 - [ ] Rating rubric and the thresholds in §15 of the spec are committed to the repository before any output is generated (pre-registration).
 - [ ] Training-use settings in both subscriptions are disabled.
-- [ ] Lab tooling is built and tested before day 1 (D-035): S3 stroke renderer, compositor with boundary audit, rating page with randomized IDs, and attempt-log form. It reuses existing open-source libraries where their licenses are AGPL-compatible.
+- [ ] Lab tooling is built and tested before day 1 (D-035): S3 stroke renderer, compositor with boundary audit, rating page with randomized IDs, and attempt-log form. It reuses opencv.js, perfect-freehand, and plain canvas (D-036), plus the legacy prototype's import, comparison, and export code where useful (D-029).
 - [ ] A Claude Project holds the frozen ideas + S3 instructions, so each case needs one chat.
 
 ## Fixed parameters (pre-registered)

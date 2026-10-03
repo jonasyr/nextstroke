@@ -53,7 +53,7 @@
 - [ ] Store immutable originals/checkpoints and versioned derived state.
 - [ ] Use storage estimate/persistence APIs when supported and explain best-effort storage.
 - [ ] Reopen safely after backgrounding and migrations.
-- [ ] Export/import a versioned project package with integrity hashes.
+- [ ] Export/import a versioned project package with integrity hashes, zipped with fflate (D-036).
 
 ## Task 5: Complete non-preview guided flow
 

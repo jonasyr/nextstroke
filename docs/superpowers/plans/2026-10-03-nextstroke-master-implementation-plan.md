@@ -6,7 +6,7 @@
 
 **Architecture:** Phase 0 is a disposable evidence lab. Production work begins only from passed evidence and keeps Quick Compare, material knowledge, coaching, imaging, and UI in separable units. `v0.1` stores projects locally; a minimal server exists only where secrets or paid model calls require it.
 
-**Tech direction:** TypeScript, React, Vite, Canvas 2D, IndexedDB/Dexie, Zod, PDF.js where retained, Vitest, Testing Library, Playwright plus real iPhone Safari. Exact versions are chosen after Phase 0.
+**Tech direction:** TypeScript, React, Vite with `vite-plugin-pwa`, Canvas 2D, IndexedDB/Dexie, Zod, Radix UI, opencv.js in a worker, perfect-freehand, pdfjs-dist, fflate, Vitest, Testing Library, Playwright plus real iPhone Safari. The full reuse list is spec §13.1 (D-036). Exact versions are chosen after Phase 0.
 
 **Spec:** `docs/superpowers/specs/2026-10-03-nextstroke-product-design.md`
 
