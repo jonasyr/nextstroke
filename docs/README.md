@@ -51,6 +51,7 @@ Implementation plans explain how to build the approved design; they do not silen
 | Privacy model and data flow | `docs/privacy/README.md` |
 | License status and dependency policy | `docs/legal/license.md` |
 | Web app build and deployment | `apps/web/README.md` |
+| Package interfaces and boundaries | `docs/architecture/interface-map.md` |
 | Current version targets | `docs/roadmap/` (created when needed; until then spec §16) |
 | Experiment results | `docs/research/` |
 | Contributor and agent rules | root `AGENTS.md` and `CONTRIBUTING.md` |
