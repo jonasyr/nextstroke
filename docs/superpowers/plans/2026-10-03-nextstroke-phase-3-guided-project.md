@@ -44,7 +44,7 @@
 ## Task 3: Structured coaching
 
 - [ ] Define input schema for intent, target area, protected details, skill level, tool, and paper.
-- [ ] Return exactly three bounded ideas with risk level and required technique.
+- [ ] Return exactly three bounded ideas with risk level, required technique, and Careful/Balanced/Bold classification (D-014).
 - [ ] Generate ordered physical instructions from rule-approved facts only.
 - [ ] Show source/evidence summaries in accessible language.
 
@@ -53,7 +53,7 @@
 - [ ] Store immutable originals/checkpoints and versioned derived state.
 - [ ] Use storage estimate/persistence APIs when supported and explain best-effort storage.
 - [ ] Reopen safely after backgrounding and migrations.
-- [ ] Export/import a versioned project package with integrity hashes.
+- [ ] Export/import a versioned project package with integrity hashes, zipped with fflate (D-036).
 
 ## Task 5: Complete non-preview guided flow
 

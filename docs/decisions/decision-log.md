@@ -145,6 +145,7 @@
 ## D-017 — Repository and quality policy
 
 - **Date:** 2026-10-03
+- **Scope narrowed by:** D-024. Applies to retained code from Phase 1 onward; disposable Phase 0 experiment code is exempt.
 - **Selected:** Full monorepo boundaries, strong `AGENTS.md`, durable product/security/privacy docs, and CI gates from the start.
 - **Alternatives:** Simpler initial documentation/CI; stricter mandatory per-change reviewer and coverage rules.
 - **Reason:** Image privacy, Safari behavior, and model boundaries are too important to remain implicit.
@@ -214,7 +215,7 @@
 - **Selected:** Distinguish controlled overlays from experimental inspiration.
 - **Alternatives:** Hide every failed preview; repeatedly regenerate until something looks acceptable.
 - **Reason:** The owner wants the best uncertain idea to remain visible, but uncertainty must not become a false safety claim.
-- **Consequence:** A failed candidate may appear with prominent warning and physical guidance. It is not called safe or exact, and default export includes its warning or excludes it as a clean instruction layer.
+- **Consequence:** A failed candidate may appear with prominent warning and physical guidance. It is not called safe or exact. Export behavior is specified by D-033.
 
 ## D-026 — Local projects and export before accounts or sync
 
@@ -247,3 +248,116 @@
 - **Alternatives:** Leave the app in a separate private workspace; discard it and rebuild only from documentation; copy only selected snippets.
 - **Reason:** The public repository must preserve the actual working upload, comparison, alignment, gesture, PDF, immersive-view, and export behavior that motivated NextStroke.
 - **Consequence:** The imported `dist/` app and its local PDF.js assets are a runnable behavioral reference. New production architecture remains governed by Phase 0 and must not treat the compact legacy bundle as the desired module structure.
+
+## D-030 — Phase 0 corpus is fineliner-only
+
+- **Date:** 2026-10-03
+- **Supersedes:** The 15 fineliner / 10 colored-pencil / 5 watercolor split in the earlier spec and Phase 0 plan.
+- **Selected:** 30 fineliner photographs.
+- **Alternatives:** 20 fineliner plus 10 colored pencil; keep 15/10/5.
+- **Reason:** Only fineliner can qualify `v0.1`. With 15 cases one case moves the success rate by 6.7 points; 30 cases make the 70% gate less noisy and spend no effort on media that cannot affect the decision.
+- **Consequence:** Colored pencil and watercolor evidence moves entirely to their own later gates.
+- **Reconsider when:** A colored-pencil study is approved after fineliner passes.
+
+## D-031 — Phase 0 runs manually on existing subscriptions
+
+- **Date:** 2026-10-03
+- **Selected:** No additional spend. Image strategies run manually in ChatGPT (Plus/Pro); ideas, instructions, and structured strokes run manually in Claude (Pro/Max).
+- **Alternatives:** Paid API with a small cap of about USD 20; a hybrid of the two; pausing Phase 0.
+- **Reason:** The owner has no budget for API usage. Manual runs can still show feasibility if every attempt is logged.
+- **Consequence:** No API calls, deployed server, or automation of consumer apps. Model versions cannot be pinned; the UI model label and date are recorded instead. Cost becomes an API-equivalent estimate. Training-use settings are disabled before uploads, and consent names the services. Phase 4 must reconfirm the retained strategy through the production API path on a fresh holdout set before a public beta.
+- **Reconsider when:** A budget for API evaluation becomes available, or manual evidence is too noisy to decide.
+
+## D-032 — No STOP outcome in Phase 0
+
+- **Date:** 2026-10-03
+- **Selected:** Phase 0 has GO and PIVOT outcomes only. Any unmet GO criterion leads to PIVOT; the owner selects and records the pivot.
+- **Alternatives:** The review's rule (stop the guided coach below 60% beginner execution and continue Quick Compare alone); a STOP that always requires an owner decision.
+- **Reason:** Owner choice. The owner decides the direction after reading the Phase 0 report instead of committing to a predefined stop.
+- **Consequence:** The continuation prompt's request for STOP criteria is answered by this decision. The default pivot for preview failures remains the spec's pivot product; other pivots are chosen and recorded by the owner.
+- **Reconsider when:** A pivot also fails its own evaluation.
+
+## D-033 — Experimental inspiration export
+
+- **Date:** 2026-10-03
+- **Clarifies:** D-025, which allowed either a warning or exclusion; project state and Phase 4 wording conflicted.
+- **Selected:** An experimental image can be exported or shared only with a visible warning drawn into the pixels. Clean export is never offered. Instruction-only export is always allowed.
+- **Alternatives:** Never exportable; clean export after explicit confirmation.
+- **Reason:** A warning that lives only in app UI disappears as soon as the image leaves the app.
+- **Reconsider when:** Beta users show that the burned-in warning blocks a legitimate need.
+
+## D-034 — Phase 0 beginner study materials and device scope
+
+- **Date:** 2026-10-03
+- **Selected:** Every participant first works on an owner-made standardized starter drawing with pre-generated previews; afterwards a participant may optionally use their own work with consent. Phase 0 device testing uses the owner's current iPhone only.
+- **Alternatives:** Standardized starters only; participants' own work only. For devices: borrowing an iPhone 11-class device before Phase 0.
+- **Reason:** Standardized starters make the worsening rubric comparable; optional own work adds realism. Only a current iPhone is available.
+- **Consequence:** The iPhone 11-class test is an open Phase 0 risk and must pass before the Phase 2 exit gate.
+- **Reconsider when:** An iPhone 11-class device becomes available before Phase 0 starts.
+
+## D-035 — Reduce Phase 0 manual effort
+
+- **Date:** 2026-10-03
+- **Selected:** S2/S3 attempts stop at the first `controlled` screening result (up to 3); a strategy stops after 10 failed cases; S1 runs once on 10 pre-selected cases; ideas and S3 strokes share one Claude chat per case; lab tooling is built before day 1; up to 10 of 30 cases may be photographs of printed CC0/CC BY line drawings.
+- **Alternatives:** Exactly 3 attempts for every case and strategy (about 300 manual interactions); a paid API run of about USD 10–20.
+- **Reason:** The manual budget route (D-031) made Phase 0 about 15–25 hours of manual generation. These rules cut it to roughly 6–9 hours without changing GO thresholds. All rules are pre-registered, and every attempt is still reported.
+- **Consequence:** S1 evidence is thinner but S1 cannot satisfy GO. Printed toner is not fineliner ink, so printed cases are reported separately. A next-day downgrade of a first-attempt success is not retried, which makes the gate slightly stricter.
+- **Reconsider when:** A budget for scripted API runs becomes available.
+
+## D-036 — Reuse existing open-source libraries
+
+- **Date:** 2026-10-03
+- **Selected:** Build on existing libraries instead of writing equivalents: opencv.js (Apache-2.0; prebuilt `@techstark/opencv-js` first, trimmed build later, in a Web Worker) for perspective warp, AKAZE/ORB + RANSAC homography, ECC refinement, and edges; jscanify (MIT) as reference for an own corner detector with manual fallback; perfect-freehand (MIT) for stroke rendering; `@use-gesture` or `@panzoom/panzoom` (MIT) for pinch and pan; img-comparison-slider (MIT) for split view; pdfjs-dist (Apache-2.0); native HEIC with heic-to (LGPL-3.0, unmodified, lazy-loaded) as fallback; Radix UI primitives (MIT) for accessible controls; fflate (MIT) for project-package zip export, with JSZip (MIT/GPL-3.0 dual) as alternative; Konva (MIT) only if mask handles need it. Later, only if Phase 0 shows a need: TEED (MIT) for contour suggestions and SlimSAM-77 (Apache-2.0) via transformers.js for region suggestions.
+- **Alternatives:** Writing these components ourselves; commercial scanner SDKs.
+- **Reason:** These libraries already solve the hard platform and math problems, are maintained, and are compatible with AGPL-3.0 distribution. Commercial SDKs cost money and conflict with the license.
+- **Consequence:** Masks stay in framework-independent bitmaps of our own. Every dependency's license is checked again when it is added. Avoid PiDiNet (research-only rider), heic2any (stale decoder), jsfeat and tracking.js (unmaintained), and full SAM/SAM2 or DexiNed on device (too large). Model weights need provenance checks before use.
+- **Reconsider when:** A library becomes unmaintained, changes license, or fails real-iPhone memory tests.
+
+## D-037 — Tooling: uv for Python, pnpm for TypeScript, one setup script
+
+- **Date:** 2026-10-03
+- **Selected:** Python tooling (Phase 0 desktop analysis such as compositing, boundary audit, and metrics) uses uv with a `pyproject.toml` and lockfile. The web app uses Node with pnpm. `scripts/setup.sh` is the single idempotent entry point: it checks tools, prepares the legacy prototype, and runs `uv sync` or `pnpm install --frozen-lockfile` only when the matching manifest exists.
+- **Alternatives:** pip/venv or Poetry; npm or yarn; per-directory setup instructions.
+- **Reason:** Owner preference for uv; lockfiles make runs reproducible; one script keeps setup simple for humans and agents.
+- **Consequence:** No Python or Node manifest exists until Phase 0 tooling is approved. The setup script must stay idempotent and non-interactive.
+
+## D-038 — ChatGPT Sites is the required host
+
+- **Date:** 2026-10-03
+- **Selected:** Every deployable build must run on ChatGPT Sites (OpenAI's hosting; the legacy prototype already deploys there via `.openai/hosting.json`). Static mode is the default; Worker mode is allowed only if a server-side secret is required.
+- **Alternatives:** GitHub Pages, Cloudflare Pages, or another static host.
+- **Reason:** Owner constraint; hosting is included in the existing ChatGPT plan.
+- **Consequence:** Facts verified from learn.chatgpt.com/docs/sites on 2026-10-03: public beta with unpublished plan limits; sites are private until public publishing is enabled; HTTPS at the origin root of `<slug>.<owner>.chatgpt.site` (each site its own origin); traffic analytics recorded automatically; no data residency; Worker mode supports secrets, environment variables, and outbound HTTPS; deployment only through ChatGPT, not CI. Not documented and therefore to be tested on a real deployment: `.wasm` MIME type, file and deploy size limits, custom headers (third-party reports say `_headers` is ignored in static mode, so no COOP/COEP and no threaded WASM), SPA fallback, injected provider scripts, service worker and manifest behavior, and iPhone Home Screen install. The app must work single-threaded, use hash routing or a single route, set no requirement on custom headers, and keep its build a plain static directory.
+- **Reconsider when:** A deployment probe fails a deciding criterion, the beta ends or changes terms, or usage limits remove public access.
+
+## D-039 — Architecture and automated quality guardrails
+
+- **Date:** 2026-10-03
+- **Selected:** Modular, testable architecture enforced by tools, applied to Phase 0 lab code as well as retained code:
+  - pure domain logic (masks, compositing rules, classification, decisions, material rules) separate from I/O, UI, and providers, with ports and adapters at the edges;
+  - one responsibility per module; dependencies point inward toward domain code and are checked automatically;
+  - test-driven development; domain modules aim for full branch coverage;
+  - Python: Ruff for lint and format, mypy in strict mode, pytest, all through uv;
+  - TypeScript (from Phase 1): Biome for lint and format, `tsc --strict`, dependency-cruiser for module boundaries, Vitest;
+  - pre-commit hooks run format, lint, type checks, and the documentation link check; GitHub Actions CI runs the same checks plus tests on every push and pull request;
+  - git workflow in `CONTRIBUTING.md`: short-lived branches, Conventional Commits, pull requests into `main` with green CI, no history rewrites on shared branches, lockfiles committed.
+- **Alternatives:** ESLint + Prettier; manual review only; quality tooling deferred to Phase 1.
+- **Reason:** Owner request to keep the product from "going rogue". Automated checks stop drift between plan and code cheaply, including in disposable experiment code that feeds the GO decision.
+- **Consequence:** Supersedes D-017's "from the start" scope note for tooling: lab code is disposable but still linted, typed, and tested. CI uses only free GitHub Actions minutes for a public repository.
+- **Reconsider when:** A tool blocks iPhone or ChatGPT Sites compatibility, or its license changes.
+
+## D-040 — Product language
+
+- **Date:** 2026-10-03
+- **Selected:** The `v0.1` user interface is German. English follows later. From Phase 1, all user-facing strings live in a message catalog keyed by ID, with `de` as the only shipped locale.
+- **Alternatives:** English first; both languages in `v0.1`.
+- **Reason:** Owner choice; the existing prototype and first users are German-speaking.
+- **Consequence:** Documentation, code, identifiers, and commit messages stay English. Material-claim paraphrases and instructions are written in German for `v0.1`. Phase 0 study materials are German.
+- **Reconsider when:** English-speaking users are recruited for a beta.
+
+## D-041 — Phase 0 plan approved
+
+- **Date:** 2026-10-03
+- **Selected:** The owner approved the revised Phase 0 plan, including the values proposed in the readiness review: study data deleted no later than 90 days after the Phase 0 decision, a 2048 px working edge, at least 10 cases with critical contours inside or touching the editable region, and a 100 ms main-thread threshold.
+- **Also decided:** The legacy demo images (`legacy/fineliner-lupe/dist/original.png`, `improved.png`) are not used as fixtures or corpus cases, because the artwork is not fineliner-only.
+- **Consequence:** Phase 0 is the active phase. Execution starts with prerequisites; the lab code lives in `lab/` on its own branch and is disposable unless a later plan retains it.

@@ -1,0 +1,14 @@
+# Environments and caches
+.venv/
+__pycache__/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+node_modules/
+
+# Never commit experiment data or artwork (private store lives outside git)
+lab/private/
+*.local.*
+.env
+.env.*

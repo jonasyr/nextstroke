@@ -6,7 +6,7 @@
 
 **Architecture:** Phase 0 is a disposable evidence lab. Production work begins only from passed evidence and keeps Quick Compare, material knowledge, coaching, imaging, and UI in separable units. `v0.1` stores projects locally; a minimal server exists only where secrets or paid model calls require it.
 
-**Tech direction:** TypeScript, React, Vite, Canvas 2D, IndexedDB/Dexie, Zod, PDF.js where retained, Vitest, Testing Library, Playwright plus real iPhone Safari. Exact versions are chosen after Phase 0.
+**Tech direction:** TypeScript, React, Vite with `vite-plugin-pwa`, Canvas 2D, IndexedDB/Dexie, Zod, Radix UI, opencv.js in a worker, perfect-freehand, pdfjs-dist, fflate, Vitest, Testing Library, Playwright plus real iPhone Safari. The full reuse list is spec §13.2 (D-036). Hosting is ChatGPT Sites (spec §13.1, D-038). Tooling: pnpm for TypeScript, uv for Python lab tooling, `scripts/setup.sh` as entry point (D-037). Exact versions are chosen after Phase 0.
 
 **Spec:** `docs/superpowers/specs/2026-10-03-nextstroke-product-design.md`
 
@@ -22,14 +22,14 @@
 - First public persistence is local plus export; no account or cloud sync.
 - Real iPhone Safari is a release gate.
 - No user art, secrets, proprietary catalog copies, or image-content telemetry in git or logs.
-- Paid live-model tests require explicit owner approval and cost limits.
+- Paid live-model tests require explicit owner approval and cost limits. Phase 0 uses no paid API (D-031).
 
 ## Phase order
 
 | Phase | Plan | Outcome | Start gate |
 | --- | --- | --- | --- |
 | 0 | `2026-10-03-nextstroke-phase-0-proof-of-feasibility.md` | Evidence on preview, device, cost, and beginner execution | Owner approves experiment |
-| 1 | `2026-10-03-nextstroke-phase-1-foundation.md` | Lean retained workspace derived from passed experiments | Every Phase 0 GO criterion passes or pivot is approved |
+| 1 | `2026-10-03-nextstroke-phase-1-foundation.md` | Lean retained workspace derived from passed experiments | Every Phase 0 GO criterion passes or the owner records a pivot (no STOP outcome, D-032) |
 | 2 | `2026-10-03-nextstroke-phase-2-quick-compare.md` | Offline comparison utility on real iPhones | Foundation green |
 | 3 | `2026-10-03-nextstroke-phase-3-guided-project.md` | Fineliner knowledge, three ideas, instructions, calibration, local projects | Quick Compare useful and stable |
 | 4 | `2026-10-03-nextstroke-phase-4-beta-cloud-ai.md` | Passed controlled-preview path, checkpoints, export, public beta hardening | Coach useful without generated preview |
@@ -46,6 +46,7 @@ Cloud accounts/sync are not Phase 4. They require demonstrated demand and a futu
 | Compare transforms/rendering | Phase 2 | Framework-independent and shared by checkpoint view |
 | Materials/evidence/rules | Phase 3 | Offline dataset, provenance required |
 | Local project repository/export | Phase 3 | Recoverable failures and explicit backup |
+| Checkpoint capture and comparison | Phase 3 (non-preview flow) | Phase 4 adds preview state to the same checkpoint view |
 | Retained preview adapter | Phase 4 | Only the Phase 0 winner; provider output remains untrusted |
 
 ## Release gates
@@ -66,7 +67,7 @@ Cloud accounts/sync are not Phase 4. They require demonstrated demand and a futu
 
 - Original/reference import, manual alignment, opacity, original reveal, CSS immersive mode, and export work offline.
 - Automatic alignment exposes confidence and manual fallback.
-- Real-device memory and gesture checklist passes on oldest supported and current iPhone.
+- Real-device memory and gesture checklist passes on oldest supported (iPhone 11 class) and current iPhone; this closes the device risk left open in Phase 0 (D-034).
 
 ### Phase 3
 
@@ -81,7 +82,7 @@ Cloud accounts/sync are not Phase 4. They require demonstrated demand and a futu
 - Controlled overlays obey original-copy boundaries.
 - Experimental inspiration is visibly distinct and never called safe.
 - Checkpoint comparison closes the physical loop.
-- Public deployment has rate/cost limits, privacy copy, accessibility, and real-iPhone evidence.
+- Public deployment on ChatGPT Sites has rate/cost limits, privacy copy (including Sites analytics), accessibility, and real-iPhone evidence.
 
 ## Estimated solo sequence
 
@@ -92,6 +93,17 @@ Cloud accounts/sync are not Phase 4. They require demonstrated demand and a futu
 | Stable public v1 | 24–32 weeks | 40–60 weeks | 70–100+ weeks |
 
 Estimates include device testing and user research. They are not promises.
+
+## Estimated model and operating cost
+
+| Stage | Range | Basis |
+| --- | --- | --- |
+| Phase 0 | USD 0 additional | Manual runs in existing ChatGPT and Claude subscriptions (D-031) |
+| Phase 0, if repeated through the API | about USD 10–20 | About 180 image edits at about USD 0.02–0.04 each plus about 90 text/vision calls; estimate from OpenAI published pricing checked 2026-10-03, to be measured |
+| Per accepted preview in production | about USD 0.03–0.30 | Depends on strategy: S3 strokes cost cents, image strategies about USD 0.02–0.04 per attempt at medium quality plus retries |
+| Small local beta | USD 10–100 per month plus model usage | Static hosting, minimal API, cost ceilings |
+
+All figures are estimates from the 2026-10-03 review and published prices; Phase 0 and the Phase 4 API reconfirmation replace them with measured values.
 
 ## Context and decision maintenance
 
