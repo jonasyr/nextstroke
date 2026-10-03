@@ -16,13 +16,20 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Literal, Protocol
 
+import numpy as np
+from numpy.typing import NDArray
+
 from nextstroke_lab.adapters.attempt_log import AttemptLog, AttemptRecord
 from nextstroke_lab.adapters.case_prompts import (
     S1_REVISION,
+    S1_REVISION_V2,
     S2_REVISION,
+    S2_REVISION_V2,
     orientation_label,
     s1_prompt,
+    s1_prompt_v2,
     s2_prompt,
+    s2_prompt_v2,
 )
 from nextstroke_lab.adapters.image_io import RegistrationError, encode_png
 from nextstroke_lab.adapters.openai_images import (
@@ -40,7 +47,7 @@ from nextstroke_lab.domain.costs import (
     reserve_usd,
 )
 from nextstroke_lab.domain.decision import MAX_ATTEMPTS
-from nextstroke_lab.domain.masks import provider_edit_mask
+from nextstroke_lab.domain.masks import provider_edit_mask, region_outline
 from nextstroke_lab.pipeline import build_candidate, load_case
 
 Short = Literal["s1", "s2"]
@@ -62,6 +69,7 @@ class RunSettings:
     quality: str = "medium"
     cap_usd: float = 5.0
     allow_unreviewed: bool = False  # only for post-hoc comparison cases such as c08b
+    prompt: Literal["v1", "v2"] = "v1"  # v2: English, outlined reference image (D-049)
     prices: TokenPrices = field(default=GPT_IMAGE_2_5_PRICES)
 
 
@@ -93,7 +101,7 @@ def record_screening(  # noqa: PLR0913 - keyword-only screening fields
 
 def _check_protocol(
     root: Path, case_dir: Path, short: str, attempt: int, settings: RunSettings
-) -> tuple[str, str]:
+) -> tuple[dict[str, object], str]:
     if short == "s1" and attempt != 1:
         raise ProtocolError("S1 has one attempt per case (D-035)")
     if not 1 <= attempt <= MAX_ATTEMPTS:
@@ -113,24 +121,63 @@ def _check_protocol(
             raise ProtocolError(f"screen attempt {attempt - 1} before running attempt {attempt}")
         if "controlled" in done.values():
             raise ProtocolError(f"{case_dir.name} {short} is already controlled; stop (D-035)")
-    return str(meta["desired_change"]), "" if reviewed else "; annotation not owner-reviewed"
+    if settings.prompt == "v2":
+        for key in ("desired_change_en", "protected_description_en"):
+            if not meta.get(key):
+                raise ProtocolError(f"{case_dir.name} annotation needs {key} for prompt v2")
+    return meta, "" if reviewed else "; annotation not owner-reviewed"
 
 
-def _request(case_dir: Path, short: str, change: str, settings: RunSettings) -> EditRequest:
+MAGENTA = np.array([255, 0, 255], dtype=np.uint8)
+
+
+def _outlined(pixels: NDArray[np.uint8], editable: NDArray[np.bool_]) -> NDArray[np.uint8]:
+    out = pixels.copy()
+    edge = region_outline(editable, thickness=max(2, round(0.003 * max(editable.shape))))
+    out[edge] = MAGENTA
+    return out
+
+
+def _prompt(
+    short: str, meta: dict[str, object], settings: RunSettings, size: tuple[int, int]
+) -> str:
+    width, height = size
+    if settings.prompt == "v1":
+        change = str(meta["desired_change"])
+        return (
+            s1_prompt(change)
+            if short == "s1"
+            else s2_prompt(change, orientation_label(width, height))
+        )
+    change, protect = str(meta["desired_change_en"]), str(meta["protected_description_en"])
+    if short == "s1":
+        return s1_prompt_v2(change, protect)
+    orientation = "landscape 3:2" if width >= height else "portrait 2:3"
+    return s2_prompt_v2(change, protect, orientation)
+
+
+def _request(
+    case_dir: Path, short: str, meta: dict[str, object], settings: RunSettings
+) -> EditRequest:
     case = load_case(case_dir)
     height, width = case.masks.shape
     size_label = api_size(width, height)
     columns, rows = (int(v) for v in size_label.split("x"))
     target = (columns, rows)
     image = encode_png(case.working.pixels, target)
-    if short == "s1":
-        mask: bytes | None = encode_png(provider_edit_mask(case.masks.editable), target)
-        prompt, background = s1_prompt(change), "opaque"
-    else:
-        mask = None
-        prompt, background = s2_prompt(change, orientation_label(width, height)), "transparent"
+    mask = encode_png(provider_edit_mask(case.masks.editable), target) if short == "s1" else None
+    references: tuple[bytes, ...] = ()
+    if settings.prompt == "v2":
+        references = (encode_png(_outlined(case.working.pixels, case.masks.editable), target),)
     return EditRequest(
-        settings.model, prompt, image, mask, size_label, settings.quality, background
+        settings.model,
+        _prompt(short, meta, settings, (width, height)),
+        image,
+        mask,
+        size_label,
+        settings.quality,
+        "opaque" if short == "s1" else "transparent",
+        references,
     )
 
 
@@ -147,13 +194,17 @@ def run_attempt(  # noqa: PLR0913 - explicit collaborators keep the runner testa
 ) -> dict[str, object]:
     case_dir = root / "cases" / case_id
     strategy = STRATEGIES[short]
-    change, caveat = _check_protocol(root, case_dir, short, attempt, settings)
+    meta, caveat = _check_protocol(root, case_dir, short, attempt, settings)
     log = AttemptLog(root / "attempts.jsonl")
     costs = [r.cost_usd for r in log.read() if r.cost_usd is not None]
     check_budget(sum(costs), reserve_usd(costs), settings.cap_usd)
 
-    request = _request(case_dir, short, change, settings)
-    revision = S1_REVISION if short == "s1" else S2_REVISION
+    request = _request(case_dir, short, meta, settings)
+    revisions = {
+        "v1": {"s1": S1_REVISION, "s2": S2_REVISION},
+        "v2": {"s1": S1_REVISION_V2, "s2": S2_REVISION_V2},
+    }
+    revision = revisions[settings.prompt][short]
     started_at = now()
     start = clock()
     base = {

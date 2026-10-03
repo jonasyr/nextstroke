@@ -441,3 +441,18 @@
 - **Reason:** Owner choice, to move on without recruiting participants now. S2 has no margin (5 of 7), misplaces strokes and drew one refusal on harmless art.
 - **Consequence:** The biggest open product risk, whether the coach actually helps a beginner draw, is untested until the end of Phase 3. Phases 1–3 must not assume it. Phase 4 still reconfirms S3 through the production API path on a fresh holdout of real, consented photos.
 - **Reconsider when:** The Phase 3 beginner gate fails (then the owner selects a further pivot), or S3 fails the Phase 4 holdout.
+
+## D-049 — Follow-up test: shading tasks and v2 prompts
+
+- **Date:** 2026-10-03
+- **Refines:** D-048. S2 is not retained for the simple additions Phase 0 tested; whether S3 or S2 wins on larger changes such as shading is open until this test reports.
+- **Selected:**
+  - A separate experiment root (`lab/private/x2/`, private) with 7 shading tasks on the GO images (c01h–c07h, Claude-drafted masks, not owner-reviewed) and the 7 original simple tasks.
+  - Prompts `s1-v2` and `s2-v2` follow OpenAI's GPT Image 2.5 prompting guide (checked 2026-10-03): English, labeled sections, numbered image roles, "change only" plus an explicit preserve list, a transparent-output prompt that describes no background, and a second input image showing the allowed area outlined in magenta. Quality `high`, model unchanged (`gpt-image-2.5-sunburst`).
+  - S3 gains hatch fills (stroke-plan schema version 2): a polygon plus angle, spacing, width and an optional cross pass, rendered deterministically.
+  - One attempt per strategy and case: S1-v2, S2-v2 and S3-v2 on c01h–c07h, plus S2-v2 on the 7 simple tasks to measure the prompt effect against S2-v1. The owner rates all candidates in one blinded round. The USD 5 cap of D-045 still covers all OpenAI spend.
+  - Pixel-identical regions come from local compositing, not from the prompt: the guide says to composite edits into the original when a region must stay pixel-identical, which the copyback and overlay compositing already do.
+- **Alternatives:** Keep D-048 unchanged; retest only with v1 prompts.
+- **Reason:** Owner's concern that Phase 0 tested only very simple additions, that shading will be harder for stroke plans, and that prompt quality matters.
+- **Consequence:** One attempt per case measures first-attempt quality only. Masks are drafts; the owner sees them in the rating view. The result may change which strategy Phase 4 retains; Phase 1 does not depend on it.
+- **Reconsider when:** The results are in.

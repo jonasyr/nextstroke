@@ -233,3 +233,46 @@ def test_unreviewed_annotations_run_only_when_allowed_and_say_so(root: Path) -> 
     _run(root, FakeClient(), allow_unreviewed=True)
     (record,) = AttemptLog(root / "attempts.jsonl").read()
     assert "annotation not owner-reviewed" in record.notes
+
+
+def _english(root: Path) -> None:
+    path = root / "cases" / "c01" / "annotation.json"
+    meta = json.loads(path.read_text())
+    meta |= {"desired_change_en": "two small gulls", "protected_description_en": "the line"}
+    path.write_text(json.dumps(meta))
+
+
+def test_v2_sends_an_outlined_reference_and_the_english_prompt(root: Path) -> None:
+    _english(root)
+    client = FakeClient()
+    _run(root, client, prompt="v2", quality="high")
+    request = client.requests[0]
+    assert "New strokes: two small gulls." in request.prompt
+    assert "Keep unchanged: the line." in request.prompt
+    assert request.quality == "high"
+    (reference,) = request.references
+    with Image.open(io.BytesIO(reference)) as outlined:
+        pixels = np.asarray(outlined.convert("RGB"))
+    assert outlined.size == (1536, 1024)
+    magenta = (pixels[..., 0] > 200) & (pixels[..., 1] < 60) & (pixels[..., 2] > 200)
+    assert magenta[:, 760:780].any()  # border of the editable right half
+    assert not magenta[:, 1200:1300].any()
+    (record,) = AttemptLog(root / "attempts.jsonl").read()
+    assert record.prompt_revision == "s2-v2"
+
+
+def test_v2_s1_keeps_the_mask_on_the_main_image(root: Path) -> None:
+    _english(root)
+    client = FakeClient(png=_png((1536, 1024), "RGB"))
+    _run(root, client, short="s1", prompt="v2")
+    request = client.requests[0]
+    assert request.mask_png is not None
+    assert request.prompt.startswith("Image 1:")
+    assert "Change only: two small gulls" in request.prompt
+    (record,) = AttemptLog(root / "attempts.jsonl").read()
+    assert record.prompt_revision == "s1-v2"
+
+
+def test_v2_needs_english_task_text(root: Path) -> None:
+    with pytest.raises(ProtocolError, match="desired_change_en"):
+        _run(root, FakeClient(), prompt="v2")

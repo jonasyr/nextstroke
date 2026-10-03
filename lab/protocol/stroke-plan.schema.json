@@ -1,5 +1,78 @@
 {
   "$defs": {
+    "Fill": {
+      "additionalProperties": false,
+      "description": "Parallel hatching clipped to a polygon (schema version 2, D-049).\n\nAngle 0 is horizontal, 90 vertical; spacing and width are fractions of the longest edge.\n`cross` adds a second pass at angle + 90.",
+      "properties": {
+        "order": {
+          "minimum": 1,
+          "title": "Order",
+          "type": "integer"
+        },
+        "polygon": {
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              }
+            ],
+            "type": "array"
+          },
+          "maxItems": 64,
+          "minItems": 3,
+          "title": "Polygon",
+          "type": "array"
+        },
+        "angle_deg": {
+          "exclusiveMaximum": 180.0,
+          "minimum": 0.0,
+          "title": "Angle Deg",
+          "type": "number"
+        },
+        "spacing": {
+          "maximum": 0.05,
+          "minimum": 0.002,
+          "title": "Spacing",
+          "type": "number"
+        },
+        "width": {
+          "exclusiveMinimum": 0.0,
+          "maximum": 0.01,
+          "title": "Width",
+          "type": "number"
+        },
+        "darkness": {
+          "exclusiveMinimum": 0.0,
+          "maximum": 1.0,
+          "title": "Darkness",
+          "type": "number"
+        },
+        "cross": {
+          "default": false,
+          "title": "Cross",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "order",
+        "polygon",
+        "angle_deg",
+        "spacing",
+        "width",
+        "darkness"
+      ],
+      "title": "Fill",
+      "type": "object"
+    },
     "Stroke": {
       "additionalProperties": false,
       "properties": {
@@ -57,7 +130,10 @@
   "additionalProperties": false,
   "properties": {
     "schema_version": {
-      "const": "1",
+      "enum": [
+        "1",
+        "2"
+      ],
       "title": "Schema Version",
       "type": "string"
     },
@@ -71,8 +147,16 @@
         "$ref": "#/$defs/Stroke"
       },
       "maxItems": 200,
-      "minItems": 1,
       "title": "Strokes",
+      "type": "array"
+    },
+    "fills": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/Fill"
+      },
+      "maxItems": 20,
+      "title": "Fills",
       "type": "array"
     }
   },

@@ -38,6 +38,7 @@ class EditRequest:
     size: str
     quality: str
     background: str
+    references: tuple[bytes, ...] = ()  # further input images, after the main one
 
 
 @dataclass(frozen=True)
@@ -60,7 +61,7 @@ def urllib_transport(url: str, headers: dict[str, str], body: bytes) -> tuple[in
         return error.code, error.read()
 
 
-def _multipart(fields: dict[str, str], files: dict[str, bytes]) -> tuple[str, bytes]:
+def _multipart(fields: dict[str, str], files: list[tuple[str, bytes]]) -> tuple[str, bytes]:
     boundary = uuid.uuid4().hex
     parts: list[bytes] = []
     for name, value in fields.items():
@@ -69,10 +70,10 @@ def _multipart(fields: dict[str, str], files: dict[str, bytes]) -> tuple[str, by
             + value.encode()
             + b"\r\n"
         )
-    for name, data in files.items():
+    for index, (name, data) in enumerate(files):
         parts.append(
             f'--{boundary}\r\nContent-Disposition: form-data; name="{name}"; '
-            f'filename="{name}.png"\r\nContent-Type: image/png\r\n\r\n'.encode()
+            f'filename="input-{index}.png"\r\nContent-Type: image/png\r\n\r\n'.encode()
             + data
             + b"\r\n"
         )
@@ -102,9 +103,13 @@ class OpenAIImagesClient:
             "output_format": "png",
             "n": "1",
         }
-        files = {"image": request.image_png}
+        if request.references:
+            images = [request.image_png, *request.references]
+            files = [("image[]", data) for data in images]  # the mask applies to the first
+        else:
+            files = [("image", request.image_png)]
         if request.mask_png is not None:
-            files["mask"] = request.mask_png
+            files.append(("mask", request.mask_png))
         content_type, body = _multipart(fields, files)
         status, raw = self._transport(EDITS_URL, {"Content-Type": content_type}, body)
         if status != 200:

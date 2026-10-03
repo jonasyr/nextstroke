@@ -10,25 +10,45 @@ import numpy as np
 from numpy.typing import NDArray
 from PIL import Image, ImageDraw
 
-from nextstroke_lab.domain.strokes import StrokePlan
+from nextstroke_lab.domain.hatching import hatch_segments
+from nextstroke_lab.domain.strokes import Fill, StrokePlan
 
 SUPERSAMPLE = 4
+
+
+Polyline = list[tuple[float, float]]
+
+
+def _fill_lines(fill: Fill, big_w: int, big_h: int) -> list[Polyline]:
+    longest = max(big_w, big_h)
+    polygon = [(x * (big_w - 1), y * (big_h - 1)) for x, y in fill.polygon]
+    angles = [fill.angle_deg, fill.angle_deg + 90.0] if fill.cross else [fill.angle_deg]
+    return [
+        [start, end]
+        for angle in angles
+        for start, end in hatch_segments(polygon, angle, fill.spacing * longest)
+    ]
 
 
 def render_plan(plan: StrokePlan, width: int, height: int) -> NDArray[np.uint8]:
     big_w, big_h = width * SUPERSAMPLE, height * SUPERSAMPLE
     longest = max(big_w, big_h)
+    items: list[tuple[int, list[Polyline], float, float]] = [
+        (s.order, [[(x * (big_w - 1), y * (big_h - 1)) for x, y in s.points]], s.width, s.darkness)
+        for s in plan.strokes
+    ]
+    items += [(f.order, _fill_lines(f, big_w, big_h), f.width, f.darkness) for f in plan.fills]
     alpha = Image.new("L", (big_w, big_h), 0)
-    for stroke in plan.ordered():
+    for _, lines, stroke_width, darkness in sorted(items, key=lambda item: item[0]):
         ink = Image.new("L", (big_w, big_h), 0)
         draw = ImageDraw.Draw(ink)
-        line_px = max(1, round(stroke.width * longest))
-        points = [(x * (big_w - 1), y * (big_h - 1)) for x, y in stroke.points]
-        draw.line(points, fill=255, width=line_px, joint="curve")
+        line_px = max(1, round(stroke_width * longest))
         radius = line_px / 2
-        for x, y in (points[0], points[-1]):
-            draw.ellipse((x - radius, y - radius, x + radius, y + radius), fill=255)
-        level = round(255 * stroke.darkness)
+        for points in lines:
+            draw.line(points, fill=255, width=line_px, joint="curve")
+            for x, y in (points[0], points[-1]):
+                draw.ellipse((x - radius, y - radius, x + radius, y + radius), fill=255)
+        level = round(255 * darkness)
         ink_alpha = np.asarray(ink, dtype=np.uint16) * level // 255
         combined = np.maximum(np.asarray(alpha, dtype=np.uint16), ink_alpha)
         alpha = Image.fromarray(combined.astype(np.uint8))
