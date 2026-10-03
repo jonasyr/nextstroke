@@ -184,3 +184,22 @@ describe("perspective drawing", () => {
     expect(rgba.data.length).toBe(48);
   });
 });
+
+describe("drawComparison split view", () => {
+  it("clips the reference to the right of the divider and draws the divider", () => {
+    const { ctx, calls } = recorder();
+    drawComparison(ctx, {
+      original,
+      reference,
+      state: { ...initialState(), split: 0.25 },
+      viewport: { width: 400, height: 200 },
+      dpr: 1,
+    });
+    // original-centred: x from 0.25·1000 − 500 = −250 rightwards
+    expect(calls.some((c) => c.startsWith("rect(-250,"))).toBe(true);
+    expect(calls).toContain("clip()");
+    expect(calls).toContain("globalAlpha=1");
+    expect(calls).toContain("moveTo(100,0)");
+    expect(calls).toContain("lineTo(100,200)");
+  });
+});

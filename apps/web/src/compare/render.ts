@@ -4,6 +4,7 @@ import {
   type Gray,
   layerMatrix,
   type Matrix,
+  splitOnScreen,
   viewMatrix,
 } from "@nextstroke/compare";
 
@@ -25,6 +26,13 @@ export function drawArtwork(
   const alpha = effectiveOpacity(state);
   if (alpha === 0) return;
   ctx.save();
+  if (state.split !== null) {
+    // Split view: the reference only right of the divider, unbounded above and below.
+    const big = 4 * Math.max(original.width, original.height, reference.width, reference.height);
+    ctx.beginPath();
+    ctx.rect(state.split * original.width - original.width / 2, -big, big, 2 * big);
+    ctx.clip();
+  }
   if (state.corners && warped) {
     // Four-point perspective: the reference was warped into the original's pixel grid.
     ctx.globalAlpha = alpha;
@@ -65,6 +73,21 @@ export function drawComparison(
   transform(ctx, viewMatrix(state.view, fit, viewport));
   drawArtwork(ctx, original, reference, state, input.warped ?? null);
   ctx.restore();
+  if (state.split !== null && effectiveOpacity(state) > 0) {
+    const x = splitOnScreen(state.split, state.view, original, viewport);
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, viewport.height);
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "rgba(255,255,255,0.9)";
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(x, viewport.height / 2, 11, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(255,255,255,0.85)";
+    ctx.fill();
+    ctx.strokeStyle = "#1d2329";
+    ctx.stroke();
+  }
   for (const [i, p] of (input.handles ?? []).entries()) {
     ctx.beginPath();
     ctx.arc(p.x, p.y, i === input.activeHandle ? 14 : 11, 0, Math.PI * 2);

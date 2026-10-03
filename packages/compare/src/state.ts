@@ -39,6 +39,8 @@ export interface CompareState {
   /** Four-point perspective; when set it replaces the affine layer for drawing. */
   corners: Corners | null;
   activeCorner: number;
+  /** Split view divider as a fraction of the original's width; null for overlay mode. */
+  split: number | null;
 }
 
 export const PARAMS: Record<Param, { min: number; max: number; step: number }> = {
@@ -69,6 +71,7 @@ export function initialState(): CompareState {
     activeParam: "x",
     corners: null,
     activeCorner: 0,
+    split: null,
   };
 }
 
@@ -94,7 +97,9 @@ export type CompareAction =
   | { type: "select-corner"; index: number }
   | { type: "corner-set"; index: number; point: Point }
   | { type: "corner-nudge"; dx: number; dy: number }
-  | { type: "corners-clear" };
+  | { type: "corners-clear" }
+  | { type: "split"; on: boolean }
+  | { type: "split-set"; value: number };
 
 function replaceCorner(corners: Corners, index: number, point: Point): Corners {
   return corners.map((c, i) => (i === index ? point : c)) as unknown as Corners;
@@ -120,7 +125,7 @@ function withParam(state: CompareState, value: number): CompareState {
 }
 
 function setOpacity(state: CompareState, fraction: number): CompareState {
-  return { ...state, opacity: clamp(fraction, 0, 1), tapReveal: false };
+  return { ...state, opacity: clamp(fraction, 0, 1), tapReveal: false, split: null };
 }
 
 export function compare(state: CompareState, action: CompareAction): CompareState {
@@ -190,11 +195,18 @@ export function compare(state: CompareState, action: CompareAction): CompareStat
     }
     case "corners-clear":
       return { ...state, corners: null };
+    case "split":
+      return action.on
+        ? { ...state, split: 0.5, tapReveal: false, aligning: false }
+        : { ...state, split: null };
+    case "split-set":
+      return state.split === null ? state : { ...state, split: clamp(action.value, 0, 1) };
   }
 }
 
 export function effectiveOpacity(state: CompareState): number {
-  return state.tapReveal || state.holdReveal ? 0 : state.opacity;
+  if (state.tapReveal || state.holdReveal) return 0;
+  return state.split === null ? state.opacity : 1;
 }
 
 export type BadgeKey =
@@ -202,11 +214,13 @@ export type BadgeKey =
   | "compare.badge.align"
   | "compare.badge.original"
   | "compare.badge.reference"
-  | "compare.badge.overlay";
+  | "compare.badge.overlay"
+  | "compare.badge.split";
 
 export function badge(state: CompareState): BadgeKey {
   if (state.tapReveal || state.holdReveal) return "compare.badge.reveal";
   if (state.aligning) return "compare.badge.align";
+  if (state.split !== null) return "compare.badge.split";
   if (state.opacity === 0) return "compare.badge.original";
   if (state.opacity === 1) return "compare.badge.reference";
   return "compare.badge.overlay";

@@ -9,6 +9,7 @@ import {
   gestures,
   HOLD_MS,
   hitCorner,
+  hitSplit,
   idleGesture,
   initialState,
   invertHomography,
@@ -17,6 +18,7 @@ import {
   paramValue,
   referenceHomography,
   screenToOriginal,
+  splitFromScreen,
 } from "@nextstroke/compare";
 import { classifyFile, exportSize, type Rgba, warpPerspective } from "@nextstroke/imaging";
 import { type MessageKey, t } from "@nextstroke/ui";
@@ -86,7 +88,10 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
   const [pdfPage, setPdfPage] = useState(1);
   const [size, setSize] = useState({ width: 0, height: 0 });
   const [warped, setWarped] = useState<ImageBitmap | null>(null);
-  const [dragging, setDragging] = useState<{ pointer: number; corner: number } | null>(null);
+  /** A corner handle (index) or the split divider under a pointer. */
+  const [dragging, setDragging] = useState<{ pointer: number; target: number | "split" } | null>(
+    null,
+  );
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const workspaceRef = useRef<HTMLDivElement | null>(null);
   const [workspaceEl, setWorkspaceEl] = useState<HTMLDivElement | null>(null);
@@ -257,9 +262,17 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
       const corner = hitCorner(s.corners, local(event), s.view, original, size, HANDLE_RADIUS);
       if (corner !== null) {
         dispatch({ type: "select-corner", index: corner });
-        setDragging({ pointer: event.pointerId, corner });
+        setDragging({ pointer: event.pointerId, target: corner });
         return;
       }
+    }
+    if (
+      s.split !== null &&
+      !dragging &&
+      hitSplit(s.split, local(event), s.view, original, size, HANDLE_RADIUS)
+    ) {
+      setDragging({ pointer: event.pointerId, target: "split" });
+      return;
     }
     feed({ type: "down", id: event.pointerId, x: event.clientX, y: event.clientY, t: deps.now() });
     clearTimeout(holdTimer.current);
@@ -268,8 +281,13 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
 
   function onPointerMove(event: PointerEvent<HTMLDivElement>) {
     if (dragging?.pointer === event.pointerId && original) {
-      const point = screenToOriginal(local(event), stateRef.current.view, original, size);
-      dispatch({ type: "corner-set", index: dragging.corner, point });
+      const view = stateRef.current.view;
+      if (dragging.target === "split") {
+        dispatch({ type: "split-set", value: splitFromScreen(local(event), view, original, size) });
+      } else {
+        const point = screenToOriginal(local(event), view, original, size);
+        dispatch({ type: "corner-set", index: dragging.target, point });
+      }
       return;
     }
     feed({ type: "move", id: event.pointerId, x: event.clientX, y: event.clientY, t: deps.now() });
@@ -457,7 +475,29 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
             <button type="button" onClick={() => dispatch({ type: "reference" })}>
               {t("compare.reference")}
             </button>
+            <button
+              type="button"
+              aria-pressed={state.split !== null}
+              onClick={() => dispatch({ type: "split", on: state.split === null })}
+            >
+              {t("compare.split")}
+            </button>
           </div>
+          {state.split !== null && (
+            <label className="ns-field" htmlFor="ns-split">
+              {t("compare.splitPosition")}: {Math.round(state.split * 100)} %
+              <input
+                id="ns-split"
+                type="range"
+                min={0}
+                max={100}
+                value={Math.round(state.split * 100)}
+                onChange={(e) =>
+                  dispatch({ type: "split-set", value: Number(e.target.value) / 100 })
+                }
+              />
+            </label>
+          )}
           <div className="ns-row">
             <button type="button" onClick={() => dispatch({ type: "zoom", factor: 1.5 })}>
               {t("compare.zoomIn")}
