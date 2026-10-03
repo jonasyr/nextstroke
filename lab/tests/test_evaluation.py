@@ -78,3 +78,36 @@ def test_s1_candidates_enter_the_pack_as_composites(
     )
     items = json.loads((tmp_path / "pack" / "items.json").read_text())
     assert list(items[0]["images"]) == ["original"]
+
+
+def test_attempts_after_the_first_rated_controlled_one_are_ignored() -> None:
+    # Extra attempts ran because a stricter screening missed the success (D-035 stops there).
+    triples = {("c01", Strategy.S2, n) for n in (1, 2)}
+    outcomes, _ = build_outcomes(
+        [_record(1), _record(2)],
+        dict.fromkeys(triples, True),
+        dict.fromkeys(triples, RUBRIC),
+        None,
+        {},
+    )
+    (case,) = outcomes[Strategy.S2]
+    assert len(case.attempts) == 1
+    assert case.succeeded
+
+
+def test_measured_cost_wins_over_the_flat_estimate() -> None:
+    triple = ("c01", Strategy.S2, 1)
+    record = _record(1).model_copy(update={"cost_usd": 0.023})
+    outcomes, _ = build_outcomes(
+        [record], {triple: True}, {triple: RUBRIC}, None, {Strategy.S2: 0.5}
+    )
+    assert outcomes[Strategy.S2][0].attempts[0].estimated_cost_usd == 0.023
+
+
+def test_only_listed_cases_are_evaluated() -> None:
+    other = _record(1).model_copy(update={"case_id": "c08"})
+    triple = ("c01", Strategy.S2, 1)
+    outcomes, _ = build_outcomes(
+        [_record(1), other], {triple: True}, {triple: RUBRIC}, None, {}, cases={"c01"}
+    )
+    assert [c.case_id for c in outcomes[Strategy.S2]] == ["c01"]

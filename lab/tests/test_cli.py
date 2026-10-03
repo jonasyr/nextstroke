@@ -138,6 +138,11 @@ def test_end_to_end_candidate_pack_decide(
     assert report["strategies"]["s3-structured-strokes"]["controlled"] == 0
     assert report["strategies"]["s3-structured-strokes"]["unnoticed_changes"] == 1
 
+    base = ["decide", str(root), "--key", str(key), "--ratings", str(ratings)]
+    base += ["--log", str(tmp_path / "attempts.jsonl"), "--evidence", str(evidence)]
+    assert main([*base, "--cases", "c99"]) == 0  # c01 is not a listed GO case
+    assert json.loads(capsys.readouterr().out)["strategies"] == {}
+
 
 def test_unrated_candidate_is_an_error(case_dir: Path, tmp_path: Path) -> None:
     root = tmp_path / "candidates"

@@ -144,7 +144,12 @@ def _decide(args: argparse.Namespace) -> int:
         if args.rereview is not None and args.rereview_key is not None:
             final = rubrics_by_candidate(load_key(args.rereview_key), args.rereview)
         outcomes, unnoticed = build_outcomes(
-            AttemptLog(args.log).read(), read_audits(args.root), first, final, dict(args.cost)
+            AttemptLog(args.log).read(),
+            read_audits(args.root),
+            first,
+            final,
+            dict(args.cost),
+            cases=set(args.cases.split(",")) if args.cases else None,
         )
     except EvaluationError as error:
         raise SystemExit(str(error)) from error
@@ -306,6 +311,7 @@ def _add_decide(sub: argparse._SubParsersAction[argparse.ArgumentParser]) -> Non
     dec.add_argument("--evidence", type=Path, required=True)
     dec.add_argument("--cost", type=_cost, action="append", default=[])
     dec.add_argument("--corpus-size", type=int, default=30, help="GO-eligible cases (D-044)")
+    dec.add_argument("--cases", help="comma-separated GO-eligible case ids; others are ignored")
     dec.set_defaults(run=_decide)
 
 

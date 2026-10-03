@@ -34,6 +34,10 @@ Rated on the phone through a private claude.ai page backed by the page database 
 - **Protocol consequence:** stop-at-first-success (D-035) used the orchestrator screening, so S3 c06 got one attempt where the owner's rating would have allowed two more. Note this as a limitation, or run S3 c06 attempts 2–3 and rate them.
 - Both S3 and S2 meet the 5-of-7 bar after round 1. Round 2 (pack 2, next day) can still downgrade candidates.
 
+## Decision run (2026-10-03, D-047)
+
+Round 2 skipped by the owner. `nextstroke-lab decide private/candidates --key private/pack-1-key.json --ratings private/ratings-1.json --log private/attempts.jsonl --evidence private/evidence.json --cost s3=0.02 --corpus-size 7 --cases c01,c02,c03,c04,c05,c06,c07` → `pivot`, best strategy S3, unmet: "no beginner study evidence", no triggers. Successes: S3 6, S2 5, S1 0 of 7.
+
 ## Open after the run
 
 - Owner rates pack 2 the next day (Task 5), built the same way as a phone page. Compare the ratings with `screening.json`; S2 is a GO candidate only if the owner's ratings confirm 5 of 7.

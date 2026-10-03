@@ -8,7 +8,7 @@
 
 **Implementation status:** Working legacy comparison prototype imported; disposable Phase 0 lab in progress under `lab/`; production rewrite not started
 
-**Active phase:** Phase 0 proof of feasibility, approved 2026-10-03 (D-041). Done: lab tooling, hosting probe, material sheet draft, corpus prepared and annotations owner-approved (8 cases incl. one comparison case). S3 and ideas done via subagents (D-045; orchestrator screening 7/7 GO cases controlled). S1/S2 done via OpenAI API (D-046; 24 calls, USD 0.53 measured; orchestrator screening S2 5/7 GO cases controlled, S1 all experimental by rule). Owner rating round 1 done (S3 6/7, S2 5/7 GO cases controlled). Next: owner rates pack 2 the next day; beginner study; `decide --corpus-size 7` (`docs/handoffs/2026-10-03-phase-0-openai-run.md`)
+**Active phase:** Phase 0 proof of feasibility, approved 2026-10-03 (D-041). Done: lab tooling, hosting probe, material sheet draft, corpus prepared and annotations owner-approved (8 cases incl. one comparison case). S3 and ideas done via subagents (D-045; orchestrator screening 7/7 GO cases controlled). S1/S2 done via OpenAI API (D-046; 24 calls, USD 0.53 measured; orchestrator screening S2 5/7 GO cases controlled, S1 all experimental by rule). Owner rating done; round 2 skipped, round 1 final (D-047): S3 6/7, S2 5/7, S1 0/7 GO cases controlled. `decide` → PIVOT, best S3, only unmet criterion: no beginner study. Next: owner decides between running the beginner study (Task 7) and selecting a pivot; beginner study; `decide --corpus-size 7` (`docs/handoffs/2026-10-03-phase-0-openai-run.md`)
 
 **Latest review:** `docs/reviews/2026-10-03-documentation-readiness-review.md`
 
@@ -42,6 +42,7 @@ NextStroke is an iPhone-first physical-art coach that compares an artwork with a
 22. **Corpus size:** 12 supplied images; 7 fineliner cases count toward GO (5 of 7 needed), 5 are comparison-only (D-044).
 23. **Generation route:** S3/ideas via contextless Claude subagents; S1/S2 via OpenAI API with proxy-injected key, cap USD 5 (D-045).
 24. **OpenAI run parameters:** `gpt-image-2.5-sunburst`, medium quality, edits endpoint with reference photo, measured cost from `usage`, refusals count as attempts (D-046).
+25. **Rating:** round 2 skipped; round-1 owner ratings are final (D-047).
 
 ## Evidence status
 
