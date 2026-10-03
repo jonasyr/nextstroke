@@ -73,3 +73,9 @@ def test_optional_feather_mask_is_loaded(case_dir: Path) -> None:
     feather[:, 200:205] = 255
     Image.fromarray(feather).save(case_dir / "feather.png")
     assert load_case(case_dir).masks.feather[:, 200:205].all()
+
+
+def test_case_without_original_has_a_clear_error(case_dir: Path) -> None:
+    (case_dir / "original.png").unlink()
+    with pytest.raises(FileNotFoundError, match="original"):
+        load_case(case_dir)

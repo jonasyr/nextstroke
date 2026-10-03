@@ -190,3 +190,13 @@ def test_bad_cost_argument_is_rejected() -> None:
                 "nope",
             ]
         )
+
+
+def test_user_errors_exit_cleanly_without_traceback(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    (tmp_path / "empty").mkdir()
+    with pytest.raises(SystemExit) as exit_info:
+        main(["candidate", str(tmp_path / "empty"), "s3", "x.json", "--attempt", "1", "--out", "o"])
+    assert exit_info.value.code == 2
+    assert "needs one of" in capsys.readouterr().err

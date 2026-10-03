@@ -46,7 +46,10 @@ class CandidateResult:
 
 
 def load_case(case_dir: Path) -> Case:
-    original = next(case_dir / n for n in ORIGINAL_NAMES if (case_dir / n).exists())
+    found = [case_dir / n for n in ORIGINAL_NAMES if (case_dir / n).exists()]
+    if not found:
+        raise FileNotFoundError(f"{case_dir} needs one of {', '.join(ORIGINAL_NAMES)}")
+    original = found[0]
     working = load_working_image(original)
     shape = working.pixels.shape[:2]
     editable = load_mask(case_dir / "editable.png", shape)

@@ -133,8 +133,12 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    args = build_parser().parse_args(argv)
-    code: int = args.run(args)
+    parser = build_parser()
+    args = parser.parse_args(argv)
+    try:
+        code: int = args.run(args)
+    except (FileNotFoundError, ValueError) as error:
+        parser.exit(2, f"nextstroke-lab: error: {error}\n")
     return code
 
 
