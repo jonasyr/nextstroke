@@ -14,7 +14,7 @@
 
 ## Run result (2026-10-03)
 
-Runner: `nextstroke-lab openai-run <private> <case> s1|s2 --attempt N` and `nextstroke-lab screen` (parameters in D-046). The owner's updated package (`nextstroke-phase0-cases-s1s2.zip`) holds `attempts.jsonl`, `screening.json`, `outputs/`, `pack-1/`, `pack-2/` and their keys. `candidates/` is left out for size again.
+Runner: `nextstroke-lab openai-run <private> <case> s1|s2 --attempt N` and `nextstroke-lab screen` (parameters in D-046). The owner's updated package came as six zips under the 30 MiB upload limit, all extracted into one folder: `nextstroke-phase0-1-data-keys.zip` (cases, `attempts.jsonl`, `screening.json`, pack keys), `-2-outputs.zip`, and `-pack1-part-a/b.zip` and `-pack2-part-a/b.zip` (the blinded packs, kept apart from their keys). `candidates/` is left out for size again.
 
 - **Spend:** 24 API calls, USD 0.53 measured (S2 16 calls USD 0.35, S1 8 calls USD 0.18), about USD 0.023 per call. Median latency 13 s, maximum 29 s.
 - **Refusal:** c01 S2 attempt 1 was blocked by moderation (`abuse`) on a harmless sun-and-mountains drawing; logged as a failed attempt.
