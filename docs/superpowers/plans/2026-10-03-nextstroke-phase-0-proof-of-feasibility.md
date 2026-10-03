@@ -35,7 +35,7 @@
 - [ ] Rating rubric and the thresholds in §15 of the spec are committed to the repository before any output is generated (pre-registration).
 - [ ] Training-use settings in both subscriptions are disabled.
 - [ ] Lab code in `lab/` follows D-039: Ruff, mypy strict, pytest, pre-commit, and CI.
-- [ ] Lab tooling is built and tested before day 1 (D-035), with Python analysis managed by uv (D-037): S3 stroke renderer, compositor with boundary audit, rating page with randomized IDs, and attempt-log form. It reuses opencv.js, perfect-freehand, and plain canvas (D-036), plus the legacy prototype's import, comparison, and export code where useful (D-029).
+- [ ] Lab tooling is built and tested before day 1 (D-035), with Python analysis managed by uv (D-037); implemented in `lab/` with the protocol and runbook in `lab/protocol/`: S3 stroke renderer, compositor with boundary audit, rating page with randomized IDs, and attempt-log form. It reuses opencv.js, perfect-freehand, and plain canvas (D-036), plus the legacy prototype's import, comparison, and export code where useful (D-029).
 - [ ] A Claude Project holds the frozen ideas + S3 instructions, so each case needs one chat.
 
 ## Fixed parameters (pre-registered)
@@ -57,6 +57,7 @@
 
 - [ ] Capture or collect 30 ordinary handheld iPhone photographs of started fineliner works with varied light, shadow, perspective, paper tone, and line density.
 - [ ] Up to 10 cases may be CC0 or CC BY line drawings (for example ArtPack or OpenSketch) printed on drawing paper and photographed the same way. Record source URL and license, mark these cases `printed` in the manifest, and choose the S1 subset before generation, covering both kinds.
+- [ ] Crop every case photo to 3:2 (landscape or portrait) before annotation. ChatGPT returns 1536×1024, 1024×1536, or 1024×1024 images; without a matching aspect ratio S1/S2 outputs could not be registered without guessing and would be rejected for format alone. Keep the uncropped photo privately.
 - [ ] For each case record: anonymous ID, lighting, paper visibility, perspective, device, desired small change, editable region, protected geometry, critical contours.
 - [ ] Store originals in the private experiment store; commit only the anonymized manifest without images.
 

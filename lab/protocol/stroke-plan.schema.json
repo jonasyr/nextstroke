@@ -1,0 +1,86 @@
+{
+  "$defs": {
+    "Stroke": {
+      "additionalProperties": false,
+      "properties": {
+        "order": {
+          "minimum": 1,
+          "title": "Order",
+          "type": "integer"
+        },
+        "points": {
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              }
+            ],
+            "type": "array"
+          },
+          "maxItems": 500,
+          "minItems": 2,
+          "title": "Points",
+          "type": "array"
+        },
+        "width": {
+          "exclusiveMinimum": 0.0,
+          "maximum": 0.01,
+          "title": "Width",
+          "type": "number"
+        },
+        "darkness": {
+          "exclusiveMinimum": 0.0,
+          "maximum": 1.0,
+          "title": "Darkness",
+          "type": "number"
+        }
+      },
+      "required": [
+        "order",
+        "points",
+        "width",
+        "darkness"
+      ],
+      "title": "Stroke",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "case_id": {
+      "minLength": 1,
+      "title": "Case Id",
+      "type": "string"
+    },
+    "strokes": {
+      "items": {
+        "$ref": "#/$defs/Stroke"
+      },
+      "maxItems": 200,
+      "minItems": 1,
+      "title": "Strokes",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "case_id",
+    "strokes"
+  ],
+  "title": "StrokePlan",
+  "type": "object"
+}
