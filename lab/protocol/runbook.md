@@ -21,6 +21,8 @@ Operational checklist for the approved plan (`docs/superpowers/plans/2026-10-03-
 
 ## Generation (Tasks 2–3)
 
+- Generate copy-ready prompts per case: `uv run nextstroke-lab prompts private/cases --out private/prompts-per-case.md`.
+
 - Per case: Claude ideas + S3 (one chat), then S2 in ChatGPT, then S1 for the 10 pre-selected cases.
 - After each S2/S3 attempt run `nextstroke-lab candidate …` and screen against the rubric. Stop at the first result that screens controlled (D-035); otherwise up to 3 attempts.
 - Stop a strategy after 10 failed cases (futility) and note the case where it stopped.
