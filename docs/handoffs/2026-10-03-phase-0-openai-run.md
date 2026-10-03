@@ -30,7 +30,7 @@ Rebuild `candidates/` after unzipping: run the S3 loop above, then for every `op
 Rated on the phone through a private claude.ai page backed by the page database (same blinded IDs as `pack-1/`, plus the task text, a before image and the mask view; rendering only, the IDs and key are unchanged). Saved as `private/ratings-1.json`.
 
 - **Cases controlled on at least one attempt, GO corpus c01–c07:** S3 6 of 7 (c06 failed on correct location), S2 5 of 7 (c01 and c03 not controlled), S1 none (capped at experimental; c01–c03 rejected).
-- **Disagreements with the orchestrator screening:** 9 of 34 candidates. The owner was stricter on S2 c02 attempt 2, S2 c08b attempt 2 (rejected for registration) and S3 c06, and more lenient on S2 c02 attempt 1 and S2 c07 attempt 1.
+- **Disagreements with the orchestrator screening:** 13 of 34 candidates. 8 only move between experimental and rejected. 5 cross the controlled line: the owner was stricter on S2 c02 attempt 2, S2 c08b attempt 2 (rejected for registration) and S3 c06, and more lenient on S2 c02 attempt 1 and S2 c07 attempt 1.
 - **Protocol consequence:** stop-at-first-success (D-035) used the orchestrator screening, so S3 c06 got one attempt where the owner's rating would have allowed two more. Note this as a limitation, or run S3 c06 attempts 2–3 and rate them.
 - Both S3 and S2 meet the 5-of-7 bar after round 1. Round 2 (pack 2, next day) can still downgrade candidates.
 
