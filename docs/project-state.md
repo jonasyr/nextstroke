@@ -8,7 +8,7 @@
 
 **Implementation status:** Working legacy comparison prototype imported; disposable Phase 0 lab in progress under `lab/`; production rewrite not started
 
-**Active phase:** Phase 0 proof of feasibility, approved 2026-10-03 (D-041). Done: lab tooling, hosting probe, material sheet draft, corpus prepared and annotations owner-approved (8 cases incl. one comparison case). Next: model runs in ChatGPT/Claude, rating, beginner study
+**Active phase:** Phase 0 proof of feasibility, approved 2026-10-03 (D-041). Done: lab tooling, hosting probe, material sheet draft, corpus prepared and annotations owner-approved (8 cases incl. one comparison case). S3 and ideas done via subagents (D-045; orchestrator screening 7/7 GO cases controlled on attempt 1, owner ratings pending). Next: S1/S2 via OpenAI API in a new session (`docs/handoffs/2026-10-03-phase-0-openai-run.md`), rating, beginner study
 
 **Latest review:** `docs/reviews/2026-10-03-documentation-readiness-review.md`
 
