@@ -50,3 +50,19 @@ def provider_edit_mask(editable: BoolMask) -> NDArray[np.uint8]:
     mask = np.zeros((*editable.shape, 4), dtype=np.uint8)
     mask[..., 3] = np.where(editable, 0, 255)
     return mask
+
+
+def region_outline(mask: BoolMask, thickness: int) -> BoolMask:
+    """Pixels within `thickness` of the region border, inside or outside."""
+    padded = np.pad(mask, thickness, mode="edge")
+    grown = np.zeros_like(padded)
+    shrunk = np.ones_like(padded)
+    size = 2 * thickness + 1
+    height, width = mask.shape
+    for dy in range(size):
+        for dx in range(size):
+            window = padded[dy : dy + height, dx : dx + width]
+            grown[thickness : thickness + height, thickness : thickness + width] |= window
+            shrunk[thickness : thickness + height, thickness : thickness + width] &= window
+    inner = slice(thickness, thickness + height), slice(thickness, thickness + width)
+    return grown[inner] & ~shrunk[inner]

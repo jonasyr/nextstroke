@@ -152,3 +152,22 @@ def test_urllib_transport_returns_http_errors(monkeypatch: pytest.MonkeyPatch) -
 
     monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
     assert urllib_transport("https://x.test", {}, b"") == (400, b"err")
+
+
+def test_reference_images_are_sent_as_an_image_array_main_image_first() -> None:
+    transport = FakeTransport(200, _ok())
+    request = EditRequest(
+        "m", "p", b"main", b"mask", "1536x1024", "high", "opaque", references=(b"ref",)
+    )
+    OpenAIImagesClient(transport).edit(request)
+    _, headers, body = transport.calls[0]
+    raw = f"Content-Type: {headers['Content-Type']}\r\n\r\n".encode() + body
+    parts = [
+        (p.get_param("name", header="content-disposition"), p.get_payload(decode=True))
+        for p in message_from_bytes(raw).get_payload()
+        if isinstance(p, Message)
+    ]
+    images = [data for name, data in parts if name == "image[]"]
+    assert images == [b"main", b"ref"]
+    assert ("mask", b"mask") in parts
+    assert not any(name == "image" for name, _ in parts)

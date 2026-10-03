@@ -62,4 +62,4 @@ def test_empty_plan_and_unknown_version_are_rejected() -> None:
     with pytest.raises(ValidationError):
         StrokePlan.model_validate({**VALID, "strokes": []})
     with pytest.raises(ValidationError):
-        StrokePlan.model_validate({**VALID, "schema_version": "2"})
+        StrokePlan.model_validate({**VALID, "schema_version": "3"})

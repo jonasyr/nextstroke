@@ -185,6 +185,7 @@ def _openai_run(args: argparse.Namespace) -> int:
         quality=args.quality,
         cap_usd=args.cap_usd,
         allow_unreviewed=args.allow_unreviewed,
+        prompt=args.prompt,
     )
     summary = run_attempt(
         args.root,
@@ -220,6 +221,7 @@ def _add_openai(sub: argparse._SubParsersAction[argparse.ArgumentParser]) -> Non
     run.add_argument("--model", default=RunSettings.model)
     run.add_argument("--quality", default=RunSettings.quality)
     run.add_argument("--cap-usd", type=float, default=RunSettings.cap_usd)
+    run.add_argument("--prompt", choices=["v1", "v2"], default="v1", help="prompt revision")
     run.add_argument(
         "--allow-unreviewed",
         action="store_true",
