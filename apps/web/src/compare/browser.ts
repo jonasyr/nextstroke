@@ -7,7 +7,7 @@
 import { type BitmapFactory, type Decoded, decodeToWorking } from "./decode.ts";
 import { type PdfLib, renderPdfPage } from "./pdf.ts";
 import type { CompareDeps } from "./QuickCompare.tsx";
-import { renderToBlob, toGray } from "./render.ts";
+import { renderToBlob, toGray, toRgba } from "./render.ts";
 import { type ShareDeps, shareOrDownload } from "./share.ts";
 
 export const createBitmap: BitmapFactory = (source, options) => createImageBitmap(source, options);
@@ -67,5 +67,8 @@ export const browserDeps: CompareDeps = {
   share: (file) => shareOrDownload(file, share),
   renderBlob: renderToBlob,
   gray: toGray,
+  rgba: (image) => toRgba(image),
+  fromRgba: (rgba) =>
+    createImageBitmap(new ImageData(new Uint8ClampedArray(rgba.data), rgba.width, rgba.height)),
   now: () => performance.now(),
 };
