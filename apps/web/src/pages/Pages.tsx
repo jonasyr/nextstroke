@@ -1,6 +1,6 @@
 import { type MessageKey, t } from "@nextstroke/ui";
-import { useState } from "react";
-import { Immersive } from "../Immersive.tsx";
+import { browserDeps } from "../compare/browser.ts";
+import { QuickCompare } from "../compare/QuickCompare.tsx";
 import type { Route } from "../routing/routes.ts";
 
 export const TITLES: Record<Route, MessageKey> = {
@@ -18,18 +18,14 @@ const INTROS: Record<Route, MessageKey> = {
 };
 
 export function Page({ route }: { route: Route }) {
-  const [immersive, setImmersive] = useState(false);
   return (
     <>
       <h1>{t(TITLES[route])}</h1>
       <p>{t(INTROS[route])}</p>
-      {route === "compare" && (
-        <button type="button" onClick={() => setImmersive(true)}>
-          {t("immersive.open")}
-        </button>
+      {route === "compare" && <QuickCompare deps={browserDeps} />}
+      {(route === "projects" || route === "guided") && (
+        <p className="ns-muted">{t("page.notReady")}</p>
       )}
-      {route !== "home" && <p className="ns-muted">{t("page.notReady")}</p>}
-      {immersive && <Immersive onClose={() => setImmersive(false)}>{null}</Immersive>}
     </>
   );
 }

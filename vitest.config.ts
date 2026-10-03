@@ -7,7 +7,13 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       include: ["apps/*/src/**/*.{ts,tsx}", "packages/*/src/**/*.{ts,tsx}"],
-      exclude: ["**/*.test.{ts,tsx}", "apps/web/src/main.tsx"],
+      // Browser bindings and entry points are exercised in a real browser (apps/web/e2e).
+      exclude: [
+        "**/*.test.{ts,tsx}",
+        "apps/web/src/main.tsx",
+        "apps/web/src/compare/browser.ts",
+        "apps/web/src/compare/decode.worker.ts",
+      ],
       thresholds: { lines: 90, branches: 90, functions: 90, statements: 90 },
     },
   },

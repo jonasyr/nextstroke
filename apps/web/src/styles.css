@@ -109,3 +109,97 @@ button {
   top: calc(env(safe-area-inset-top, 0px) + 12px);
   right: calc(env(safe-area-inset-right, 0px) + 12px);
 }
+/* Quick Compare: the workspace sets the size; the canvas fills it and never feeds back. */
+.ns-compare {
+  display: grid;
+  gap: 12px;
+}
+.ns-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.ns-field {
+  display: grid;
+  gap: 4px;
+}
+.ns-field input[type="range"] {
+  width: 100%;
+}
+.ns-file {
+  display: inline-grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  min-height: 44px;
+}
+.ns-status:empty {
+  display: none;
+}
+.ns-workspace {
+  position: relative;
+  height: min(62dvh, 640px);
+  overflow: hidden;
+  border-radius: 8px;
+  background: var(--sheet);
+  border: 1px solid var(--line);
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+.ns-immersive .ns-workspace {
+  height: calc(100dvh - 140px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+  border: 0;
+  background: #000;
+}
+.ns-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.ns-badge {
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  pointer-events: none;
+}
+.ns-align {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+}
+.ns-align [role="tab"][aria-selected="true"] {
+  background: var(--ink);
+  color: var(--sheet);
+}
+.ns-immersive-controls {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+}
+.ns-dialog {
+  position: fixed;
+  inset: auto 16px calc(16px + env(safe-area-inset-bottom, 0px)) 16px;
+  z-index: 20;
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--sheet);
+  border: 1px solid var(--line);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+}
+.ns-dialog h2 {
+  margin-top: 0;
+  font-size: 1.1rem;
+}

@@ -4,5 +4,10 @@
     "lib": ["ES2023"],
     "types": ["node"]
   },
-  "include": ["apps/*/vite.config.ts", "apps/*/sw-plugin.ts", "vitest.config.ts"]
+  "include": [
+    "apps/*/vite.config.ts",
+    "apps/*/sw-plugin.ts",
+    "apps/*/playwright.config.ts",
+    "vitest.config.ts"
+  ]
 }
