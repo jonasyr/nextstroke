@@ -299,7 +299,8 @@ Every build must deploy to ChatGPT Sites. The web app therefore:
 - needs no custom response headers; runs opencv.js single-threaded without `SharedArrayBuffer`;
 - uses hash routing or a single route;
 - falls back to `fetch` + `WebAssembly.instantiate` if `.wasm` is not served as `application/wasm`;
-- treats the deployment probe in Phase 0 Task 6 as the evidence for these assumptions.
+- treats the deployment probe in Phase 0 Task 6 as the evidence for these assumptions (first iPhone run passed, `docs/research/2026-10-03-sites-probe-iphone.md`);
+- decodes and downscales photos in a worker (`OffscreenCanvas`), because main-thread decoding of a 12 MP photo blocked for up to 285 ms on the probe device.
 
 ### 13.2 Reused libraries (D-036)
 

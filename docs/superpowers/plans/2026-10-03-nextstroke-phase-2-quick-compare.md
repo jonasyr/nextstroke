@@ -39,7 +39,7 @@
 ## Task 1: Safe bounded import
 
 - [ ] Test orientation, transparency, color normalization, and decode pixel budget.
-- [ ] Downsample early while retaining the immutable original blob separately.
+- [ ] Downsample early in a worker with `OffscreenCanvas` while retaining the immutable original blob separately; the probe measured up to 285 ms main-thread blocks when decoding on the main thread.
 - [ ] Add HEIC capability detection/fallback and single-page PDF selection/release.
 
 ## Task 2: Deterministic renderer
