@@ -3,6 +3,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testi
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { PdfPasswordError } from "./pdf.ts";
 import { type CompareDeps, QuickCompare } from "./QuickCompare.tsx";
+import type { VisionDeps } from "./visionClient.ts";
 
 beforeAll(() => {
   HTMLCanvasElement.prototype.getContext = (() => null) as never;
@@ -428,5 +429,116 @@ describe("Quick Compare editor: paper corners on both images", () => {
     fireEvent.click(screen.getByRole("button", { name: "Abbrechen" }));
     expect(screen.getByText("ÜBERLAGERUNG")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Blattecken setzen" })).toBeTruthy();
+  });
+});
+
+describe("Quick Compare editor: opencv.js vision (D-055)", () => {
+  const paper = (inset: number) => ({
+    corners: [
+      { x: inset, y: inset },
+      { x: 1 - inset, y: inset },
+      { x: 1 - inset, y: 1 - inset },
+      { x: inset, y: 1 - inset },
+    ] as const,
+    confidence: 0.97,
+  });
+
+  function fakeVision(over: Partial<VisionDeps> = {}): VisionDeps {
+    return {
+      load: vi.fn(async () => ({ ok: true, ms: 5 })),
+      detectPaper: vi.fn(async () => null),
+      align: vi.fn(async () => null),
+      ...over,
+    };
+  }
+
+  it("starts loading opencv.js when the editor opens", async () => {
+    const vision = fakeVision();
+    await loadBoth(makeDeps({ vision }));
+    expect(vision.load).toHaveBeenCalled();
+  });
+
+  it("pre-places detected paper corners on the reference, then on the original", async () => {
+    let loaded: (value: { ok: boolean; ms: number }) => void = () => {};
+    // Like the real client, every load() call shares one promise.
+    const loading = new Promise<{ ok: boolean; ms: number }>((resolve) => {
+      loaded = resolve;
+    });
+    const detectPaper = vi.fn().mockResolvedValueOnce(paper(0.2)).mockResolvedValueOnce(paper(0.1));
+    const vision = fakeVision({ load: vi.fn(() => loading), detectPaper });
+    await loadBoth(makeDeps({ vision }));
+    fireEvent.click(screen.getByRole("button", { name: "Blattecken setzen" }));
+    expect(await screen.findByText("Bilderkennung wird geladen …")).toBeTruthy();
+    await act(async () => loaded({ ok: true, ms: 5 }));
+    expect(await screen.findByText(/Blattecken erkannt/)).toBeTruthy();
+    // At 0.85× the image spans (30, 15)–(370, 185); the detected bottom-right corner (0.8, 0.8)
+    // sits at (302, 151), far from the image corner's ring at (370, 185).
+    drag(2, [302, 151], [300, 150]);
+    expect(
+      screen.getByRole("button", { name: "Ecke unten rechts" }).getAttribute("aria-pressed"),
+    ).toBe("true");
+    fireEvent.click(screen.getByRole("button", { name: "Weiter" }));
+    await waitFor(() => expect(detectPaper).toHaveBeenCalledTimes(2));
+    await screen.findByText(/Blattecken erkannt/);
+    // The original's detected top-right corner (0.9, 0.1) sits at (336, 32).
+    drag(3, [336, 32], [330, 30]);
+    expect(
+      screen.getByRole("button", { name: "Ecke oben rechts" }).getAttribute("aria-pressed"),
+    ).toBe("true");
+    fireEvent.click(screen.getByRole("button", { name: "Fertig" }));
+    fireEvent.click(screen.getByRole("button", { name: "Blattecken ändern" }));
+    fireEvent.click(screen.getByRole("button", { name: "Weiter" }));
+    // Corners placed earlier are the user's: no new detection.
+    expect(detectPaper).toHaveBeenCalledTimes(2);
+  });
+
+  it("keeps the manual corner flow when no paper is found or vision is unavailable", async () => {
+    const vision = fakeVision();
+    await loadBoth(makeDeps({ vision }));
+    fireEvent.click(screen.getByRole("button", { name: "Blattecken setzen" }));
+    expect(await screen.findByText(/Blatt nicht erkannt/)).toBeTruthy();
+    cleanup();
+    const offline = fakeVision({ load: vi.fn(async () => ({ ok: false, ms: 0 })) });
+    await loadBoth(makeDeps({ vision: offline }));
+    fireEvent.click(screen.getByRole("button", { name: "Blattecken setzen" }));
+    await waitFor(() => expect(offline.load).toHaveBeenCalled());
+    expect(screen.queryByText(/Blatt nicht erkannt/)).toBeNull();
+    expect(screen.getByText("Blattecken 1/2: Referenz")).toBeTruthy();
+    expect(offline.detectPaper).not.toHaveBeenCalled();
+  });
+
+  it("aligns with the feature homography first and shows it as paper corners", async () => {
+    const deps = makeDeps({
+      vision: fakeVision({
+        align: vi.fn(async () => ({
+          accepted: true as const,
+          corners: paper(0.1).corners,
+          confidence: 0.6,
+        })),
+      }),
+    });
+    await loadBoth(deps);
+    fireEvent.click(screen.getByRole("button", { name: "Ausrichten" }));
+    fireEvent.click(screen.getByRole("button", { name: "Automatisch ausrichten" }));
+    expect(await screen.findByText("Abgeglichen. Prüfe die Kanten bei 50 %.")).toBeTruthy();
+    expect(screen.getByText(/Die Blattecken bestimmen/)).toBeTruthy();
+    expect(deps.gray).not.toHaveBeenCalled();
+    await waitFor(() => expect(deps.fromRgba).toHaveBeenCalled());
+  });
+
+  it("falls back to the correlation search when the homography is rejected or unavailable", async () => {
+    for (const align of [
+      vi.fn(async () => ({ accepted: false as const, reason: "few-inliers" as const })),
+      vi.fn(async () => null),
+    ]) {
+      const deps = makeDeps({ vision: fakeVision({ align }) });
+      await loadBoth(deps);
+      fireEvent.click(screen.getByRole("button", { name: "Ausrichten" }));
+      fireEvent.click(screen.getByRole("button", { name: "Automatisch ausrichten" }));
+      await screen.findByText("Kein sicherer Abgleich. Bitte manuell ausrichten.");
+      expect(align).toHaveBeenCalled();
+      expect(deps.gray).toHaveBeenCalled();
+      cleanup();
+    }
   });
 });

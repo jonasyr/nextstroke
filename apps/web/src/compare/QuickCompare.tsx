@@ -3,6 +3,7 @@ import {
   badge,
   CORNER_VIEW,
   type CompareState,
+  type CornerStep,
   compare,
   cornersFromLayer,
   cornersOnScreen,
@@ -33,6 +34,7 @@ import {
   type renderToBlob,
   type toGray,
 } from "./render.ts";
+import type { VisionDeps } from "./visionClient.ts";
 
 export interface Loaded extends Decoded {
   name: string;
@@ -52,6 +54,8 @@ export interface CompareDeps {
   rgba(image: ImageBitmap): Rgba;
   fromRgba(rgba: Rgba): Promise<ImageBitmap>;
   now(): number;
+  /** opencv.js paper detection and feature alignment; absent or failing, Quick Compare works without it (D-055). */
+  vision?: VisionDeps;
 }
 
 /** Touch radius of corner handles and the split divider, in CSS pixels. */
@@ -97,6 +101,7 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
   const abortRef = useRef<AbortController | null>(null);
   const stateRef = useRef<CompareState>(state);
   stateRef.current = state;
+  const visionReady = useRef(false);
 
   const { original, reference } = images;
   const ready = Boolean(original && reference);
@@ -186,6 +191,34 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
   }, [corners, refCorners, original, reference, dragging, deps]);
 
   useEffect(() => () => abortRef.current?.abort(), []);
+
+  // Load opencv.js in its worker once the editor opens, never before (D-055).
+  useEffect(() => {
+    if (!open || !deps.vision) return;
+    void deps.vision.load().then(() => {
+      visionReady.current = true;
+    });
+  }, [open, deps]);
+
+  /** Resolves to the vision deps once opencv.js is ready, telling the user while it loads. */
+  async function visionLoaded(): Promise<VisionDeps | null> {
+    const vision = deps.vision;
+    if (!vision) return null;
+    if (!visionReady.current) setStatus(t("compare.status.visionLoading"));
+    const { ok } = await vision.load();
+    visionReady.current = true;
+    return ok ? vision : null;
+  }
+
+  /** Pre-place the rings of a corner step on the detected sheet; manual placement otherwise. */
+  async function suggestCorners(step: CornerStep, image: ImageBitmap) {
+    const vision = await visionLoaded();
+    if (!vision) return setStatus("");
+    const paper = await vision.detectPaper(image);
+    if (!paper) return setStatus(t("compare.status.paperMissing"));
+    dispatch({ type: "corners-suggest", step, corners: paper.corners });
+    setStatus(t("compare.status.paperFound"));
+  }
 
   const choosePage = useCallback(
     (count: number) =>
@@ -353,6 +386,14 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
       type: "corners-next",
       corners: cornersFromLayer(s.layer, original, reference, s.refCorners ?? undefined),
     });
+    if (s.corners === null) void suggestCorners("original", original.bitmap);
+  }
+
+  function beginCorners() {
+    setStatus("");
+    const fresh = stateRef.current.refCorners === null;
+    dispatch({ type: "corners-begin" });
+    if (fresh && reference) void suggestCorners("reference", reference.bitmap);
   }
 
   async function runAutoAlign() {
@@ -364,6 +405,15 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
     const h = Math.max(16, Math.round((w * original.height) / original.width));
     const layer = stateRef.current.layer;
     try {
+      // Feature homography first (handles perspective); the correlation search is the fallback.
+      const vision = await visionLoaded();
+      const verdict = vision && (await vision.align(original.bitmap, reference.bitmap));
+      if (controller.signal.aborted) return;
+      if (verdict?.accepted) {
+        dispatch({ type: "corners-set", corners: verdict.corners });
+        setStatus(t("compare.status.aligned"));
+        return;
+      }
       const result = await autoAlign(
         deps.gray(original.bitmap, w, h),
         deps.gray(reference.bitmap, w, h),
@@ -440,14 +490,7 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
       onStatus={setStatus}
     />
   ) : (
-    <ViewPanel
-      state={state}
-      dispatch={dispatch}
-      onCorners={() => {
-        setStatus("");
-        dispatch({ type: "corners-begin" });
-      }}
-    />
+    <ViewPanel state={state} dispatch={dispatch} onCorners={beginCorners} />
   );
 
   return (

@@ -59,6 +59,11 @@ export interface CompareState {
   /** Corners from before the current corner steps, restored on cancel. */
   cornersBefore: { corners: Corners | null; refCorners: Corners | null } | null;
   activeCorner: number;
+  /**
+   * True once the quad of the current corner step holds the user's own placement (moved, or
+   * kept from earlier); detected paper corners then no longer replace it (D-055).
+   */
+  cornerEdited: boolean;
   /** Split view divider as a fraction of the original's width; null for overlay mode. */
   split: number | null;
 }
@@ -96,6 +101,7 @@ export function initialState(): CompareState {
     cornerStep: null,
     cornersBefore: null,
     activeCorner: 0,
+    cornerEdited: false,
     split: null,
   };
 }
@@ -123,6 +129,8 @@ export type CompareAction =
   | { type: "corners-back" }
   | { type: "corners-done" }
   | { type: "corners-cancel" }
+  | { type: "corners-suggest"; step: CornerStep; corners: Corners }
+  | { type: "corners-set"; corners: Corners }
   | { type: "select-corner"; index: number }
   | { type: "corner-set"; index: number; point: Point }
   | { type: "corner-nudge"; dx: number; dy: number }
@@ -143,7 +151,7 @@ function withCorner(
   const corner = quad?.[index];
   if (!quad || !corner) return state;
   const next = quad.map((c, i) => (i === index ? move(corner) : c)) as unknown as Corners;
-  return { ...state, [key]: next };
+  return { ...state, [key]: next, cornerEdited: true };
 }
 
 const LAYER_KEY: Record<Param, keyof Layer> = {
@@ -227,6 +235,7 @@ export function compare(state: CompareState, action: CompareAction): CompareStat
         refCorners: state.refCorners ?? IMAGE_CORNERS,
         cornerStep: "reference",
         activeCorner: 0,
+        cornerEdited: state.refCorners !== null,
         view: CORNER_VIEW,
         aligning: false,
         split: null,
@@ -240,11 +249,18 @@ export function compare(state: CompareState, action: CompareAction): CompareStat
             corners: state.corners ?? action.corners,
             cornerStep: "original",
             activeCorner: 0,
+            cornerEdited: state.corners !== null,
             view: CORNER_VIEW,
           }
         : state;
     case "corners-back":
-      return { ...state, cornerStep: "reference", activeCorner: 0, view: CORNER_VIEW };
+      return {
+        ...state,
+        cornerStep: "reference",
+        activeCorner: 0,
+        cornerEdited: true,
+        view: CORNER_VIEW,
+      };
     case "corners-done":
       return { ...setOpacity(state, 0.5), cornerStep: null, cornersBefore: null, view: FIT };
     case "corners-cancel":
@@ -256,6 +272,13 @@ export function compare(state: CompareState, action: CompareAction): CompareStat
         cornersBefore: null,
         view: FIT,
       };
+    case "corners-suggest":
+      if (state.cornerStep !== action.step || state.cornerEdited) return state;
+      return action.step === "reference"
+        ? { ...state, refCorners: action.corners }
+        : { ...state, corners: action.corners };
+    case "corners-set":
+      return { ...state, ...NO_CORNERS, corners: action.corners };
     case "select-corner":
       return { ...state, activeCorner: action.index };
     case "corner-set":

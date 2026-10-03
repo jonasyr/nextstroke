@@ -8,7 +8,7 @@
 
 **Implementation status:** Legacy prototype preserved; Phase 0 lab closed; Phase 1 workspace (`apps/web`, `packages/*`) built
 
-**Active phase:** Phase 2 Quick Compare (`docs/superpowers/plans/2026-10-03-nextstroke-phase-2-quick-compare.md`), started 2026-10-03 after the owner accepted the Phase 1 interface map. Phase 1 done (D-052). Phase 0 closed with PIVOT (D-048); Phase 4 preview route is the hybrid S1 template → S3 stroke plan (D-051). Beginner study is a hard Phase 3 exit gate. Open owner item: AGPL `LICENSE` file (`docs/legal/license.md`). Phase 2 status and open items: plan section "Status"; split, gestures and manual warp are own code (D-053); Quick Compare is a full-screen editor with paper corners on both images after the first iPhone test (D-054).
+**Active phase:** Phase 2 Quick Compare (`docs/superpowers/plans/2026-10-03-nextstroke-phase-2-quick-compare.md`), started 2026-10-03 after the owner accepted the Phase 1 interface map. Phase 1 done (D-052). Phase 0 closed with PIVOT (D-048); Phase 4 preview route is the hybrid S1 template → S3 stroke plan (D-051). Beginner study is a hard Phase 3 exit gate. Open owner item: AGPL `LICENSE` file (`docs/legal/license.md`). Phase 2 status and open items: plan section "Status"; split, gestures and manual warp are own code (D-053); Quick Compare is a full-screen editor with paper corners on both images after the first iPhone test (D-054). opencv.js runs in a worker for paper-corner suggestions and ORB + RANSAC auto-align, precached for offline use (D-055); its iPhone behavior is part of the Phase 2 exit gate.
 
 **Latest review:** `docs/reviews/2026-10-03-documentation-readiness-review.md`
 

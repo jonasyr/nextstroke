@@ -83,6 +83,11 @@ test("works offline after the first visit", async ({ page, context }) => {
   await page.getByLabel(/^Referenz wählen/).setInputFiles({ ...original, name: "b.png" });
   await expect(page.getByText("ÜBERLAGERUNG")).toBeVisible();
   await expect(page.getByRole("status").filter({ hasText: "Offline" })).toBeVisible();
+  // opencv.js comes from the precache too: paper detection answers (D-055).
+  await page.getByRole("button", { name: "Blattecken setzen" }).click();
+  await expect(page.getByText(/Blatt nicht erkannt|Blattecken erkannt/)).toBeVisible({
+    timeout: 30_000,
+  });
 });
 
 test("places paper corners on both images and warps the reference", async ({ page }) => {
