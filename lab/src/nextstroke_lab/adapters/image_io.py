@@ -10,6 +10,9 @@ from pathlib import Path
 import numpy as np
 from numpy.typing import NDArray
 from PIL import Image, ImageCms, ImageOps
+from pillow_heif import register_heif_opener
+
+register_heif_opener()  # iPhone HEIC photos
 
 DEFAULT_MAX_EDGE = 2048
 ASPECT_TOLERANCE = 0.02

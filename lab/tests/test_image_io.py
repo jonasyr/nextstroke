@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import numpy as np
+import pillow_heif
 import pytest
 from PIL import Image, ImageCms
 
@@ -89,3 +90,11 @@ def test_save_png_round_trips(tmp_path: Path) -> None:
     target = tmp_path / "out" / "x.png"
     save_png(pixels, target)
     assert np.array_equal(np.asarray(Image.open(target)), pixels)
+
+
+def test_heic_photos_load(tmp_path: Path) -> None:
+    path = tmp_path / "photo.heic"
+    pillow_heif.from_pillow(Image.new("RGB", (64, 48), (200, 10, 10))).save(path, quality=90)
+    image = load_working_image(path)
+    assert image.pixels.shape == (48, 64, 3)
+    assert image.pixels[0, 0, 0] > 150
