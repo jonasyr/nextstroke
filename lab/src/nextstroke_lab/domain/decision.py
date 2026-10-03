@@ -5,12 +5,13 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from enum import StrEnum
+from math import ceil
 from statistics import median
 
 from nextstroke_lab.domain.classification import OVERLAY_STRATEGIES, Strategy, Trust
 
-CORPUS_SIZE = 30
-GO_CASES = 21  # 70% of 30
+CORPUS_SIZE = 30  # planned default; D-044 allows the actual eligible count
+GO_SHARE = 0.7
 MAX_ATTEMPTS = 3
 MAX_LATENCY_SECONDS = 60.0
 MAX_COST_USD = 0.30
@@ -74,17 +75,27 @@ class Decision:
     triggers: tuple[str, ...] = field(default=())
 
 
-def is_futile(failed_cases: int) -> bool:
-    """A strategy cannot reach GO once more than CORPUS_SIZE - GO_CASES cases failed."""
-    return failed_cases > CORPUS_SIZE - GO_CASES
+def go_cases_needed(corpus_size: int) -> int:
+    """Case successes GO needs: 70% of the corpus, rounded up (21 of 30, 5 of 7)."""
+    if corpus_size < 1:
+        raise ValueError("corpus size must be positive")
+    return ceil(round(GO_SHARE * corpus_size, 9))
 
 
-def _strategy_findings(cases: Sequence[CaseOutcome]) -> tuple[list[str], list[str]]:
+def is_futile(failed_cases: int, corpus_size: int = CORPUS_SIZE) -> bool:
+    """A strategy cannot reach GO once more failures than the corpus can absorb."""
+    return failed_cases > corpus_size - go_cases_needed(corpus_size)
+
+
+def _strategy_findings(
+    cases: Sequence[CaseOutcome], corpus_size: int
+) -> tuple[list[str], list[str]]:
     unmet: list[str] = []
     triggers: list[str] = []
     wins = [c for c in cases if c.succeeded]
-    if len(wins) < GO_CASES:
-        unmet.append(f"{len(wins)} case successes; GO needs {GO_CASES} of {CORPUS_SIZE}")
+    needed = go_cases_needed(corpus_size)
+    if len(wins) < needed:
+        unmet.append(f"{len(wins)} case successes; GO needs {needed} of {corpus_size}")
 
     controlled = [a for c in cases for a in c.attempts if a.trust is Trust.CONTROLLED]
     if any(a.critical_contour_destroyed for a in controlled):
@@ -96,8 +107,8 @@ def _strategy_findings(cases: Sequence[CaseOutcome]) -> tuple[list[str], list[st
         triggers.append("more than 10% of controlled candidates had unnoticed changes")
 
     needs_work = sum(c.mask_repaired or not c.first_attempt_controlled for c in cases)
-    needs_work += CORPUS_SIZE - min(len(cases), CORPUS_SIZE)
-    if needs_work * 2 > CORPUS_SIZE:
+    needs_work += corpus_size - min(len(cases), corpus_size)
+    if needs_work * 2 > corpus_size:
         triggers.append(
             "more than 50% of cases needed mask repair or a retry after the first attempt"
         )
@@ -136,6 +147,7 @@ def decide(
     study: StudyEvidence | None,
     device: DeviceEvidence | None,
     unreported_selection: bool,
+    corpus_size: int = CORPUS_SIZE,
 ) -> Decision:
     shared_unmet, shared_triggers = _shared_findings(study, device, unreported_selection)
 
@@ -144,7 +156,7 @@ def decide(
         if strategy not in results:
             continue
         cases = results[strategy]
-        unmet, triggers = _strategy_findings(cases)
+        unmet, triggers = _strategy_findings(cases, corpus_size)
         wins = sum(c.succeeded for c in cases)
         candidates.append((len(unmet) + len(triggers), -wins, strategy, unmet, triggers))
 

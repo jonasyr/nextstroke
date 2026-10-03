@@ -11,6 +11,7 @@ from nextstroke_lab.domain.decision import (
     Outcome,
     StudyEvidence,
     decide,
+    go_cases_needed,
     is_futile,
 )
 
@@ -166,3 +167,28 @@ def test_too_many_attempts_rejected() -> None:
 def test_attempts_after_success_rejected() -> None:
     with pytest.raises(ValueError, match="first"):
         CaseOutcome("c", [GOOD, BAD])
+
+
+def test_go_threshold_scales_with_corpus_size() -> None:
+    def cases(n: int, wins: int) -> list[CaseOutcome]:
+        return [CaseOutcome(f"c{i}", [GOOD] if i < wins else [BAD, BAD, BAD]) for i in range(n)]
+
+    assert go_cases_needed(7) == 5
+    assert (
+        decide({Strategy.S3: cases(7, 5)}, STUDY, DEVICE, False, corpus_size=7).outcome
+        is Outcome.GO
+    )
+    assert (
+        decide({Strategy.S3: cases(7, 4)}, STUDY, DEVICE, False, corpus_size=7).outcome
+        is Outcome.PIVOT
+    )
+
+
+@pytest.mark.parametrize(("failed", "futile"), [(2, False), (3, True)])
+def test_futility_scales_with_corpus_size(failed: int, futile: bool) -> None:
+    assert is_futile(failed, corpus_size=7) is futile
+
+
+def test_corpus_size_must_be_positive() -> None:
+    with pytest.raises(ValueError, match="corpus"):
+        go_cases_needed(0)

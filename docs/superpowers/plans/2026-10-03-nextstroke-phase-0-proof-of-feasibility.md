@@ -10,7 +10,7 @@
 
 **Spec:** `docs/superpowers/specs/2026-10-03-nextstroke-product-design.md` §15
 
-**Decisions:** D-024, D-030 through D-035
+**Decisions:** D-024, D-030 through D-035, D-042 to D-044
 
 ## Global constraints
 

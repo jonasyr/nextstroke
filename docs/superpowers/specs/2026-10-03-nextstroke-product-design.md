@@ -4,7 +4,7 @@
 
 **Date:** 2026-10-03
 
-**Owner decisions:** `docs/decisions/decision-log.md` D-022 through D-043
+**Owner decisions:** `docs/decisions/decision-log.md` D-022 through D-044
 
 **Feasibility evidence:** `docs/reviews/2026-10-03-independent-feasibility-review.md`
 
@@ -366,7 +366,7 @@ S1 can never be `controlled`. Pixel ratios are reported as diagnostics only.
 
 **GO** requires one strategy, S2 or S3, to meet every criterion; that strategy is the only preview path Phase 4 may retain:
 
-- at least 70% of cases (21 of 30) are case successes;
+- at least 70% of GO-eligible cases are case successes (21 of 30 as planned; 5 of 7 for the supplied corpus, D-044);
 - zero critical contour destruction among `controlled` candidates;
 - at least 80% of `controlled` candidates are understandable in isolation;
 - at least 70% of beginner participants understand the instruction;
