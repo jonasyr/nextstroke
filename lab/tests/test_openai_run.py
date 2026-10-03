@@ -276,3 +276,19 @@ def test_v2_s1_keeps_the_mask_on_the_main_image(root: Path) -> None:
 def test_v2_needs_english_task_text(root: Path) -> None:
     with pytest.raises(ProtocolError, match="desired_change_en"):
         _run(root, FakeClient(), prompt="v2")
+
+
+def test_s1_may_retry_once_after_a_server_error(root: Path) -> None:
+    _run(
+        root,
+        FakeClient(error=ProviderError(502, "http_error", "upstream request failed")),
+        short="s1",
+    )
+    summary = _run(root, FakeClient(png=_png((1536, 1024), "RGB")), short="s1", attempt=2)
+    assert summary["attempt"] == 2
+
+
+def test_s1_does_not_retry_after_a_refusal(root: Path) -> None:
+    _run(root, FakeClient(error=ProviderError(400, "moderation_blocked", "no")), short="s1")
+    with pytest.raises(ProtocolError, match="one attempt"):
+        _run(root, FakeClient(), short="s1", attempt=2)

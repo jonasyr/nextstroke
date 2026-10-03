@@ -99,10 +99,20 @@ def record_screening(  # noqa: PLR0913 - keyword-only screening fields
     )
 
 
+def _server_error_retry(root: Path, case_id: str, attempt: int) -> bool:
+    """S1 gets one retry when its only attempt died on a provider 5xx (not a refusal)."""
+    if attempt != 2:
+        return False
+    for record in AttemptLog(root / "attempts.jsonl").read():
+        if record.key == (case_id, Strategy.S1, 1):
+            return bool(record.failure and record.failure[:1] == "5")
+    return False
+
+
 def _check_protocol(
     root: Path, case_dir: Path, short: str, attempt: int, settings: RunSettings
 ) -> tuple[dict[str, object], str]:
-    if short == "s1" and attempt != 1:
+    if short == "s1" and attempt != 1 and not _server_error_retry(root, case_dir.name, attempt):
         raise ProtocolError("S1 has one attempt per case (D-035)")
     if not 1 <= attempt <= MAX_ATTEMPTS:
         raise ProtocolError(f"attempt must be 1..{MAX_ATTEMPTS}")
