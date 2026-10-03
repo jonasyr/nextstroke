@@ -79,3 +79,19 @@ def test_failed_attempt_needs_reason_instead_of_output() -> None:
 def test_more_than_three_attempts_is_invalid() -> None:
     with pytest.raises(ValueError, match="less than or equal"):
         AttemptRecord.model_validate({**_record().model_dump(), "attempt": 4})
+
+
+def test_api_attempts_carry_measured_cost_and_usage(tmp_path: Path) -> None:
+    record = _record().model_copy(
+        update={"service": "openai", "cost_usd": 0.05, "usage": {"image_output": 1000}}
+    )
+    log = AttemptLog(tmp_path / "attempts.jsonl")
+    log.append(AttemptRecord.model_validate(record.model_dump()))
+    (back,) = log.read()
+    assert back.cost_usd == 0.05
+    assert back.usage == {"image_output": 1000}
+
+
+def test_negative_costs_are_rejected() -> None:
+    with pytest.raises(ValueError, match="greater than or equal"):
+        AttemptRecord.model_validate({**_record().model_dump(), "cost_usd": -1})

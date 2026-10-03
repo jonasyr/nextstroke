@@ -8,7 +8,7 @@
 
 **Implementation status:** Working legacy comparison prototype imported; disposable Phase 0 lab in progress under `lab/`; production rewrite not started
 
-**Active phase:** Phase 0 proof of feasibility, approved 2026-10-03 (D-041). Done: lab tooling, hosting probe, material sheet draft, corpus prepared and annotations owner-approved (8 cases incl. one comparison case). S3 and ideas done via subagents (D-045; orchestrator screening 7/7 GO cases controlled on attempt 1, owner ratings pending). Next: S1/S2 via OpenAI API in a new session (`docs/handoffs/2026-10-03-phase-0-openai-run.md`), rating, beginner study
+**Active phase:** Phase 0 proof of feasibility, approved 2026-10-03 (D-041). Done: lab tooling, hosting probe, material sheet draft, corpus prepared and annotations owner-approved (8 cases incl. one comparison case). S3 and ideas done via subagents (D-045; orchestrator screening 7/7 GO cases controlled). S1/S2 done via OpenAI API (D-046; 24 calls, USD 0.53 measured; orchestrator screening S2 5/7 GO cases controlled, S1 all experimental by rule). Two blinded rating packs built. Next: owner rates pack 1, then pack 2 the next day; beginner study; `decide --corpus-size 7` (`docs/handoffs/2026-10-03-phase-0-openai-run.md`)
 
 **Latest review:** `docs/reviews/2026-10-03-documentation-readiness-review.md`
 
@@ -41,6 +41,7 @@ NextStroke is an iPhone-first physical-art coach that compares an artwork with a
 21. **Device evidence:** first probe run accepted for Phase 0; remaining device checks move to the Phase 2 exit gate (D-043).
 22. **Corpus size:** 12 supplied images; 7 fineliner cases count toward GO (5 of 7 needed), 5 are comparison-only (D-044).
 23. **Generation route:** S3/ideas via contextless Claude subagents; S1/S2 via OpenAI API with proxy-injected key, cap USD 5 (D-045).
+24. **OpenAI run parameters:** `gpt-image-2.5-sunburst`, medium quality, edits endpoint with reference photo, measured cost from `usage`, refusals count as attempts (D-046).
 
 ## Evidence status
 

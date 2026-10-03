@@ -1,12 +1,18 @@
+import io
 import json
 from datetime import UTC, datetime
 from pathlib import Path
 
+import numpy as np
 import pytest
+from PIL import Image
 
+from nextstroke_lab import cli
 from nextstroke_lab.adapters.attempt_log import AttemptLog, AttemptRecord
+from nextstroke_lab.adapters.openai_images import EditRequest, EditResult
 from nextstroke_lab.cli import main
 from nextstroke_lab.domain.classification import Strategy
+from nextstroke_lab.domain.costs import TokenUsage
 
 ALL_PASS = dict.fromkeys(
     [
@@ -200,3 +206,38 @@ def test_user_errors_exit_cleanly_without_traceback(
         main(["candidate", str(tmp_path / "empty"), "s3", "x.json", "--attempt", "1", "--out", "o"])
     assert exit_info.value.code == 2
     assert "needs one of" in capsys.readouterr().err
+
+
+def test_openai_run_and_screen_commands(
+    case_dir: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    for name in ("original.png", "editable.png", "protected.png"):
+        with Image.open(case_dir / name) as image:
+            image.resize((450, 300), Image.Resampling.NEAREST).save(case_dir / name)
+    (case_dir / "annotation.json").write_text(
+        json.dumps(
+            {"desired_change": "Möwen", "protected_description": "x", "owner_reviewed": True}
+        )
+    )
+    buffer = io.BytesIO()
+    Image.fromarray(np.zeros((1024, 1536, 4), dtype=np.uint8), "RGBA").save(buffer, format="PNG")
+    sent: list[EditRequest] = []
+
+    class Client:
+        def edit(self, request: EditRequest) -> EditResult:
+            sent.append(request)
+            return EditResult(buffer.getvalue(), TokenUsage(0, 0, 0, 1000))
+
+    monkeypatch.setattr(cli, "default_images_client", Client)
+    root = case_dir.parent.parent
+    code = main(
+        ["openai-run", str(root), "c01", "s2", "--attempt", "1", "--model", "gpt-image-2.5-flare"]
+    )
+    assert code == 0
+    assert sent[0].model == "gpt-image-2.5-flare"
+    assert json.loads(capsys.readouterr().out)["cost_usd"] == pytest.approx(0.03)
+    assert main(["screen", str(root), "c01", "s2", "1", "experimental", "--note", "empty"]) == 0
+    screening = json.loads((root / "screening.json").read_text())
+    assert screening["s2"]["c01"][0]["note"] == "empty"
+    with pytest.raises(SystemExit):
+        main(["openai-run", str(root), "c01", "s1", "--attempt", "2"])

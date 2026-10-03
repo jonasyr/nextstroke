@@ -25,6 +25,7 @@ Operational checklist for the approved plan (`docs/superpowers/plans/2026-10-03-
 
 - Per case: Claude ideas + S3 (one chat), then S2 in ChatGPT, then S1 for the 10 pre-selected cases.
 - After each S2/S3 attempt run `nextstroke-lab candidate …` and screen against the rubric. Stop at the first result that screens controlled (D-035); otherwise up to 3 attempts.
+- API route (D-045, D-046): `uv run nextstroke-lab openai-run private <case> s2 --attempt N` builds the candidate itself; screen it with `uv run nextstroke-lab screen private <case> s2 N controlled|experimental|rejected --note '…'` before the next attempt is allowed. S1: `openai-run private <case> s1 --attempt 1`. The runner refuses calls that could pass the USD 5 cap.
 - Stop a strategy after 10 failed cases (futility) and note the case where it stopped.
 - Log every attempt, including refusals and unusable outputs.
 

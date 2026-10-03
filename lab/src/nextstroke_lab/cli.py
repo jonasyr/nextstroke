@@ -19,7 +19,9 @@ from nextstroke_lab.adapters.annotation import (
 from nextstroke_lab.adapters.attempt_log import AttemptLog
 from nextstroke_lab.adapters.case_prompts import DEFAULT_PAPER, DEFAULT_PEN, write_case_prompts
 from nextstroke_lab.adapters.image_io import load_working_image, save_png
+from nextstroke_lab.adapters.openai_images import OpenAIImagesClient
 from nextstroke_lab.domain.classification import Strategy, Trust
+from nextstroke_lab.domain.costs import BudgetExceededError
 from nextstroke_lab.domain.decision import DeviceEvidence, StudyEvidence, decide
 from nextstroke_lab.domain.geometry import crop_box_3_2
 from nextstroke_lab.domain.materials import MaterialSheet, render_prompt_block
@@ -30,10 +32,12 @@ from nextstroke_lab.evaluation import (
     read_audits,
     rubrics_by_candidate,
 )
+from nextstroke_lab.openai_run import RunSettings, record_screening, run_attempt
 from nextstroke_lab.pipeline import build_candidate, load_case
 from nextstroke_lab.rating_pack import PackEntry, make_rating_pack
 
 SHORT = {"s1": Strategy.S1, "s2": Strategy.S2, "s3": Strategy.S3}
+default_images_client = OpenAIImagesClient
 
 
 def _cost(value: str) -> tuple[Strategy, float]:
@@ -170,6 +174,63 @@ def _decide(args: argparse.Namespace) -> int:
     return 0
 
 
+def _openai_run(args: argparse.Namespace) -> int:
+    settings = RunSettings(
+        model=args.model,
+        quality=args.quality,
+        cap_usd=args.cap_usd,
+        allow_unreviewed=args.allow_unreviewed,
+    )
+    summary = run_attempt(
+        args.root,
+        args.case_id,
+        args.strategy,
+        attempt=args.attempt,
+        client=default_images_client(),
+        settings=settings,
+    )
+    print(json.dumps(summary, ensure_ascii=False))
+    return 0
+
+
+def _screen(args: argparse.Namespace) -> int:
+    record_screening(
+        args.root,
+        args.strategy,
+        args.case_id,
+        attempt=args.attempt,
+        screen=args.screen,
+        note=args.note,
+    )
+    print(json.dumps({"screened": [args.case_id, args.strategy, args.attempt, args.screen]}))
+    return 0
+
+
+def _add_openai(sub: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
+    run = sub.add_parser("openai-run", help="one S1/S2 attempt via the OpenAI Images API")
+    run.add_argument("root", type=Path, help="private store with cases/ and attempts.jsonl")
+    run.add_argument("case_id")
+    run.add_argument("strategy", choices=["s1", "s2"])
+    run.add_argument("--attempt", type=int, required=True, choices=[1, 2, 3])
+    run.add_argument("--model", default=RunSettings.model)
+    run.add_argument("--quality", default=RunSettings.quality)
+    run.add_argument("--cap-usd", type=float, default=RunSettings.cap_usd)
+    run.add_argument(
+        "--allow-unreviewed",
+        action="store_true",
+        help="run a case whose annotation is not owner-reviewed (logged in the notes)",
+    )
+    run.set_defaults(run=_openai_run)
+    scr = sub.add_parser("screen", help="record an orchestrator screening result")
+    scr.add_argument("root", type=Path)
+    scr.add_argument("case_id")
+    scr.add_argument("strategy", choices=["s1", "s2"])
+    scr.add_argument("attempt", type=int)
+    scr.add_argument("screen", choices=["controlled", "experimental", "rejected"])
+    scr.add_argument("--note", default="")
+    scr.set_defaults(run=_screen)
+
+
 def _add_prepare(sub: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     prep = sub.add_parser("prepare", help="orient, scale, crop to 3:2, and add blank masks")
     prep.add_argument("source", type=Path)
@@ -259,6 +320,7 @@ def build_parser() -> argparse.ArgumentParser:
     _add_candidate(sub)
     _add_pack(sub)
     _add_decide(sub)
+    _add_openai(sub)
     return parser
 
 
@@ -267,7 +329,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(argv)
     try:
         code: int = args.run(args)
-    except (FileNotFoundError, ValueError) as error:
+    except (FileNotFoundError, ValueError, BudgetExceededError) as error:
         parser.exit(2, f"nextstroke-lab: error: {error}\n")
     return code
 
