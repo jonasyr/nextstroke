@@ -329,3 +329,35 @@
 - **Reason:** Owner constraint; hosting is included in the existing ChatGPT plan.
 - **Consequence:** Facts verified from learn.chatgpt.com/docs/sites on 2026-10-03: public beta with unpublished plan limits; sites are private until public publishing is enabled; HTTPS at the origin root of `<slug>.<owner>.chatgpt.site` (each site its own origin); traffic analytics recorded automatically; no data residency; Worker mode supports secrets, environment variables, and outbound HTTPS; deployment only through ChatGPT, not CI. Not documented and therefore to be tested on a real deployment: `.wasm` MIME type, file and deploy size limits, custom headers (third-party reports say `_headers` is ignored in static mode, so no COOP/COEP and no threaded WASM), SPA fallback, injected provider scripts, service worker and manifest behavior, and iPhone Home Screen install. The app must work single-threaded, use hash routing or a single route, set no requirement on custom headers, and keep its build a plain static directory.
 - **Reconsider when:** A deployment probe fails a deciding criterion, the beta ends or changes terms, or usage limits remove public access.
+
+## D-039 — Architecture and automated quality guardrails
+
+- **Date:** 2026-10-03
+- **Selected:** Modular, testable architecture enforced by tools, applied to Phase 0 lab code as well as retained code:
+  - pure domain logic (masks, compositing rules, classification, decisions, material rules) separate from I/O, UI, and providers, with ports and adapters at the edges;
+  - one responsibility per module; dependencies point inward toward domain code and are checked automatically;
+  - test-driven development; domain modules aim for full branch coverage;
+  - Python: Ruff for lint and format, mypy in strict mode, pytest, all through uv;
+  - TypeScript (from Phase 1): Biome for lint and format, `tsc --strict`, dependency-cruiser for module boundaries, Vitest;
+  - pre-commit hooks run format, lint, type checks, and the documentation link check; GitHub Actions CI runs the same checks plus tests on every push and pull request;
+  - git workflow in `CONTRIBUTING.md`: short-lived branches, Conventional Commits, pull requests into `main` with green CI, no history rewrites on shared branches, lockfiles committed.
+- **Alternatives:** ESLint + Prettier; manual review only; quality tooling deferred to Phase 1.
+- **Reason:** Owner request to keep the product from "going rogue". Automated checks stop drift between plan and code cheaply, including in disposable experiment code that feeds the GO decision.
+- **Consequence:** Supersedes D-017's "from the start" scope note for tooling: lab code is disposable but still linted, typed, and tested. CI uses only free GitHub Actions minutes for a public repository.
+- **Reconsider when:** A tool blocks iPhone or ChatGPT Sites compatibility, or its license changes.
+
+## D-040 — Product language
+
+- **Date:** 2026-10-03
+- **Selected:** The `v0.1` user interface is German. English follows later. From Phase 1, all user-facing strings live in a message catalog keyed by ID, with `de` as the only shipped locale.
+- **Alternatives:** English first; both languages in `v0.1`.
+- **Reason:** Owner choice; the existing prototype and first users are German-speaking.
+- **Consequence:** Documentation, code, identifiers, and commit messages stay English. Material-claim paraphrases and instructions are written in German for `v0.1`. Phase 0 study materials are German.
+- **Reconsider when:** English-speaking users are recruited for a beta.
+
+## D-041 — Phase 0 plan approved
+
+- **Date:** 2026-10-03
+- **Selected:** The owner approved the revised Phase 0 plan, including the values proposed in the readiness review: study data deleted no later than 90 days after the Phase 0 decision, a 2048 px working edge, at least 10 cases with critical contours inside or touching the editable region, and a 100 ms main-thread threshold.
+- **Also decided:** The legacy demo images (`legacy/fineliner-lupe/dist/original.png`, `improved.png`) are not used as fixtures or corpus cases, because the artwork is not fineliner-only.
+- **Consequence:** Phase 0 is the active phase. Execution starts with prerequisites; the lab code lives in `lab/` on its own branch and is disposable unless a later plan retains it.

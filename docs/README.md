@@ -51,7 +51,7 @@ Implementation plans explain how to build the approved design; they do not silen
 | Privacy model and data flow | `docs/privacy/` (created in Phase 1; until then spec §11) |
 | Current version targets | `docs/roadmap/` (created when needed; until then spec §16) |
 | Experiment results | `docs/research/` |
-| Contributor and agent rules | root `AGENTS.md`; `CONTRIBUTING.md` is added in Phase 1 |
+| Contributor and agent rules | root `AGENTS.md` and `CONTRIBUTING.md` |
 | Existing working prototype | `legacy/fineliner-lupe/` |
 | Independent audits | `docs/reviews/` |
 | Context-free handoffs | `docs/handoffs/` |

@@ -2,7 +2,7 @@
 
 > **For agentic workers:** This is a timeboxed experiment. Code is disposable unless a later approved plan explicitly retains it. Do not generalize architecture during the experiment.
 
-**Status:** Revised 2026-10-03 after documentation readiness review; awaiting owner approval.
+**Status:** Approved by the owner on 2026-10-03 (D-041).
 
 **Goal:** Determine within a 10-working-day execution timebox whether NextStroke can produce understandable, physically executable fineliner guidance and a bounded visual preview on normal iPhone photos without unacceptable contour, device, latency, or cost failures.
 
@@ -26,7 +26,7 @@
 
 ## Prerequisites (outside the timebox, all required before day 1)
 
-- [ ] Owner approves this plan.
+- [x] Owner approves this plan (D-041).
 - [ ] Prompt templates for ideas, strategy S1, S2, and S3 are written, versioned, and frozen.
 - [ ] Consent template covers: purpose, the named services (OpenAI ChatGPT, Anthropic Claude), that those services may retain uploads under their consumer terms, local storage location, deletion date (no later than 90 days after the Phase 0 decision), and withdrawal.
 - [ ] Corpus sources confirmed: owner-made works and consenting volunteers only; no web-sourced artwork.
@@ -34,6 +34,7 @@
 - [ ] Two to three standardized starter drawings exist on real drawing paper, made by the owner and licensed for the study.
 - [ ] Rating rubric and the thresholds in §15 of the spec are committed to the repository before any output is generated (pre-registration).
 - [ ] Training-use settings in both subscriptions are disabled.
+- [ ] Lab code in `lab/` follows D-039: Ruff, mypy strict, pytest, pre-commit, and CI.
 - [ ] Lab tooling is built and tested before day 1 (D-035), with Python analysis managed by uv (D-037): S3 stroke renderer, compositor with boundary audit, rating page with randomized IDs, and attempt-log form. It reuses opencv.js, perfect-freehand, and plain canvas (D-036), plus the legacy prototype's import, comparison, and export code where useful (D-029).
 - [ ] A Claude Project holds the frozen ideas + S3 instructions, so each case needs one chat.
 

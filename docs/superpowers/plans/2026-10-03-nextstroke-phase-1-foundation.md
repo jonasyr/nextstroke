@@ -29,6 +29,8 @@
 - [ ] Select supported Node/pnpm versions based on current stable releases and document them.
 - [ ] Create focused `apps/web` and `packages/{contracts,compare,imaging,materials,coaching,ui}` boundaries.
 - [ ] Use pnpm and extend `scripts/setup.sh` (D-037).
+- [ ] Add Biome, `tsc --strict`, dependency-cruiser boundary rules, and Vitest to pre-commit and CI (D-039).
+- [ ] Add a message catalog with `de` as the only shipped locale (D-040).
 - [ ] Add only the spec §13.2 libraries the first phases use (D-036) and run a dependency-license check on them.
 - [ ] Add formatting, linting, typechecking, unit-test, build, dependency-license, and documentation-link commands.
 - [ ] Add CI using synthetic/licensed fixtures only.

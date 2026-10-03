@@ -33,10 +33,11 @@ See `docs/project-state.md` for the exact handoff state and `docs/decisions/deci
 2. Read the governing spec and the active phase plan.
 3. Inspect `legacy/fineliner-lupe/` before recreating existing comparison behavior.
 4. Do not start Phase 1 until Phase 0 evidence meets every GO criterion.
-5. Use test-driven implementation for retained code.
-6. Keep source files focused and framework-independent logic outside React components.
-7. Update the decision log, project state, spec, and plan in the same change whenever scope, architecture, privacy, external services, or quality gates change.
-8. Never commit new secrets, user artwork, unlicensed fixtures, provider responses containing personal images, or image-content telemetry.
+5. Use test-driven implementation for all code, including disposable Phase 0 lab code (D-039).
+6. Keep source files focused and framework-independent logic outside React components. Domain logic stays pure; I/O, UI, and providers are adapters (D-039).
+7. Run `scripts/check.sh` before committing; never bypass hooks or CI. Follow `CONTRIBUTING.md` for branches and commits.
+8. Update the decision log, project state, spec, and plan in the same change whenever scope, architecture, privacy, external services, or quality gates change.
+9. Never commit new secrets, user artwork, unlicensed fixtures, provider responses containing personal images, or image-content telemetry.
 
 ## Document authority
 

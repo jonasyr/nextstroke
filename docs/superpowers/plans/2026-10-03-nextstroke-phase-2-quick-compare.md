@@ -72,4 +72,3 @@
 - Ten repeated sessions show no crash/reload under defined test images.
 - Manual alignment always recovers from failed automatic alignment.
 - Original reveal works by tap and press/hold without hiding controls unexpectedly.
-

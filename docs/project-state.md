@@ -6,9 +6,9 @@
 
 **Branch:** `main`
 
-**Implementation status:** Working legacy comparison prototype imported; production rewrite not started
+**Implementation status:** Working legacy comparison prototype imported; disposable Phase 0 lab in progress under `lab/`; production rewrite not started
 
-**Next executable phase:** Phase 0 proof of feasibility, after owner approval of the revised Phase 0 plan
+**Active phase:** Phase 0 proof of feasibility, approved 2026-10-03 (D-041); prerequisites in progress
 
 **Latest review:** `docs/reviews/2026-10-03-documentation-readiness-review.md`
 
@@ -34,6 +34,9 @@ NextStroke is an iPhone-first physical-art coach that compares an artwork with a
 14. **Libraries:** reuse the vetted open-source stack in spec §13.2 (D-036).
 15. **Tooling:** uv for Python, pnpm for TypeScript, `scripts/setup.sh` (D-037).
 16. **Hosting:** every build must deploy to ChatGPT Sites; static mode, no required headers (D-038).
+17. **Quality guardrails:** modular ports-and-adapters design, TDD, automatic lint/format/type checks in pre-commit and CI, git workflow in `CONTRIBUTING.md` (D-039).
+18. **Language:** German UI for `v0.1`, English later, message catalog from Phase 1 (D-040).
+19. **Phase 0 approved** with the review's proposed values; legacy demo images are not fixtures (D-041).
 
 ## Evidence status
 

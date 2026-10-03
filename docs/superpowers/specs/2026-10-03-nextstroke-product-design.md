@@ -4,7 +4,7 @@
 
 **Date:** 2026-10-03
 
-**Owner decisions:** `docs/decisions/decision-log.md` D-022 through D-038
+**Owner decisions:** `docs/decisions/decision-log.md` D-022 through D-041
 
 **Feasibility evidence:** `docs/reviews/2026-10-03-independent-feasibility-review.md`
 
