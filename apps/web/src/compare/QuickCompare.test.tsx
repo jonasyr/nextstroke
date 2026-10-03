@@ -6,10 +6,21 @@ import { type CompareDeps, QuickCompare } from "./QuickCompare.tsx";
 
 beforeAll(() => {
   HTMLCanvasElement.prototype.getContext = (() => null) as never;
+  // jsdom has no layout: give every element a 400 × 200 box and report it once observed.
+  Element.prototype.getBoundingClientRect = () =>
+    ({ left: 0, top: 0, x: 0, y: 0, width: 400, height: 200, right: 400, bottom: 200 }) as DOMRect;
+  globalThis.ResizeObserver = class {
+    constructor(private readonly callback: ResizeObserverCallback) {}
+    observe() {
+      this.callback([], this as unknown as ResizeObserver);
+    }
+    unobserve() {}
+    disconnect() {}
+  };
 });
 afterEach(cleanup);
 
-const bitmap = (width = 1000, height = 500) =>
+const bitmap = (width = 100, height = 50) =>
   ({ width, height, close: vi.fn() }) as unknown as ImageBitmap;
 
 function makeDeps(over: Partial<CompareDeps> = {}): CompareDeps {
@@ -36,6 +47,12 @@ function makeDeps(over: Partial<CompareDeps> = {}): CompareDeps {
       width: w,
       height: h,
     })),
+    rgba: vi.fn((image: ImageBitmap) => ({
+      data: new Uint8ClampedArray(image.width * image.height * 4).fill(200),
+      width: image.width,
+      height: image.height,
+    })),
+    fromRgba: vi.fn(async (rgba) => bitmap(rgba.width, rgba.height)),
     now: () => 0,
     ...over,
   };
@@ -311,5 +328,55 @@ describe("Quick Compare view and alignment controls", () => {
     pick("Original wählen", png("two.png"));
     await screen.findByText(/two\.png/);
     expect(first.close).toHaveBeenCalled();
+  });
+});
+
+describe("four-point perspective (Task 4)", () => {
+  it("starts from the current layer, moves a corner with buttons and warps the reference", async () => {
+    const deps = makeDeps();
+    await loadBoth(deps);
+    fireEvent.click(screen.getByRole("button", { name: "Ausrichten" }));
+    fireEvent.click(screen.getByRole("button", { name: "Perspektive (4 Ecken)" }));
+    expect(screen.getByText(/Ziehe die vier Ecken/)).toBeTruthy();
+    await waitFor(() => expect(deps.fromRgba).toHaveBeenCalled());
+    fireEvent.click(screen.getByRole("button", { name: "Ecke unten rechts" }));
+    expect(
+      screen.getByRole("button", { name: "Ecke unten rechts" }).getAttribute("aria-pressed"),
+    ).toBe("true");
+    fireEvent.click(screen.getByRole("button", { name: "Ecke nach links" }));
+    fireEvent.click(screen.getByRole("button", { name: "Ecke nach oben" }));
+    fireEvent.click(screen.getByRole("button", { name: "Ecke nach rechts" }));
+    fireEvent.click(screen.getByRole("button", { name: "Ecke nach unten" }));
+    await waitFor(() => expect(vi.mocked(deps.fromRgba).mock.calls.length).toBeGreaterThan(1));
+    fireEvent.click(screen.getByRole("button", { name: "Perspektive entfernen" }));
+    expect(screen.getByRole("button", { name: "Perspektive (4 Ecken)" })).toBeTruthy();
+  });
+
+  it("warns instead of warping when corners cross", async () => {
+    const deps = makeDeps();
+    await loadBoth(deps);
+    fireEvent.click(screen.getByRole("button", { name: "Ausrichten" }));
+    fireEvent.click(screen.getByRole("button", { name: "Perspektive (4 Ecken)" }));
+    await waitFor(() => expect(deps.fromRgba).toHaveBeenCalledTimes(1));
+    const workspace = screen.getByLabelText(/Vergleichsfläche/);
+    // The 100 × 50 original fills the 400 × 200 workspace: drag top-left past bottom-right.
+    fireEvent.pointerDown(workspace, { pointerId: 3, clientX: 1, clientY: 1 });
+    fireEvent.pointerMove(workspace, { pointerId: 3, clientX: 420, clientY: 220 });
+    fireEvent.pointerUp(workspace, { pointerId: 3 });
+    expect(await screen.findByText(/Ecken überkreuzen sich/)).toBeTruthy();
+    expect(deps.fromRgba).toHaveBeenCalledTimes(1);
+  });
+
+  it("drags a corner handle on the workspace", async () => {
+    const deps = makeDeps();
+    await loadBoth(deps);
+    fireEvent.click(screen.getByRole("button", { name: "Ausrichten" }));
+    fireEvent.click(screen.getByRole("button", { name: "Perspektive (4 Ecken)" }));
+    await waitFor(() => expect(deps.fromRgba).toHaveBeenCalledTimes(1));
+    const workspace = screen.getByLabelText(/Vergleichsfläche/);
+    fireEvent.pointerDown(workspace, { pointerId: 7, clientX: 2, clientY: 2 });
+    fireEvent.pointerMove(workspace, { pointerId: 7, clientX: 40, clientY: 20 });
+    fireEvent.pointerUp(workspace, { pointerId: 7 });
+    await waitFor(() => expect(vi.mocked(deps.fromRgba).mock.calls.length).toBeGreaterThan(1));
   });
 });

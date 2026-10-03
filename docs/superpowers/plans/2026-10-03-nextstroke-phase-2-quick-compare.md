@@ -28,43 +28,55 @@
 
 ## Task 0: Characterize the legacy prototype
 
-- [ ] Write a behavior checklist from `legacy/fineliner-lupe/dist/app.js` and turn each item into an acceptance test: opacity 0–100, tap toggles original, press-hold reveal with pointer capture, two-finger pan/zoom (view 1–8×) versus reference transform in align mode (scale 0.4–2), fine-adjust tabs, 50% shortcut, PDF page picker (render edge ≤ 2400 px, document destroyed after use), PNG export of original/reference/comparison with share-sheet fallback, busy/importing guards, and the auto-align "no safe match, align manually" fallback.
-- [ ] Fix the legacy defects found in the 2026-10-03 review instead of porting them:
+- [x] Write a behavior checklist from `legacy/fineliner-lupe/dist/app.js` and turn each item into an acceptance test: opacity 0–100, tap toggles original, press-hold reveal with pointer capture, two-finger pan/zoom (view 1–8×) versus reference transform in align mode (scale 0.4–2), fine-adjust tabs, 50% shortcut, PDF page picker (render edge ≤ 2400 px, document destroyed after use), PNG export of original/reference/comparison with share-sheet fallback, busy/importing guards, and the auto-align "no safe match, align manually" fallback.
+- [x] Fix the legacy defects found in the 2026-10-03 review instead of porting them:
   - imports up to 40 MP are decoded and exported at full resolution, so 24 MP iPhone photos exceed the ~16.7 MP iOS canvas area and the comparison export can fail silently (`toBlob` returns null);
   - `contextmenu` and `selectstart` are suppressed document-wide instead of only in the workspace;
   - no web app manifest or service worker, so the app is not installable or offline;
   - auto-align optimizes only translation, scale (0.65–1.4), and rotation (±15°) by grayscale correlation at 160 px, which misses perspective differences.
-- [ ] Decide whether to keep the prototype's `document.modelContext.registerTool` agent-tool hook (WebMCP) as progressive enhancement.
+- [x] Decide whether to keep the prototype's `document.modelContext.registerTool` agent-tool hook (WebMCP) as progressive enhancement.
 
 ## Task 1: Safe bounded import
 
-- [ ] Test orientation, transparency, color normalization, and decode pixel budget.
-- [ ] Downsample early in a worker with `OffscreenCanvas` while retaining the immutable original blob separately; the probe measured up to 285 ms main-thread blocks when decoding on the main thread.
-- [ ] Add HEIC capability detection/fallback and single-page PDF selection/release.
+- [x] Test orientation, transparency, color normalization, and decode pixel budget.
+- [x] Downsample early in a worker with `OffscreenCanvas` while retaining the immutable original blob separately; the probe measured up to 285 ms main-thread blocks when decoding on the main thread.
+- [x] Add HEIC capability detection/fallback and single-page PDF selection/release.
 
 ## Task 2: Deterministic renderer
 
-- [ ] Define finite source-normalized transforms and viewport projection.
+- [x] Define finite source-normalized transforms and viewport projection.
 - [ ] Implement opacity, split comparison (img-comparison-slider), original reveal, fit/reset, and layered render.
 - [ ] Verify current settings survive route and immersive-mode transitions.
 
 ## Task 3: Touch and controls
 
-- [ ] Implement pan/pinch with explicit pointer lifecycle and cancellation, using `@use-gesture` or `@panzoom/panzoom` (D-036).
-- [ ] Provide button alternatives for position, scale, rotation, opacity, fit, and reset.
-- [ ] Scope selection/drag/long-press suppression to the workspace.
+- [x] Implement pan/pinch with explicit pointer lifecycle and cancellation, using `@use-gesture` or `@panzoom/panzoom` (D-036).
+- [x] Provide button alternatives for position, scale, rotation, opacity, fit, and reset.
+- [x] Scope selection/drag/long-press suppression to the workspace.
 
 ## Task 4: Alignment
 
-- [ ] Implement manual four-point perspective alignment first.
+- [x] Implement manual four-point perspective alignment first.
 - [ ] Add automatic feature/homography proposal (opencv.js AKAZE/ORB + RANSAC, ECC refinement, in a worker; D-036) with confidence and cancellation only after fixtures exist. Keep the legacy correlation search as a cheap first guess if tests show it helps.
-- [ ] Reject low-confidence results without moving the user's layer.
+- [x] Reject low-confidence results without moving the user's layer.
 
 ## Task 5: Offline route and export
 
-- [ ] Complete no-project Quick Compare flow.
-- [ ] Add PNG/JPEG comparison export and native share when supported.
+- [x] Complete no-project Quick Compare flow.
+- [x] Add PNG/JPEG comparison export and native share when supported.
 - [ ] Verify installed/offline behavior and service-worker update recovery.
+
+## Status (2026-10-03)
+
+Done and tested (unit tests plus Playwright in CI): legacy checklist (`docs/research/legacy-behavior.md`), bounded worker decode, HEIC native decode with an explained fallback message, single-page PDF via the pdf.js legacy build, renderer with opacity and tap/hold reveal, pinch/pan, alignment with button alternatives, cancellable correlation auto-align, four-point perspective with draggable corners and button nudges, PNG/JPEG export with share fallback, offline route.
+
+Open:
+- Split comparison: not built yet. The renderer is canvas-based, so a canvas clip is planned instead of img-comparison-slider (D-036 listed it); needs a decision entry when built.
+- opencv.js automatic homography: waits for fixtures (Task 4).
+- HEIC decoding where the browser cannot: `heic-to` fallback not added; Safari decodes HEIC natively, so this is measured on the iPhone first.
+- Perspective warp runs on the main thread (about 3 MP of bilinear sampling); move it to the worker if the iPhone shows a stall.
+- UX on small screens: the alignment panel sits below the image, so button adjustments are made without seeing the image. Review on the iPhone.
+- Exit gate items below need real iPhones.
 
 ## Exit gate
 

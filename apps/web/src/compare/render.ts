@@ -19,11 +19,25 @@ export function drawArtwork(
   original: Drawable,
   reference: Drawable,
   state: CompareState,
+  warped: Drawable | null = null,
 ) {
   ctx.drawImage(original, -original.width / 2, -original.height / 2);
   const alpha = effectiveOpacity(state);
   if (alpha === 0) return;
   ctx.save();
+  if (state.corners && warped) {
+    // Four-point perspective: the reference was warped into the original's pixel grid.
+    ctx.globalAlpha = alpha;
+    ctx.drawImage(
+      warped,
+      -original.width / 2,
+      -original.height / 2,
+      original.width,
+      original.height,
+    );
+    ctx.restore();
+    return;
+  }
   transform(ctx, layerMatrix(state.layer, original, reference));
   ctx.globalAlpha = alpha;
   ctx.drawImage(reference, 0, 0);
@@ -38,6 +52,9 @@ export function drawComparison(
     state: CompareState;
     viewport: { width: number; height: number };
     dpr: number;
+    warped?: Drawable | null;
+    handles?: readonly { x: number; y: number }[];
+    activeHandle?: number;
   },
 ) {
   const { original, reference, state, viewport, dpr } = input;
@@ -46,8 +63,28 @@ export function drawComparison(
   ctx.save();
   const fit = Math.min(viewport.width / original.width, viewport.height / original.height);
   transform(ctx, viewMatrix(state.view, fit, viewport));
-  drawArtwork(ctx, original, reference, state);
+  drawArtwork(ctx, original, reference, state, input.warped ?? null);
   ctx.restore();
+  for (const [i, p] of (input.handles ?? []).entries()) {
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, i === input.activeHandle ? 14 : 11, 0, Math.PI * 2);
+    ctx.fillStyle = i === input.activeHandle ? "rgba(43,74,139,0.9)" : "rgba(255,255,255,0.85)";
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "#1d2329";
+    ctx.stroke();
+  }
+}
+
+/** Pixels of an image, for the perspective warp. */
+export function toRgba(image: Drawable, makeCanvas: () => HTMLCanvasElement = newCanvas) {
+  const canvas = makeCanvas();
+  canvas.width = image.width;
+  canvas.height = image.height;
+  const ctx = context(canvas);
+  ctx.drawImage(image, 0, 0);
+  const { data } = ctx.getImageData(0, 0, image.width, image.height);
+  return { data, width: image.width, height: image.height };
 }
 
 const newCanvas = () => document.createElement("canvas");

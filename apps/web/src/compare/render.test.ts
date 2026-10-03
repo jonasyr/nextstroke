@@ -1,6 +1,6 @@
 import { initialState } from "@nextstroke/compare";
 import { describe, expect, it } from "vitest";
-import { drawComparison, renderToBlob, toGray } from "./render.ts";
+import { drawComparison, renderToBlob, toGray, toRgba } from "./render.ts";
 
 function recorder() {
   const calls: string[] = [];
@@ -127,5 +127,60 @@ describe("renderToBlob (legacy D1: a null blob is an error)", () => {
         () => noCtx as unknown as HTMLCanvasElement,
       ),
     ).rejects.toThrow(/2d/);
+  });
+});
+
+describe("perspective drawing", () => {
+  const corners = [
+    { x: 0, y: 0 },
+    { x: 1, y: 0 },
+    { x: 1, y: 1 },
+    { x: 0, y: 1 },
+  ] as const;
+
+  it("draws the warped reference instead of the affine layer and the corner handles", () => {
+    const { ctx, calls } = recorder();
+    const state = { ...initialState(), corners };
+    const warped = { width: 1000, height: 500 } as ImageBitmap;
+    drawComparison(ctx, {
+      original,
+      reference,
+      state,
+      viewport: { width: 400, height: 200 },
+      dpr: 1,
+      warped,
+      handles: [
+        { x: 1, y: 2 },
+        { x: 3, y: 4 },
+      ],
+      activeHandle: 1,
+    });
+    expect(calls).toContain("drawImage(img,-500,-250,1000,500)");
+    expect(calls.filter((c) => c.startsWith("arc("))).toEqual([
+      "arc(1,2,11,0,6.283)",
+      "arc(3,4,14,0,6.283)",
+    ]);
+  });
+
+  it("falls back to the affine layer until the warp is ready", () => {
+    const { ctx, calls } = recorder();
+    drawComparison(ctx, {
+      original,
+      reference,
+      state: { ...initialState(), corners },
+      viewport: { width: 400, height: 200 },
+      dpr: 1,
+    });
+    expect(calls).toContain("drawImage(img,0,0)");
+  });
+
+  it("reads image pixels", () => {
+    const { ctx } = recorder();
+    const rgba = toRgba(
+      { width: 4, height: 3 } as ImageBitmap,
+      () => ({ getContext: () => ctx }) as unknown as HTMLCanvasElement,
+    );
+    expect(rgba.width).toBe(4);
+    expect(rgba.data.length).toBe(48);
   });
 });

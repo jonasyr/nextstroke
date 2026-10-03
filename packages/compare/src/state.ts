@@ -17,6 +17,16 @@ export interface Layer {
 
 export type Param = "x" | "y" | "scale" | "rotation";
 
+interface Point {
+  x: number;
+  y: number;
+}
+/** Reference corners on the original (TL, TR, BR, BL), normalized; see corners.ts. */
+export type Corners = readonly [Point, Point, Point, Point];
+
+/** One button step for a corner: 0.2 % of the original's width or height. */
+export const CORNER_STEP = 0.002;
+
 export interface CompareState {
   opacity: number;
   tapReveal: boolean;
@@ -26,6 +36,9 @@ export interface CompareState {
   aligning: boolean;
   alignGestures: boolean;
   activeParam: Param;
+  /** Four-point perspective; when set it replaces the affine layer for drawing. */
+  corners: Corners | null;
+  activeCorner: number;
 }
 
 export const PARAMS: Record<Param, { min: number; max: number; step: number }> = {
@@ -54,6 +67,8 @@ export function initialState(): CompareState {
     aligning: false,
     alignGestures: true,
     activeParam: "x",
+    corners: null,
+    activeCorner: 0,
   };
 }
 
@@ -74,7 +89,16 @@ export type CompareAction =
   | { type: "zoom"; factor: number }
   | { type: "set-view"; view: View }
   | { type: "fit" }
-  | { type: "image-replaced" };
+  | { type: "image-replaced" }
+  | { type: "corners-start"; corners: Corners }
+  | { type: "select-corner"; index: number }
+  | { type: "corner-set"; index: number; point: Point }
+  | { type: "corner-nudge"; dx: number; dy: number }
+  | { type: "corners-clear" };
+
+function replaceCorner(corners: Corners, index: number, point: Point): Corners {
+  return corners.map((c, i) => (i === index ? point : c)) as unknown as Corners;
+}
 
 const LAYER_KEY: Record<Param, keyof Layer> = {
   x: "x",
@@ -131,7 +155,7 @@ export function compare(state: CompareState, action: CompareAction): CompareStat
     case "set-layer":
       return { ...state, layer: action.layer };
     case "reset-layer":
-      return { ...state, layer: IDENTITY };
+      return { ...state, layer: IDENTITY, corners: null };
     case "zoom": {
       const zoom = clamp(state.view.zoom * action.factor, ZOOM.min, ZOOM.max);
       const f = zoom / state.view.zoom;
@@ -142,7 +166,30 @@ export function compare(state: CompareState, action: CompareAction): CompareStat
     case "fit":
       return { ...state, view: FIT };
     case "image-replaced":
-      return { ...state, view: FIT, layer: IDENTITY, tapReveal: false, holdReveal: false };
+      return {
+        ...state,
+        view: FIT,
+        layer: IDENTITY,
+        tapReveal: false,
+        holdReveal: false,
+        corners: null,
+      };
+    case "corners-start":
+      return { ...state, corners: action.corners, activeCorner: 0 };
+    case "select-corner":
+      return { ...state, activeCorner: action.index };
+    case "corner-set":
+      return state.corners
+        ? { ...state, corners: replaceCorner(state.corners, action.index, action.point) }
+        : state;
+    case "corner-nudge": {
+      const c = state.corners?.[state.activeCorner];
+      if (!state.corners || !c) return state;
+      const point = { x: c.x + action.dx * CORNER_STEP, y: c.y + action.dy * CORNER_STEP };
+      return { ...state, corners: replaceCorner(state.corners, state.activeCorner, point) };
+    }
+    case "corners-clear":
+      return { ...state, corners: null };
   }
 }
 

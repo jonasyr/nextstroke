@@ -3,16 +3,22 @@ import {
   badge,
   type CompareState,
   compare,
+  cornersFromLayer,
+  cornersOnScreen,
   type GestureEvent,
   gestures,
   HOLD_MS,
+  hitCorner,
   idleGesture,
   initialState,
+  invertHomography,
   PARAMS,
   type Param,
   paramValue,
+  referenceHomography,
+  screenToOriginal,
 } from "@nextstroke/compare";
-import { classifyFile, exportSize } from "@nextstroke/imaging";
+import { classifyFile, exportSize, type Rgba, warpPerspective } from "@nextstroke/imaging";
 import { type MessageKey, t } from "@nextstroke/ui";
 import {
   type ChangeEvent,
@@ -42,8 +48,13 @@ export interface CompareDeps {
   share(file: File): Promise<unknown>;
   renderBlob: typeof renderToBlob;
   gray: typeof toGray;
+  /** Pixels of a bitmap and back, for the four-point perspective warp. */
+  rgba(image: ImageBitmap): Rgba;
+  fromRgba(rgba: Rgba): Promise<ImageBitmap>;
   now(): number;
 }
+
+const HANDLE_RADIUS = 28;
 
 const PARAM_LABEL: Record<Param, MessageKey> = {
   x: "compare.param.x",
@@ -74,6 +85,8 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
   } | null>(null);
   const [pdfPage, setPdfPage] = useState(1);
   const [size, setSize] = useState({ width: 0, height: 0 });
+  const [warped, setWarped] = useState<ImageBitmap | null>(null);
+  const [dragging, setDragging] = useState<{ pointer: number; corner: number } | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const workspaceRef = useRef<HTMLDivElement | null>(null);
   const [workspaceEl, setWorkspaceEl] = useState<HTMLDivElement | null>(null);
@@ -112,8 +125,43 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
       state,
       viewport: size,
       dpr,
+      warped,
+      handles:
+        state.aligning && state.corners
+          ? cornersOnScreen(state.corners, state.view, original, size)
+          : [],
+      activeHandle: state.activeCorner,
     });
   });
+
+  // Warp the reference into the original's grid once corners settle (not while dragging).
+  const corners = state.corners;
+  useEffect(() => {
+    if (!corners || !original || !reference || dragging) return;
+    const h = referenceHomography(corners, original, reference);
+    const toSource = h && invertHomography(h);
+    if (!toSource) {
+      setStatus(t("compare.status.perspectiveFolded"));
+      return;
+    }
+    let cancelled = false;
+    const result = warpPerspective(
+      deps.rgba(reference.bitmap),
+      toSource,
+      original.width,
+      original.height,
+    );
+    void deps.fromRgba(result).then((bitmap) => {
+      if (cancelled) return bitmap.close();
+      setWarped((previous) => {
+        previous?.close();
+        return bitmap;
+      });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [corners, original, reference, dragging, deps]);
 
   useEffect(() => () => abortRef.current?.abort(), []);
 
@@ -184,7 +232,7 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
       scale: Math.min(width / original.width, height / original.height),
       view: s.view,
       layer: s.layer,
-      moveLayer: s.aligning && s.alignGestures && !immersive,
+      moveLayer: s.aligning && s.alignGestures && !immersive && !s.corners,
       originalWidth: original.width,
     });
     gestureRef.current = step.state;
@@ -196,15 +244,42 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
     }
   }
 
+  function local(event: PointerEvent<HTMLDivElement>) {
+    const rect = workspaceRef.current?.getBoundingClientRect();
+    return { x: event.clientX - (rect?.left ?? 0), y: event.clientY - (rect?.top ?? 0) };
+  }
+
   function onPointerDown(event: PointerEvent<HTMLDivElement>) {
-    if (!ready || busy) return;
+    if (!ready || busy || !original) return;
     event.currentTarget.setPointerCapture?.(event.pointerId);
+    const s = stateRef.current;
+    if (s.aligning && s.corners && !dragging) {
+      const corner = hitCorner(s.corners, local(event), s.view, original, size, HANDLE_RADIUS);
+      if (corner !== null) {
+        dispatch({ type: "select-corner", index: corner });
+        setDragging({ pointer: event.pointerId, corner });
+        return;
+      }
+    }
     feed({ type: "down", id: event.pointerId, x: event.clientX, y: event.clientY, t: deps.now() });
     clearTimeout(holdTimer.current);
     holdTimer.current = setTimeout(() => feed({ type: "tick", t: deps.now() }), HOLD_MS);
   }
 
+  function onPointerMove(event: PointerEvent<HTMLDivElement>) {
+    if (dragging?.pointer === event.pointerId && original) {
+      const point = screenToOriginal(local(event), stateRef.current.view, original, size);
+      dispatch({ type: "corner-set", index: dragging.corner, point });
+      return;
+    }
+    feed({ type: "move", id: event.pointerId, x: event.clientX, y: event.clientY, t: deps.now() });
+  }
+
   const endPointer = (type: "up" | "cancel") => (event: PointerEvent<HTMLDivElement>) => {
+    if (dragging?.pointer === event.pointerId) {
+      setDragging(null);
+      return;
+    }
     clearTimeout(holdTimer.current);
     feed(
       type === "up" ? { type, id: event.pointerId, t: deps.now() } : { type, id: event.pointerId },
@@ -271,7 +346,7 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
           ctx.fillStyle = "#fff";
           ctx.fillRect(0, 0, size.width, size.height);
           ctx.setTransform(size.scale, 0, 0, size.scale, size.width / 2, size.height / 2);
-          drawArtwork(ctx, original.bitmap, reference.bitmap, stateRef.current);
+          drawArtwork(ctx, original.bitmap, reference.bitmap, stateRef.current, warped);
         });
         file = new File([blob], `Vergleich.${kind === "png" ? "png" : "jpg"}`, { type });
       }
@@ -319,9 +394,7 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
       tabIndex={0}
       aria-label={t("compare.workspace")}
       onPointerDown={onPointerDown}
-      onPointerMove={(e) =>
-        feed({ type: "move", id: e.pointerId, x: e.clientX, y: e.clientY, t: deps.now() })
-      }
+      onPointerMove={onPointerMove}
       onPointerUp={endPointer("up")}
       onPointerCancel={endPointer("cancel")}
       onLostPointerCapture={endPointer("cancel")}
@@ -461,6 +534,58 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
                 />
                 {t("compare.alignGestures")}
               </label>
+              <div className="ns-row">
+                {state.corners ? (
+                  <button type="button" onClick={() => dispatch({ type: "corners-clear" })}>
+                    {t("compare.perspective.clear")}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!original || !reference) return;
+                      dispatch({
+                        type: "corners-start",
+                        corners: cornersFromLayer(state.layer, original, reference),
+                      });
+                      setStatus(t("compare.perspective.hint"));
+                    }}
+                  >
+                    {t("compare.perspective.start")}
+                  </button>
+                )}
+              </div>
+              {state.corners && (
+                <div className="ns-row">
+                  {([0, 1, 2, 3] as const).map((i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      aria-pressed={state.activeCorner === i}
+                      onClick={() => dispatch({ type: "select-corner", index: i })}
+                    >
+                      {t(`compare.corner.${i}`)}
+                    </button>
+                  ))}
+                  {(
+                    [
+                      ["left", -1, 0, "←"],
+                      ["up", 0, -1, "↑"],
+                      ["right", 1, 0, "→"],
+                      ["down", 0, 1, "↓"],
+                    ] as const
+                  ).map(([name, dx, dy, arrow]) => (
+                    <button
+                      key={name}
+                      type="button"
+                      aria-label={t(`compare.corner.${name}`)}
+                      onClick={() => dispatch({ type: "corner-nudge", dx, dy })}
+                    >
+                      {arrow}
+                    </button>
+                  ))}
+                </div>
+              )}
               <div className="ns-row">
                 <button
                   type="button"

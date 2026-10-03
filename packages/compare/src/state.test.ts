@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   badge,
+  CORNER_STEP,
   type CompareState,
   compare,
   effectiveOpacity,
@@ -87,5 +88,38 @@ describe("comparison state (legacy C1–C6, V3–V5)", () => {
 
   it("toggles whether gestures move the layer while aligning", () => {
     expect(run({ type: "align-gestures", enabled: false }).alignGestures).toBe(false);
+  });
+});
+
+describe("perspective corners in the state", () => {
+  const corners = [
+    { x: 0, y: 0 },
+    { x: 1, y: 0 },
+    { x: 1, y: 1 },
+    { x: 0, y: 1 },
+  ] as const;
+
+  it("starts, selects, moves and nudges corners", () => {
+    let s = run({ type: "corners-start", corners });
+    expect(s.corners).toEqual(corners);
+    expect(s.activeCorner).toBe(0);
+    s = compare(s, { type: "select-corner", index: 2 });
+    s = compare(s, { type: "corner-nudge", dx: 1, dy: 0 });
+    expect(s.corners?.[2]?.x).toBeCloseTo(1 + CORNER_STEP);
+    s = compare(s, { type: "corner-set", index: 0, point: { x: 0.1, y: 0.2 } });
+    expect(s.corners?.[0]).toEqual({ x: 0.1, y: 0.2 });
+  });
+
+  it("ignores corner edits without corners", () => {
+    const s = initialState();
+    expect(compare(s, { type: "corner-nudge", dx: 1, dy: 0 })).toBe(s);
+    expect(compare(s, { type: "corner-set", index: 0, point: { x: 0, y: 0 } })).toBe(s);
+  });
+
+  it("clears corners on request, on reset and on a new image", () => {
+    const s = run({ type: "corners-start", corners });
+    expect(compare(s, { type: "corners-clear" }).corners).toBeNull();
+    expect(compare(s, { type: "reset-layer" }).corners).toBeNull();
+    expect(compare(s, { type: "image-replaced" }).corners).toBeNull();
   });
 });

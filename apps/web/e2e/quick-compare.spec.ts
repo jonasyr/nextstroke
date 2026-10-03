@@ -84,3 +84,58 @@ test("works offline after the first visit", async ({ page, context }) => {
   await expect(page.getByText("ÜBERLAGERUNG")).toBeVisible();
   await expect(page.getByRole("status").filter({ hasText: "Offline" })).toBeVisible();
 });
+
+test("aligns a perspective-distorted reference with four corner handles", async ({ page }) => {
+  await page.goto("#/compare");
+  const original = await syntheticImage(page, {
+    width: 1200,
+    height: 800,
+    type: "image/png",
+    seed: 3,
+  });
+  const reference = await syntheticImage(page, {
+    width: 1200,
+    height: 800,
+    type: "image/png",
+    seed: 4,
+  });
+  await page.getByLabel(/^Original wählen/).setInputFiles(original);
+  await expect(page.getByText("Bild geladen. Automatisch oder manuell ausrichten.")).toBeVisible();
+  await page.getByLabel(/^Referenz wählen/).setInputFiles(reference);
+  await expect(page.getByText("ÜBERLAGERUNG")).toBeVisible();
+  await page.getByRole("button", { name: "Ausrichten" }).click();
+  await page.getByRole("button", { name: "Perspektive (4 Ecken)" }).click();
+
+  const snapshot = () =>
+    page.evaluate(() => {
+      const canvas = document.querySelector("canvas") as HTMLCanvasElement;
+      const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
+      const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      let sum = 0;
+      for (let i = 0; i < data.length; i += 16) sum += data[i] as number;
+      return sum;
+    });
+  await page.waitForTimeout(300);
+  const before = await snapshot();
+
+  // Drag the top-right handle inwards: a keystone the affine layer cannot express.
+  await page.locator(".ns-workspace").scrollIntoViewIfNeeded();
+  const box = (await page.locator(".ns-workspace").boundingBox()) as {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+  const fit = Math.min(box.width / 1200, box.height / 800);
+  const left = box.x + (box.width - 1200 * fit) / 2;
+  const top = box.y + (box.height - 800 * fit) / 2;
+  await page.mouse.move(left + 1200 * fit - 2, top + 2);
+  await page.mouse.down();
+  await page.mouse.move(left + 1200 * fit * 0.8, top + 800 * fit * 0.15, { steps: 5 });
+  await page.mouse.up();
+
+  await expect.poll(snapshot, { timeout: 5_000 }).not.toBe(before);
+  await page.getByRole("button", { name: "Ecke unten links" }).click();
+  await page.getByRole("button", { name: "Ecke nach rechts" }).click();
+  await expect(page.getByRole("button", { name: "Perspektive entfernen" })).toBeVisible();
+});
