@@ -1,0 +1,23 @@
+name: Change request
+description: Propose a change to scope, behavior or architecture.
+labels: [proposal]
+body:
+  - type: markdown
+    attributes:
+      value: Scope, privacy, architecture, external-service and quality-gate changes need a decision-log entry and updates to the project state, spec and plan (AGENTS.md). Check the stop conditions first.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or opportunity
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+    validations:
+      required: true
+  - type: textarea
+    id: rules
+    attributes:
+      label: Affected product rules or decisions (for example rule 3, D-038)

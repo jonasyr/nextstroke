@@ -48,7 +48,10 @@ Implementation plans explain how to build the approved design; they do not silen
 | Decision options and rationale | `docs/decisions/decision-log.md` |
 | One major technical choice | `docs/decisions/NNNN-*.md` |
 | Task order, files, tests, commits | `docs/superpowers/plans/` |
-| Privacy model and data flow | `docs/privacy/` (created in Phase 1; until then spec §11) |
+| Privacy model and data flow | `docs/privacy/README.md` |
+| License status and dependency policy | `docs/legal/license.md` |
+| Web app build and deployment | `apps/web/README.md` |
+| Package interfaces and boundaries | `docs/architecture/interface-map.md` |
 | Current version targets | `docs/roadmap/` (created when needed; until then spec §16) |
 | Experiment results | `docs/research/` |
 | Contributor and agent rules | root `AGENTS.md` and `CONTRIBUTING.md` |

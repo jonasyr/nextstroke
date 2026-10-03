@@ -1,0 +1,27 @@
+name: Bug report
+description: Something does not work as described.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Please do not attach your artwork or personal photos. Describe the image instead (size, format, device).
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device, iOS/browser version, Home Screen app or Safari tab
+  - type: input
+    id: version
+    attributes:
+      label: App version or commit
