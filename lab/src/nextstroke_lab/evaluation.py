@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from collections import defaultdict
-from collections.abc import Mapping, Sequence
+from collections.abc import Collection, Mapping, Sequence
 from pathlib import Path
 
 from nextstroke_lab.adapters.attempt_log import AttemptRecord
@@ -52,16 +52,26 @@ def read_audits(root: Path) -> dict[Triple, bool]:
     return audits
 
 
-def build_outcomes(
+def build_outcomes(  # noqa: PLR0913 - the evidence sources stay explicit
     records: Sequence[AttemptRecord],
     audits: Mapping[Triple, bool],
     first: Mapping[Triple, Rubric],
     final: Mapping[Triple, Rubric] | None,
     cost_per_attempt: Mapping[Strategy, float],
+    *,
+    cases: Collection[str] | None = None,
 ) -> tuple[dict[Strategy, list[CaseOutcome]], dict[Strategy, int]]:
-    """Return outcomes per strategy and the count of unnoticed changes per strategy."""
+    """Return outcomes per strategy and the count of unnoticed changes per strategy.
+
+    Only `cases` are evaluated when given (D-044: comparison cases do not count). Measured
+    cost from the log wins over the flat per-strategy estimate. Attempts after the first one
+    rated controlled are ignored: D-035 stops there, so they only exist because a stricter
+    screening missed the success.
+    """
     grouped: dict[tuple[str, Strategy], list[AttemptRecord]] = defaultdict(list)
     for record in records:
+        if cases is not None and record.case_id not in cases:
+            continue
         grouped[(record.case_id, record.strategy)].append(record)
 
     outcomes: dict[Strategy, list[CaseOutcome]] = defaultdict(list)
@@ -69,8 +79,14 @@ def build_outcomes(
     for (case_id, strategy), attempts in sorted(grouped.items()):
         results: list[AttemptOutcome] = []
         for record in sorted(attempts, key=lambda r: r.attempt):
+            if results and results[-1].trust is Trust.CONTROLLED:
+                break
             triple = record.key
-            cost = cost_per_attempt.get(strategy, 0.0)
+            cost = (
+                record.cost_usd
+                if record.cost_usd is not None
+                else cost_per_attempt.get(strategy, 0.0)
+            )
             if record.failure is not None:
                 results.append(
                     AttemptOutcome(

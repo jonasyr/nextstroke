@@ -418,3 +418,13 @@
 - **Reason:** Placement precision is what S2 is judged on; medium quality matches the runbook's cost basis; the reference photo is required for S2 to know where to draw.
 - **Consequence:** Results describe this model variant and quality only. One benign case (c01, S2 attempt 1) was refused by moderation (`safety_violations=[abuse]`), so refusals on harmless art are a real provider risk to report.
 - **Reconsider when:** Owner ratings show S2 failing on placement in ways a different variant or quality might fix, or refusals recur.
+
+## D-047 — Rating round 2 skipped; round 1 is final
+
+- **Date:** 2026-10-03
+- **Supersedes:** The second blinded rating pass of Phase 0 Task 5 (seed 2, next day).
+- **Selected:** The owner's round-1 ratings (`ratings-1.json`, rated on the phone through a private claude.ai page with the same blinded IDs) are final. `decide` runs without `--rereview`. It evaluates only the GO cases c01–c07 (`--cases`). Attempts after the first one the owner rated controlled are ignored, since D-035 stops there and they ran only because the orchestrator's screening was stricter (S2 c02, S2 c07). Measured cost from the log replaces the flat estimate; S3 uses an estimate of USD 0.02 per attempt.
+- **Alternatives:** Rate pack 2 the next day as planned.
+- **Reason:** Owner choice, to move on.
+- **Consequence:** The "unnoticed changes" criterion is not measured (reported as 0 because there is no second pass, not because none exist), and rater consistency is unknown. The report must state both. With round 1 only: S3 6 of 7, S2 5 of 7, S1 0 of 7 cases controlled. `decide` returns PIVOT with S3 as the best strategy and one unmet criterion: no beginner study evidence.
+- **Reconsider when:** A later re-rating disagrees with round 1.
