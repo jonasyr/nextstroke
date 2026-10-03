@@ -47,6 +47,7 @@
 
 ## Task 4: Minimal API and cost controls
 
+- [ ] If a server-side secret is needed, implement the API in ChatGPT Sites Worker mode with hosted secrets (D-038); verify outbound access to the provider.
 - [ ] Explain transmitted data before request and send only confirmed working assets.
 - [ ] Add authentication suitable for protecting the service endpoint without introducing user project accounts.
 - [ ] Add rate limit, idempotency, request size, timeout, retry, and cost ceilings.

@@ -312,3 +312,20 @@
 - **Reason:** These libraries already solve the hard platform and math problems, are maintained, and are compatible with AGPL-3.0 distribution. Commercial SDKs cost money and conflict with the license.
 - **Consequence:** Masks stay in framework-independent bitmaps of our own. Every dependency's license is checked again when it is added. Avoid PiDiNet (research-only rider), heic2any (stale decoder), jsfeat and tracking.js (unmaintained), and full SAM/SAM2 or DexiNed on device (too large). Model weights need provenance checks before use.
 - **Reconsider when:** A library becomes unmaintained, changes license, or fails real-iPhone memory tests.
+
+## D-037 — Tooling: uv for Python, pnpm for TypeScript, one setup script
+
+- **Date:** 2026-10-03
+- **Selected:** Python tooling (Phase 0 desktop analysis such as compositing, boundary audit, and metrics) uses uv with a `pyproject.toml` and lockfile. The web app uses Node with pnpm. `scripts/setup.sh` is the single idempotent entry point: it checks tools, prepares the legacy prototype, and runs `uv sync` or `pnpm install --frozen-lockfile` only when the matching manifest exists.
+- **Alternatives:** pip/venv or Poetry; npm or yarn; per-directory setup instructions.
+- **Reason:** Owner preference for uv; lockfiles make runs reproducible; one script keeps setup simple for humans and agents.
+- **Consequence:** No Python or Node manifest exists until Phase 0 tooling is approved. The setup script must stay idempotent and non-interactive.
+
+## D-038 — ChatGPT Sites is the required host
+
+- **Date:** 2026-10-03
+- **Selected:** Every deployable build must run on ChatGPT Sites (OpenAI's hosting; the legacy prototype already deploys there via `.openai/hosting.json`). Static mode is the default; Worker mode is allowed only if a server-side secret is required.
+- **Alternatives:** GitHub Pages, Cloudflare Pages, or another static host.
+- **Reason:** Owner constraint; hosting is included in the existing ChatGPT plan.
+- **Consequence:** Facts verified from learn.chatgpt.com/docs/sites on 2026-10-03: public beta with unpublished plan limits; sites are private until public publishing is enabled; HTTPS at the origin root of `<slug>.<owner>.chatgpt.site` (each site its own origin); traffic analytics recorded automatically; no data residency; Worker mode supports secrets, environment variables, and outbound HTTPS; deployment only through ChatGPT, not CI. Not documented and therefore to be tested on a real deployment: `.wasm` MIME type, file and deploy size limits, custom headers (third-party reports say `_headers` is ignored in static mode, so no COOP/COEP and no threaded WASM), SPA fallback, injected provider scripts, service worker and manifest behavior, and iPhone Home Screen install. The app must work single-threaded, use hash routing or a single route, set no requirement on custom headers, and keep its build a plain static directory.
+- **Reconsider when:** A deployment probe fails a deciding criterion, the beta ends or changes terms, or usage limits remove public access.

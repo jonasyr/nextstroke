@@ -4,7 +4,7 @@
 
 **Date:** 2026-10-03
 
-**Owner decisions:** `docs/decisions/decision-log.md` D-022 through D-035
+**Owner decisions:** `docs/decisions/decision-log.md` D-022 through D-038
 
 **Feasibility evidence:** `docs/reviews/2026-10-03-independent-feasibility-review.md`
 
@@ -257,6 +257,7 @@ Every derived artifact records its source asset hash, algorithm or model version
 - No user image or image-derived description enters logs or analytics.
 - A remote analysis/preview call requires a visible explanation of what will be sent.
 - Server processing, if used, retains no project asset by default and follows a documented deletion window.
+- ChatGPT Sites (D-038) records traffic analytics (visitors, page views) automatically and offers no data residency. Privacy copy discloses this; image processing stays on the device.
 - A NextStroke server's retention is not the model provider's retention. Provider retention is disclosed as the provider documents it; for example, OpenAI documents up to 30 days of abuse-monitoring retention for image edits unless zero data retention is approved (verified 2026-10-03). Privacy copy never says "not retained" without a matching provider contract.
 
 Cloud accounts and synchronization require a future design amendment covering identity, conflicts, deletion, retention, backups, and applicable data-protection obligations.
@@ -290,7 +291,17 @@ After Phase 0, the retained product may use a TypeScript workspace with:
 
 Phase 0 is allowed to use disposable scripts and a thin server endpoint. It must not prematurely freeze production interfaces.
 
-### 13.1 Reused libraries (D-036)
+### 13.1 Hosting constraint (D-038)
+
+Every build must deploy to ChatGPT Sites. The web app therefore:
+
+- is a plain static directory, deployed in static mode unless a server-side secret is needed (then Worker mode);
+- needs no custom response headers; runs opencv.js single-threaded without `SharedArrayBuffer`;
+- uses hash routing or a single route;
+- falls back to `fetch` + `WebAssembly.instantiate` if `.wasm` is not served as `application/wasm`;
+- treats the deployment probe in Phase 0 Task 6 as the evidence for these assumptions.
+
+### 13.2 Reused libraries (D-036)
 
 | Need | Library | License |
 | --- | --- | --- |
@@ -414,7 +425,7 @@ Small betas produce qualitative signals, not statistically credible â€œ99% safeâ
 - which preview strategy, if any, graduates from the experiment;
 - exact initial fineliner catalog after license/source review;
 - whether a minimal API is needed for analysis as well as preview;
-- public hosting provider and cost controls;
+- cost controls on the hosting plan's usage limits (the host itself is ChatGPT Sites, D-038);
 - account and sync architecture;
 - colored-pencil and watercolor scope.
 

@@ -34,7 +34,7 @@
 - [ ] Two to three standardized starter drawings exist on real drawing paper, made by the owner and licensed for the study.
 - [ ] Rating rubric and the thresholds in §15 of the spec are committed to the repository before any output is generated (pre-registration).
 - [ ] Training-use settings in both subscriptions are disabled.
-- [ ] Lab tooling is built and tested before day 1 (D-035): S3 stroke renderer, compositor with boundary audit, rating page with randomized IDs, and attempt-log form. It reuses opencv.js, perfect-freehand, and plain canvas (D-036), plus the legacy prototype's import, comparison, and export code where useful (D-029).
+- [ ] Lab tooling is built and tested before day 1 (D-035), with Python analysis managed by uv (D-037): S3 stroke renderer, compositor with boundary audit, rating page with randomized IDs, and attempt-log form. It reuses opencv.js, perfect-freehand, and plain canvas (D-036), plus the legacy prototype's import, comparison, and export code where useful (D-029).
 - [ ] A Claude Project holds the frozen ideas + S3 instructions, so each case needs one chat.
 
 ## Fixed parameters (pre-registered)
@@ -100,7 +100,8 @@ The change requested for every strategy is the case's pre-registered desired cha
 
 ## Task 6 (days 6–7): iPhone pipeline
 
-- [ ] Serve a throwaway static page over HTTPS on the local network or from free static hosting approved by the owner. It uses pre-generated candidates and makes no model calls.
+- [ ] Serve the throwaway static page from a private ChatGPT Sites deployment (D-038). It uses pre-generated candidates and makes no model calls.
+- [ ] Deployment probe, which decides whether the planned architecture fits the host. Record pass/fail for each: `.wasm` served as `application/wasm` (else the fallback loader works); a ~10 MB opencv.js file deploys and loads; single-threaded opencv.js runs a homography on the iPhone; web app manifest and service worker register, update, and work offline; Home Screen install on the iPhone; hash routes and reloads work; injected provider scripts do not break the page; response headers actually served are recorded. A failure becomes a PIVOT input for the architecture, not for the product.
 - [ ] On the owner's current iPhone, complete ten import → normalize → composite → compare → export cycles with corpus images at full camera resolution.
 - [ ] Background and resume the page during decode, compositing, and local persistence; repeat once as a Home Screen web app.
 - [ ] Record reloads, crashes, decode failures, canvas failures, export failures, and main-thread blocks longer than 100 ms.

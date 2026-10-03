@@ -28,7 +28,8 @@
 
 - [ ] Select supported Node/pnpm versions based on current stable releases and document them.
 - [ ] Create focused `apps/web` and `packages/{contracts,compare,imaging,materials,coaching,ui}` boundaries.
-- [ ] Add only the spec §13.1 libraries the first phases use (D-036) and run a dependency-license check on them.
+- [ ] Use pnpm and extend `scripts/setup.sh` (D-037).
+- [ ] Add only the spec §13.2 libraries the first phases use (D-036) and run a dependency-license check on them.
 - [ ] Add formatting, linting, typechecking, unit-test, build, dependency-license, and documentation-link commands.
 - [ ] Add CI using synthetic/licensed fixtures only.
 
@@ -44,6 +45,7 @@
 - [ ] Add accessible routing for Home, Quick Compare, Projects, and Guided Project.
 - [ ] Implement safe-area layout, CSS immersive container, loading/error/offline primitives, and install metadata.
 - [ ] Add service-worker update/version handling without caching user artwork in a general response cache.
+- [ ] Build to a plain static directory that deploys to ChatGPT Sites with hash routing and no required response headers (D-038); document the manual deploy steps.
 
 ## Task 4: Add repository governance
 

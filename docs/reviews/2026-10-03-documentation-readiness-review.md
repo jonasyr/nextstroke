@@ -7,7 +7,7 @@
 
 ## 1. Repository state
 
-- Documentation only. No application code, package manifests, CI, or fixtures exist.
+- At review start: documentation only. Later the same day `main` gained the preserved Fineliner Lupe prototype (`cd22696`, D-029); see §8.
 - Five commits on `main`, the latest being `c77d880 docs: revise NextStroke plan after feasibility review`.
 - The revised direction (D-022 to D-028) was consistently applied to the spec, project state, and plans. The remaining problems were in Phase 0 operational detail, a few contradictions, and missing owner decisions.
 
@@ -93,3 +93,37 @@ The manual subscription route (D-031) means Phase 0 uses ChatGPT and Claude apps
 ## 7. Recommendation
 
 **READY FOR OWNER REVIEW.** Every blocker now has a documented resolution, and every product tradeoff found has an owner decision. The Phase 0 plan is executable without further product decisions, but it is not approved. Execution needs the owner's explicit approval of the revised Phase 0 plan, including the proposed values in §6.5.
+
+## 8. Addendum: legacy prototype, libraries, tooling, hosting
+
+Added after `main` imported `legacy/fineliner-lupe/` and the owner approved the library stack, uv tooling, and the hosting constraint.
+
+### 8.1 Legacy prototype review
+
+- Smoke test: served `dist/` locally and drove it in headless Chromium with an iPhone 13 profile. It loads demo images, changes opacity, and auto-aligns without console errors. The vendor archive SHA-256 matches its README. The bundled PDF.js version is 5.6.205.
+- Strengths worth porting: pointer-capture press-hold reveal, tap toggle, separate view and reference gestures, PDF page picker that renders at most 2400 px and destroys the document, share-sheet export with download fallback, busy/import guards, and an auto-align that rejects low-confidence results and asks for manual alignment.
+- Defects not to port: images up to 40 MP are decoded and exported at full resolution, which exceeds the ~16.7 MP iOS canvas area for 24 MP photos so export can fail silently; selection and context menu are blocked document-wide; there is no manifest or service worker, so the app is neither installable nor offline; auto-align is similarity-only.
+- UI copy is German, while all documents are English. The product language is not decided anywhere (open question).
+- The demo images `dist/original.png` and `dist/improved.png` are the owner's artwork in a public AGPL repository. Their license should be stated, or they should be replaced by licensed fixtures before any tests use them.
+- These findings are now Phase 2 Task 0.
+
+### 8.2 New decisions
+
+- D-036: reuse the vetted library stack (spec §13.2).
+- D-037: uv for Python, pnpm for TypeScript, `scripts/setup.sh` as the single entry point.
+- D-038: every build must deploy to ChatGPT Sites.
+
+### 8.3 ChatGPT Sites deciding criteria
+
+| Criterion | Status (2026-10-03) | Consequence |
+| --- | --- | --- |
+| Availability | Public beta, included in Plus/Pro/Business/Enterprise/Edu with unpublished limits | Heavy public use could lose public access; keep the build host-portable |
+| Visibility | Private until public publishing is enabled | Phase 0 can stay private; public beta must switch it on |
+| Origin | HTTPS at the root of `<slug>.<owner>.chatgpt.site`, its own origin | Good for service worker scope and isolated storage |
+| Server code | Worker mode supports secrets and outbound HTTPS | A Phase 4 model proxy can live on Sites |
+| Custom headers | Not documented; third parties report `_headers` ignored in static mode | No COOP/COEP, so no threaded WASM; design single-threaded |
+| `.wasm` MIME, size limits, SPA fallback, injected scripts, service worker, iPhone install | Not documented | Phase 0 Task 6 deployment probe decides |
+| Analytics and residency | Traffic analytics automatic; no data residency | Disclose in privacy copy; keep images on device |
+| Deployment | Only through ChatGPT, not CI | Manual deploy procedure documented in Phase 1 |
+
+Sources: learn.chatgpt.com/docs/sites and learn.chatgpt.com/docs/enterprise/sites (official), plus third-party deployment reports for the undocumented rows.

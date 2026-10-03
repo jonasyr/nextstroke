@@ -31,6 +31,9 @@ NextStroke is an iPhone-first physical-art coach that compares an artwork with a
 11. **Phase 0 outcomes:** GO or PIVOT only; no STOP outcome (D-032).
 12. **Phase 0 study and devices:** standardized starter drawings plus optional own work; owner's current iPhone only, iPhone 11-class test deferred to the Phase 2 exit gate (D-034).
 13. **Phase 0 effort:** stop-at-first-success attempts, futility stop, reduced S1 baseline, combined Claude chats, pre-built lab tooling, and up to 10 printed licensed drawings (D-035).
+14. **Libraries:** reuse the vetted open-source stack in spec §13.2 (D-036).
+15. **Tooling:** uv for Python, pnpm for TypeScript, `scripts/setup.sh` (D-037).
+16. **Hosting:** every build must deploy to ChatGPT Sites; static mode, no required headers (D-038).
 
 ## Evidence status
 

@@ -17,7 +17,7 @@ The current browser app lives in `legacy/fineliner-lupe/dist/` and supports:
 Run it locally from the repository root:
 
 ```bash
-./legacy/fineliner-lupe/prepare-vendor.sh
+./scripts/setup.sh
 python3 -m http.server 4173 --directory legacy/fineliner-lupe/dist
 ```
 
