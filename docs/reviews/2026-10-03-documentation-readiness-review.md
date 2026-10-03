@@ -80,11 +80,12 @@ The manual subscription route (D-030) means Phase 0 uses ChatGPT and Claude apps
 - D-031: No STOP outcome; failed GO criteria lead to an owner-recorded PIVOT.
 - D-032: Experimental inspiration exports only with a burned-in warning.
 - D-033: Standardized starter drawings plus optional own work; current iPhone only, with the iPhone 11-class test deferred to the Phase 2 exit gate.
+- D-034: Reduced manual effort (added after the owner asked to shorten Phase 0).
 
 ## 6. Consequences the owner should know before approving
 
 1. **Manual evidence is weaker.** Model versions cannot be pinned, the cost criterion is an estimate, and blinding is partial. A GO from Phase 0 is provisional until Phase 4 reconfirms the retained strategy through the production API. That reconfirmation is the first required spend, about USD 10–20.
-2. **Ten days of manual runs is tight.** 30 cases × 3 strategies × 3 attempts is 270 manual generations plus 30 idea sets. At a few minutes each, Tasks 2–3 alone take roughly 15–25 hours. If the timebox ends with missing evidence, those criteria count as unmet.
+2. **Ten days of manual runs is tight.** The original design (30 cases × 3 strategies × 3 attempts plus 30 idea sets) meant roughly 15–25 hours of manual generation. D-034 (stop at first success, futility stop, 10-case S1 baseline, combined chats) reduces this to roughly 6–9 hours. If the timebox ends with missing evidence, those criteria count as unmet.
 3. **The device gate is partial.** A clean run on a current iPhone says little about the iPhone 11's memory limits.
 4. **Participant own work requires upload to consumer apps.** The consent template must say so explicitly.
 5. **Values proposed by this review need confirmation:** the 90-day deletion limit for study data, the 2048 px working edge, "at least 10 cases with critical contours inside the editable region", and a 100 ms main-thread threshold.

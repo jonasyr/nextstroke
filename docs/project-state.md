@@ -30,6 +30,7 @@ NextStroke is an iPhone-first physical-art coach that compares an artwork with a
 10. **Phase 0 budget:** No additional spend; manual runs in the owner's ChatGPT and Claude subscriptions (D-030).
 11. **Phase 0 outcomes:** GO or PIVOT only; no STOP outcome (D-031).
 12. **Phase 0 study and devices:** standardized starter drawings plus optional own work; owner's current iPhone only, iPhone 11-class test deferred to the Phase 2 exit gate (D-033).
+13. **Phase 0 effort:** stop-at-first-success attempts, futility stop, reduced S1 baseline, combined Claude chats, pre-built lab tooling, and up to 10 printed licensed drawings (D-034).
 
 ## Evidence status
 
@@ -42,7 +43,7 @@ Full review: `docs/reviews/2026-10-03-independent-feasibility-review.md`.
 
 ## Current milestone
 
-The documentation readiness review is complete and the revised Phase 0 plan awaits owner approval. Phase 0 then compares, with three recorded attempts per case:
+The documentation readiness review is complete and the revised Phase 0 plan awaits owner approval. Phase 0 then compares, under the attempt and futility rules of D-034:
 
 1. S1 masked full-composite editing followed by hard original copyback (baseline; at most experimental);
 2. S2 direct transparent overlay generation;

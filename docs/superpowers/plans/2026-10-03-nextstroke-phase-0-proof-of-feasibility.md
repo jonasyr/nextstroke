@@ -10,7 +10,7 @@
 
 **Spec:** `docs/superpowers/specs/2026-10-03-nextstroke-product-design.md` §15
 
-**Decisions:** D-024, D-029 through D-033
+**Decisions:** D-024, D-029 through D-034
 
 ## Global constraints
 
@@ -34,14 +34,17 @@
 - [ ] Two to three standardized starter drawings exist on real drawing paper, made by the owner and licensed for the study.
 - [ ] Rating rubric and the thresholds in §15 of the spec are committed to the repository before any output is generated (pre-registration).
 - [ ] Training-use settings in both subscriptions are disabled.
+- [ ] Lab tooling is built and tested before day 1 (D-034): S3 stroke renderer, compositor with boundary audit, rating page with randomized IDs, and attempt-log form. It reuses existing open-source libraries where their licenses are AGPL-compatible.
+- [ ] A Claude Project holds the frozen ideas + S3 instructions, so each case needs one chat.
 
 ## Fixed parameters (pre-registered)
 
 | Parameter | Value |
 | --- | --- |
-| Corpus | 30 fineliner photos; at least 10 with an annotated critical contour inside or touching the editable region |
+| Corpus | 30 fineliner photos; at least 10 with an annotated critical contour inside or touching the editable region; at most 10 may be printed licensed line drawings (D-034) |
 | Strategies | S1 masked full-composite edit, S2 direct transparent overlay, S3 structured strokes/SVG rendered locally |
-| Attempts | Exactly 3 per case per strategy, all recorded; no additional attempts |
+| Attempts | S2 and S3: up to 3 per case, stopping at the first `controlled` screening result; S1: 1 attempt on 10 pre-selected cases. All attempts recorded |
+| Futility stop | A strategy stops once it has 10 failed cases, because it can no longer reach 21 of 30 |
 | Services | S1/S2: ChatGPT image editing/generation. Ideas and S3: Claude |
 | Working image | Longest edge 2048 px, sRGB, orientation applied; every canvas ≤ 4096 × 4096 |
 | Masks | `editableRegion`, `protectedGeometry`, `featherBand` (inside editable only), in source-normalized coordinates |
@@ -52,12 +55,13 @@
 ## Task 1 (day 1): Freeze corpus and annotations
 
 - [ ] Capture or collect 30 ordinary handheld iPhone photographs of started fineliner works with varied light, shadow, perspective, paper tone, and line density.
+- [ ] Up to 10 cases may be CC0 or CC BY line drawings (for example ArtPack or OpenSketch) printed on drawing paper and photographed the same way. Record source URL and license, mark these cases `printed` in the manifest, and choose the S1 subset before generation, covering both kinds.
 - [ ] For each case record: anonymous ID, lighting, paper visibility, perspective, device, desired small change, editable region, protected geometry, critical contours.
 - [ ] Store originals in the private experiment store; commit only the anonymized manifest without images.
 
 ## Task 2 (days 1–2): Ideas and instructions
 
-- [ ] For each case, ask Claude once with the frozen template for exactly three bounded fineliner ideas, each with ordered physical instructions, using only the facts in the Phase 0 material sheet (Task 2a).
+- [ ] For each case, open one chat in the Claude Project and ask with the frozen template for exactly three bounded fineliner ideas, each with ordered physical instructions, using only the facts in the Phase 0 material sheet (Task 2a). Request the S3 strokes for the pre-registered change in the same chat (Task 3).
 - [ ] Record the unedited output. The owner may veto an unsafe instruction but must log the veto and reason. Edited instructions are not used for the study.
 - [ ] Rate each idea set: count of physically infeasible ideas (for example white highlights, washes, erasing ink), and count of material claims not present in the sheet.
 
@@ -70,7 +74,9 @@
 
 The change requested for every strategy is the case's pre-registered desired change from Task 1, so strategies are compared on identical tasks.
 
-- [ ] **S1 masked full composite:** ChatGPT image edit with the area selection matching the editable region. This is the comparative baseline. Its outputs can be classified only `experimental` or `rejected`, never `controlled` (spec §7).
+- [ ] Order of attempts: after each S2/S3 attempt, the owner screens it immediately against spec §15.3. If it screens `controlled`, no further attempts run for that case and strategy. The next-day re-review in Task 5 can still downgrade it, and no attempts are added afterwards.
+- [ ] Apply the futility stop from the fixed parameters and record the case at which it triggered.
+- [ ] **S1 masked full composite:** ChatGPT image edit with the area selection matching the editable region, one attempt on each of the 10 pre-selected cases. This is the comparative baseline. Its outputs can be classified only `experimental` or `rejected`, never `controlled` (spec §7).
 - [ ] **S2 direct transparent overlay:** ask for a transparent PNG containing only the new marks, with the original supplied as visual reference.
 - [ ] **S3 structured strokes:** ask Claude for polylines in normalized coordinates with width, darkness, and order, in a fixed JSON schema; render locally and deterministically.
 - [ ] Save every raw output and failure in the private store with the metadata listed above.
@@ -116,4 +122,4 @@ Apply spec §15.4 exactly. Criteria that have no evidence when the timebox ends 
 
 ## Required report
 
-Create `docs/research/phase-0-results.md` containing methods, deviations, corpus summary without images, all aggregate outcomes per strategy, the first-attempt and three-attempt success rates, failure categories, device matrix including the untested iPhone 11 class, cost estimates and latency distribution, rater agreement, participant limitations, the manual-subscription limitations, recommendation, and the exact owner decision. Do not begin Phase 1 until that decision is committed.
+Create `docs/research/phase-0-results.md` containing methods, deviations, corpus summary without images, all aggregate outcomes per strategy split by hand-drawn and printed cases, the attempt at which each case succeeded, any futility stop, failure categories, device matrix including the untested iPhone 11 class, cost estimates and latency distribution, rater agreement, participant limitations, the manual-subscription limitations, recommendation, and the exact owner decision. Do not begin Phase 1 until that decision is committed.

@@ -286,3 +286,12 @@
 - **Reason:** Standardized starters make the worsening rubric comparable; optional own work adds realism. Only a current iPhone is available.
 - **Consequence:** The iPhone 11-class test is an open Phase 0 risk and must pass before the Phase 2 exit gate.
 - **Reconsider when:** An iPhone 11-class device becomes available before Phase 0 starts.
+
+## D-034 — Reduce Phase 0 manual effort
+
+- **Date:** 2026-10-03
+- **Selected:** S2/S3 attempts stop at the first `controlled` screening result (up to 3); a strategy stops after 10 failed cases; S1 runs once on 10 pre-selected cases; ideas and S3 strokes share one Claude chat per case; lab tooling is built before day 1; up to 10 of 30 cases may be photographs of printed CC0/CC BY line drawings.
+- **Alternatives:** Exactly 3 attempts for every case and strategy (about 300 manual interactions); a paid API run of about USD 10–20.
+- **Reason:** The manual budget route (D-030) made Phase 0 about 15–25 hours of manual generation. These rules cut it to roughly 6–9 hours without changing GO thresholds. All rules are pre-registered, and every attempt is still reported.
+- **Consequence:** S1 evidence is thinner but S1 cannot satisfy GO. Printed toner is not fineliner ink, so printed cases are reported separately. A next-day downgrade of a first-attempt success is not retried, which makes the gate slightly stricter.
+- **Reconsider when:** A budget for scripted API runs becomes available.

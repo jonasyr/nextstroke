@@ -307,19 +307,19 @@ Phase 0 is allowed to use disposable scripts and a thin server endpoint. It must
 
 ## 15. Phase 0 gates
 
-Owner decisions: D-024, D-029, D-030, D-031, D-033. The operational checklist is the Phase 0 plan.
+Owner decisions: D-024, D-029, D-030, D-031, D-033, D-034. The operational checklist is the Phase 0 plan.
 
 ### 15.1 Corpus and method
 
-- 30 ordinary iPhone photographs of started fineliner works (D-029); at least 10 have an annotated critical contour inside or touching the editable region.
+- 30 ordinary iPhone photographs of started fineliner works (D-029); at least 10 have an annotated critical contour inside or touching the editable region. At most 10 may be photographs of printed CC0/CC BY line drawings, reported separately (D-034).
 - Strategies: S1 masked full-composite edit, S2 direct transparent overlay, S3 structured strokes/SVG rendered locally.
-- Exactly three recorded attempts per case per strategy. Every attempt is reported.
+- S2 and S3: up to three attempts per case, stopping at the first `controlled` screening result. S1: one attempt on 10 pre-selected cases. A strategy stops after 10 failed cases because it can no longer reach GO. Every attempt is reported (D-034).
 - Models are run manually through existing subscriptions without additional spend (D-030). Cost is an API-equivalent estimate from published pricing on the run date.
 - Thresholds and definitions are committed before any output is generated.
 
 ### 15.2 Definitions
 
-- **Case success for a strategy:** at least one of the three pre-registered attempts is classified `controlled`. Reporting every attempt is required; this is the realistic-retry model, not cherry-picking.
+- **Case success for a strategy:** one of at most three attempts is classified `controlled` after the next-day re-review. Reporting every attempt is required; this is the realistic-retry model, not cherry-picking. Cases not run because of a futility stop count as failures.
 - **Critical contour destruction:** an annotated critical contour is visibly removed, broken, altered, or obscured in the final composite so that the artist would need to redraw or rescue it.
 - **Understandable in isolation:** shown alone on white, a rater can say what to draw and where without seeing the composite.
 - **Unnoticed change:** a contour or paper defect in a `controlled` candidate that the owner's next-day re-review or a second rater finds after classification.
