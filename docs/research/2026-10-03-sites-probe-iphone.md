@@ -3,7 +3,7 @@
 - **Date:** 2026-10-03
 - **Plan:** Phase 0 Task 6 deployment probe (`lab/probe/`, commit `8d0b8b6`)
 - **Host:** private ChatGPT Sites deployment, static mode, served by Cloudflare (FRA edge)
-- **Device:** iPhone with a 375×812 pt screen at 3× (iPhone 11 Pro, 12 mini, or 13 mini class; exact model to be confirmed), iOS 26.5.2 Safari, run as a Home Screen web app
+- **Device:** iPhone 13 mini (A15, confirmed by the owner), iOS 26.5.2 Safari, run as a Home Screen web app
 - **Raw result:** shared JSON kept privately; no images were uploaded by the probe
 
 ## Results
@@ -19,7 +19,7 @@
 | Service worker | pass | registered and controlling |
 | Offline start | pass | loaded from the Home Screen while offline |
 | Hash-route reload | pass | |
-| Storage | info | quota about 41 GB; `persisted` false; `persist()` not yet requested |
+| Storage | info | quota about 41 GB; `persisted` false at load; owner tapped the `persist()` button afterwards, answer not yet captured in a shared JSON |
 | Canvas limits | pass | 4096², 4097², and 5000×4000 all usable, larger than the 4096² MDN states for iOS |
 | opencv.js 5.0.0 (13 MB, single-threaded, worker) | pass | load 843 ms; homography + 2048×1536 warp 163 ms |
 | Ten decode → downscale → composite → export cycles | pass | 3024×4032 JPEG (12 MP); 133–320 ms per cycle; no crash or reload |
@@ -34,7 +34,10 @@
 
 ## Still open
 
-1. Repeat the ten cycles while sending the app to the background once (`backgrounds` was 0).
-2. Tap the persistent-storage button and record the answer.
-3. Repeat with a 24 MP or 48 MP photo and with a HEIC file (this run decoded a 12 MP JPEG).
-4. Confirm the exact iPhone model. If it is an iPhone 11 Pro (A13, same class as iPhone 11), the iPhone 11-class risk in D-034 is largely covered.
+1. Repeat the ten cycles while sending the app to the background once (`backgrounds` was 0). The probe now accepts several images at once and cycles through them; include at least one full-resolution camera photo next to Pinterest images, ideally 48 MP or HEIC.
+2. Share the JSON again so the `persist()` answer is captured.
+3. The device is an iPhone 13 mini (A15), newer than the iPhone 11 class (A13). The iPhone 11-class risk in D-034 stays open until the Phase 2 exit gate.
+
+## Hosting note
+
+The owner reported that ChatGPT Sites asked for a D1/R2 database during deployment. The probe and the planned `v0.1` app are static and need neither; D-026 excludes cloud project storage. If a binding is unavoidable, it stays empty and unused.

@@ -1,5 +1,5 @@
 'use strict';
-const CACHE = 'ns-probe-v1';
+const CACHE = 'ns-probe-v2';
 const ASSETS = ['./', 'index.html', 'probe.js', 'worker.js', 'manifest.webmanifest', 'icon.svg', 'icon-180.png', 'tiny.wasm', 'vendor/opencv.js'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS)).then(() => self.skipWaiting()));
