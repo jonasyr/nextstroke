@@ -1,0 +1,40 @@
+# Phase 0 Runbook
+
+Operational checklist for the approved plan (`docs/superpowers/plans/2026-10-03-nextstroke-phase-0-proof-of-feasibility.md`). The plan and spec §15 win if this file disagrees.
+
+## Before day 1
+
+- [ ] ChatGPT: Settings → Data controls → turn off model improvement. Claude: Settings → Privacy → turn off training use. Note date and state in `private/settings.md`.
+- [ ] Create `lab/private/` (git-ignored) with `cases/`, `outputs/`, `candidates/`, `keys/`.
+- [ ] Commit the material sheet (Task 2a) and freeze `protocol/prompts.md`.
+- [ ] Create the Claude Project with the `ideas-s3-v1` instructions, the stroke schema from `stroke-plan.schema.json`, and the material sheet.
+- [ ] Deploy `lab/probe` privately on ChatGPT Sites and run it on the iPhone (Task 6 can start early).
+- [ ] Signed consent (`consent-de.md`) for every person whose artwork or session data is used.
+
+## Corpus preparation (Task 1)
+
+1. Save the source image privately (`private/sources/`). Pinterest pins (D-042) work as JPEG, PNG, or WebP. Better: print some pins on drawing paper and photograph them handheld, so the case has real paper, light, and perspective. iPhone photos: Settings → Camera → Formats → Most Compatible.
+2. Run `uv run nextstroke-lab prepare private/sources/<file> --case-dir private/cases/cNN`. It applies orientation and sRGB, scales to at most 2048 px, center-crops to 3:2 so ChatGPT outputs (1536×1024 / 1024×1536) can be registered, and writes `original.png` plus blank `editable.png` and `protected.png`. Check that the crop kept the important part; if not, crop the source by hand first.
+3. Paint the masks over the blank templates at the same size: `editable.png` (white = may change), `protected.png` (white = critical contours that must not change), optional `feather.png` (white band inside editable).
+4. Add a manifest line: id, source (`web` + pin URL, `printed` + URL + license, `own`, or `volunteer`), photographed by hand (yes/no), lighting, paper, perspective, desired change, protected description, critical contours inside editable (yes/no), S1 subset (yes/no).
+
+## Generation (Tasks 2–3)
+
+- Per case: Claude ideas + S3 (one chat), then S2 in ChatGPT, then S1 for the 10 pre-selected cases.
+- After each S2/S3 attempt run `nextstroke-lab candidate …` and screen against the rubric. Stop at the first result that screens controlled (D-035); otherwise up to 3 attempts.
+- Stop a strategy after 10 failed cases (futility) and note the case where it stopped.
+- Log every attempt, including refusals and unusable outputs.
+
+## Rating (Task 5)
+
+1. `nextstroke-lab pack` with seed 1 → rate everything → export `ratings-1.json`.
+2. Next day: `nextstroke-lab pack` with seed 2 (new IDs) → re-rate → `ratings-2.json`. Downgrades become "unnoticed changes".
+3. A second rater, if available, rates at least a third of the candidates in their own pack; the stricter rating wins.
+
+## Decision (Task 8)
+
+Fill `private/evidence.json` from the study and probe, then run `nextstroke-lab decide`. Copy the JSON report into `docs/research/phase-0-results.md` with the limitations listed in the plan.
+
+## Cost basis
+
+Use API-equivalent estimates from published prices on the run date and note the source: for example OpenAI GPT Image 2.5 medium 1024² ≈ USD 0.013 output plus input tokens (checked 2026-10-03), so roughly USD 0.02–0.04 per image attempt; text-only S3 attempts cost cents.

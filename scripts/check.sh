@@ -20,4 +20,10 @@ for project in lab; do
   )
 done
 
+for script in lab/probe/dist/*.js; do
+  [ -f "$script" ] || continue
+  echo "== JavaScript syntax: $script"
+  node --check "$script"
+done
+
 echo "== All checks passed"

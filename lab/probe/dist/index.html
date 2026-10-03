@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#101a22">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>NextStroke Hosting-Test</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg">
+<link rel="apple-touch-icon" href="icon-180.png">
+<style>
+  :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
+  body { margin: 0; padding: 16px; padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
+  h1 { font-size: 1.3rem; } h2 { font-size: 1.05rem; margin-top: 24px; }
+  button, label.file { display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px;
+    margin: 4px 4px 4px 0; font-size: 1rem; border: 1px solid #8886; border-radius: 10px; background: none; color: inherit; }
+  table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+  td { border-top: 1px solid #8884; padding: 6px 4px; vertical-align: top; word-break: break-word; }
+  .pass { color: #1a8a3a; } .fail { color: #c0392b; } .info { color: #777; }
+  textarea { width: 100%; min-height: 8em; font-family: ui-monospace, monospace; font-size: .75rem; }
+  canvas { display: none; }
+</style>
+</head>
+<body>
+<h1>NextStroke Hosting-Test</h1>
+<p>Prüft, ob die geplante App auf ChatGPT Sites und diesem iPhone funktioniert. Es werden keine Bilder hochgeladen; Fotos bleiben auf dem Gerät.</p>
+
+<h2>1. Automatische Prüfungen</h2>
+<p>Laufen beim Öffnen. Danach die Schritte unten ausführen.</p>
+
+<h2>2. Offline und Home-Bildschirm</h2>
+<button id="reloadHash">Hash-Route testen (lädt neu)</button>
+<button id="persist">Dauerhaften Speicher anfragen</button>
+<p>Dann: Teilen → „Zum Home-Bildschirm“, App von dort öffnen, Flugmodus an, App neu öffnen.</p>
+
+<h2>3. opencv.js</h2>
+<button id="opencv">opencv.js laden und rechnen</button>
+
+<h2>4. Zehn Bildzyklen</h2>
+<label class="file">Foto wählen (volle Kamera-Auflösung)<input id="photo" type="file" accept="image/*" hidden></label>
+<p>Während der Zyklen einmal die App in den Hintergrund schicken und zurückkehren.</p>
+
+<h2>Ergebnisse</h2>
+<table><tbody id="results"></tbody></table>
+<button id="share">Ergebnis teilen</button>
+<textarea id="json" readonly aria-label="Ergebnis als JSON"></textarea>
+<canvas id="work"></canvas>
+<script src="probe.js"></script>
+</body>
+</html>
