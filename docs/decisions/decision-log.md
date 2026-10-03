@@ -380,3 +380,13 @@
 - **Reason:** Owner choice; the ChatGPT Sites usage credits for redeployment are used up.
 - **Consequence:** Background/resume during processing, 24/48 MP and HEIC decoding, the `persist()` answer, and the iPhone 11 class are untested and move to the Phase 2 real-device exit gate. The Phase 0 report lists them as limitations.
 - **Reconsider when:** Sites credits are available again before Phase 2, or a later test crashes on large photos.
+
+## D-044 — Phase 0 corpus is the 12 supplied images; 7 count toward GO
+
+- **Date:** 2026-10-03
+- **Supersedes:** The 30-case corpus size in D-030 and spec §15.1.
+- **Selected:** The owner supplied 12 images and no more. Seven are fineliner on paper and form the GO corpus (Pinterest pins 7921, 7922, 7924, 7925, 7926, 7928, 7930). Five are comparison-only: the owner's lighthouse (PNG and a handheld HEIC photo; fineliner with colored pencil and watercolor), 7927 (ballpoint with colored pencil), 7923 (digital drawing), 7929 (no paper texture, likely digital). Gates keep their percentages: GO needs ceil(70% × eligible cases), 5 of 7; a strategy stops after more failures than the corpus can absorb (3 of 7); S1 runs once on every eligible case.
+- **Alternatives:** Collect more images to reach 30; count all 12 including mixed media and digital drawings.
+- **Reason:** Owner choice. Counting mixed media or digital work would evaluate `v0.1` on materials it does not support (D-023).
+- **Consequence:** With 7 cases one case moves the success rate by 14 percentage points; a GO is weak evidence and the report must say so. The Phase 4 holdout of real, consented photos carries more weight. `nextstroke-lab decide --corpus-size 7` applies the scaled gate.
+- **Reconsider when:** More eligible images become available before the run starts.

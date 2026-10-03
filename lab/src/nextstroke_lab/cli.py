@@ -140,10 +140,13 @@ def _decide(args: argparse.Namespace) -> int:
     evidence = json.loads(args.evidence.read_text(encoding="utf-8"))
     study = StudyEvidence(**evidence["study"]) if "study" in evidence else None
     device = DeviceEvidence(**evidence["device"]) if "device" in evidence else None
-    decision = decide(outcomes, study, device, bool(evidence["unreported_selection"]))
+    decision = decide(
+        outcomes, study, device, bool(evidence["unreported_selection"]), args.corpus_size
+    )
     report = {
         "outcome": decision.outcome.value,
         "best_strategy": decision.strategy.value if decision.strategy else None,
+        "corpus_size": args.corpus_size,
         "unmet": list(decision.unmet),
         "triggers": list(decision.triggers),
         "strategies": {
@@ -216,6 +219,7 @@ def build_parser() -> argparse.ArgumentParser:
     dec.add_argument("--log", type=Path, required=True)
     dec.add_argument("--evidence", type=Path, required=True)
     dec.add_argument("--cost", type=_cost, action="append", default=[])
+    dec.add_argument("--corpus-size", type=int, default=30, help="GO-eligible cases (D-044)")
     dec.set_defaults(run=_decide)
     return parser
 
