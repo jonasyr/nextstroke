@@ -10,7 +10,7 @@ from typing import Annotated
 
 import numpy as np
 from numpy.typing import NDArray
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 from pydantic import BaseModel, Field, TypeAdapter
 
 from nextstroke_lab.adapters.image_io import save_png
@@ -116,7 +116,10 @@ def _tile(case_dir: Path) -> Image.Image:
     )
     labelled = Image.new("RGB", (TILE_WIDTH, image.height + 36), "white")
     labelled.paste(image, (0, 36))
-    ImageDraw.Draw(labelled).text((6, 4), f"{case_dir.name}: {change}"[:90], fill="black")
+    font = ImageFont.load_default(size=13)  # scalable font with umlauts
+    ImageDraw.Draw(labelled).text(
+        (6, 4), f"{case_dir.name}: {change}"[:90], fill="black", font=font
+    )
     return labelled
 
 
