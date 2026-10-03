@@ -36,6 +36,18 @@ Barcode/photo recognition is later convenience work. It must never be the only w
 
 Conflicting evidence remains visible. Newer manufacturer text does not silently overwrite a controlled test, and one paper result does not generalize to every paper.
 
+### Maximum confidence per evidence level
+
+| Level | Maximum confidence | Note |
+| --- | --- | --- |
+| A | high | Only within the scope the document states |
+| B | medium | Attributed as the manufacturer's claim |
+| C | high | Only for the tested pen, paper, environment, and revision; otherwise medium |
+| D | medium | Never the only basis for a safety-relevant instruction |
+| E | low | Not shown to users as a fact |
+
+Build-time validation rejects a claim whose confidence exceeds its level's maximum.
+
 ## Minimum data model
 
 ```ts
@@ -51,7 +63,7 @@ interface MaterialClaim {
   sourceId: string;
   evidenceLevel: EvidenceLevel;
   confidence: "high" | "medium" | "low";
-  verifiedAt: string;
+  verifiedAt: string; // date a curator last checked the claim against its source
   supersedesClaimId?: string;
 }
 
@@ -127,3 +139,12 @@ Store normalized facts, identifiers, short original paraphrases, provenance, and
 - an unknown pen remains usable through a conservative generic profile;
 - calibration is skippable and its confidence limits are explained;
 - no model can introduce an unsourced fact into a user-facing instruction.
+
+## Phase 0 material sheet
+
+Phase 0 uses a short throwaway sheet covering only the pens in the corpus and study plus the generic profile. It follows the same source, evidence-level, and retrieval-date rules but is not the shipped dataset.
+
+## Open items before Phase 3
+
+- Paper, calibration sample, technique rule, and compatibility assertion schemas.
+- License for the curated dataset as distributed (facts and paraphrases), separate from the AGPL code license.

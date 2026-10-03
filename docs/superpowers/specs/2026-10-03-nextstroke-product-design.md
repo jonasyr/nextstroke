@@ -4,7 +4,7 @@
 
 **Date:** 2026-10-03
 
-**Owner decisions:** `docs/decisions/decision-log.md` D-022 through D-028
+**Owner decisions:** `docs/decisions/decision-log.md` D-022 through D-033
 
 **Feasibility evidence:** `docs/reviews/2026-10-03-independent-feasibility-review.md`
 
@@ -133,12 +133,21 @@ Quick Compare must remain usable offline after the PWA shell is installed.
 ## 7. Preview artifact model
 
 ```ts
-type PreviewTrust = "controlled" | "experimental" | "rejected";
+type ArtifactTrust = "untrusted" | "diagnostic" | "controlled" | "experimental" | "rejected";
+
+interface Provenance {
+  sourceAssetHash: string;
+  transformRevision: string;
+  producer: string; // algorithm version, or service + model label
+  promptRevision?: string;
+  createdAt: string;
+}
 
 interface GeneratedComposite {
   kind: "generated-composite";
   assetId: string;
   providerRunId: string;
+  provenance: Provenance;
   trust: "untrusted";
 }
 
@@ -146,7 +155,8 @@ interface DerivedDifferenceOverlay {
   kind: "derived-difference-overlay";
   assetId: string;
   sourceCompositeId: string;
-  diagnosticOnly: true;
+  provenance: Provenance;
+  trust: "diagnostic";
 }
 
 interface ControlledOverlay {
@@ -155,6 +165,7 @@ interface ControlledOverlay {
   construction: "direct-alpha" | "structured-strokes" | "svg";
   editableMaskRevision: string;
   protectedGeometryRevision: string;
+  provenance: Provenance;
   trust: "controlled";
 }
 
@@ -162,23 +173,36 @@ interface ExperimentalInspiration {
   kind: "experimental-inspiration";
   assetId: string;
   source: "generated-composite" | "failed-overlay";
+  sourceArtifactId: string;
+  provenance: Provenance;
   trust: "experimental";
   warningCode: string;
 }
+
+interface RejectedCandidate {
+  kind: "rejected-candidate";
+  sourceArtifactId: string;
+  reasonCode: string;
+  trust: "rejected";
+}
 ```
 
-`GeneratedComposite` and `DerivedDifferenceOverlay` can never be silently promoted to `ControlledOverlay`. Human approval records preference; it does not change the artifact's technical trust class.
+`GeneratedComposite` and `DerivedDifferenceOverlay` can never be promoted to `ControlledOverlay`, silently or with approval. A `GeneratedComposite`, even after original copyback, can become at most `ExperimentalInspiration`. Human approval records preference; it does not change the artifact's technical trust class.
+
+### 7.1 Experimental inspiration export (D-032)
+
+An `ExperimentalInspiration` image can be exported or shared only with a visible warning drawn into the exported pixels. A clean export is never offered. Exporting the physical instructions without the image is always allowed.
 
 ## 8. Image and safety pipeline
 
 1. Keep the immutable source blob.
 2. Apply orientation and convert a bounded working copy to defined sRGB behavior.
 3. Store transform and crop revisions in source-normalized coordinates.
-4. Maintain separate `editableRegion`, `protectedGeometry`, and `featherBand` masks.
+4. Maintain separate `editableRegion`, `protectedGeometry`, and `featherBand` masks. `protectedGeometry` takes priority over `editableRegion` where they intersect. `featherBand` lies entirely inside `editableRegion`, so blending never touches pixels outside it.
 5. Send only the confirmed working crop, required context, and masks after explicit user action.
 6. Treat provider output as untrusted.
 7. Register provider output to the working source with confidence; fall back to manual alignment.
-8. For a controlled output, copy original pixels outside the editable region and inside protected geometry.
+8. For a controlled output, copy original pixels outside the editable region and inside protected geometry. For overlays this means overlay alpha is zero there; for an exported composite at any resolution, those pixels come from the immutable original at that resolution.
 9. Evaluate geometry, photometry, contour similarity, and artifact structure separately.
 10. Ask the user to confirm artistic meaning.
 11. Keep experimental candidates in a separate state with prominent warning.
@@ -233,12 +257,15 @@ Every derived artifact records its source asset hash, algorithm or model version
 - No user image or image-derived description enters logs or analytics.
 - A remote analysis/preview call requires a visible explanation of what will be sent.
 - Server processing, if used, retains no project asset by default and follows a documented deletion window.
+- A NextStroke server's retention is not the model provider's retention. Provider retention is disclosed as the provider documents it; for example, OpenAI documents up to 30 days of abuse-monitoring retention for image edits unless zero data retention is approved (verified 2026-10-03). Privacy copy never says "not retained" without a matching provider contract.
 
 Cloud accounts and synchronization require a future design amendment covering identity, conflicts, deletion, retention, backups, and applicable data-protection obligations.
 
 ## 12. Mobile and accessibility
 
-- Support the current and previous major iOS versions at release time, verified again before launch.
+- Support the current and previous major iOS versions at release time, verified again before launch. On 2026-10-03 these are iOS 27 and iOS 26, both supporting iPhone 11 and later, so iPhone 11 is the oldest real-device target.
+- Element Fullscreen is not available on iPhone Safari (verified 2026-10-03); CSS immersive mode is the only iPhone path.
+- Every canvas stays at or below 4096 × 4096; the default working image has a 2048 px longest edge until Phase 0 evidence changes it.
 - Define a working image pixel budget; file-size limits alone are insufficient.
 - Decode and downsample early, reuse canvases, release `ImageBitmap`, PDF, and OpenCV resources.
 - Use CSS immersive mode as the reliable iPhone path.
@@ -280,26 +307,55 @@ Phase 0 is allowed to use disposable scripts and a thin server endpoint. It must
 
 ## 15. Phase 0 gates
 
-Phase 0 uses 30 normal iPhone photos, initially 15 fineliner, 10 colored-pencil, and 5 watercolor examples for comparative research; only fineliner can qualify `v0.1`.
+Owner decisions: D-024, D-029, D-030, D-031, D-033. The operational checklist is the Phase 0 plan.
 
-GO requires all of:
+### 15.1 Corpus and method
 
-- at least 70% of fineliner cases yield at least one acceptable bounded preview without selecting only favorable seeds;
-- zero critical contour destruction among outputs labeled controlled;
-- at least 80% of accepted overlays are understandable in isolation;
-- at least 70% of beginner participants understand the instruction without help;
-- at least 60% execute without making the work worse under the study rubric;
-- no crash or reload in the defined real-device cycle;
-- median preview under 60 seconds and under USD 0.30 including realistic retry rate.
+- 30 ordinary iPhone photographs of started fineliner works (D-029); at least 10 have an annotated critical contour inside or touching the editable region.
+- Strategies: S1 masked full-composite edit, S2 direct transparent overlay, S3 structured strokes/SVG rendered locally.
+- Exactly three recorded attempts per case per strategy. Every attempt is reported.
+- Models are run manually through existing subscriptions without additional spend (D-030). Cost is an API-equivalent estimate from published pricing on the run date.
+- Thresholds and definitions are committed before any output is generated.
 
-PIVOT away from generated preview as the core when any applies:
+### 15.2 Definitions
 
-- more than 10% of accepted outputs contain unnoticed contour or paper changes;
-- more than half of cases need mask repair or repeated attempts;
-- quality depends on cherry-picking;
-- direct overlay and structured strokes are not useful while full-composite difference is the only route.
+- **Case success for a strategy:** at least one of the three pre-registered attempts is classified `controlled`. Reporting every attempt is required; this is the realistic-retry model, not cherry-picking.
+- **Critical contour destruction:** an annotated critical contour is visibly removed, broken, altered, or obscured in the final composite so that the artist would need to redraw or rescue it.
+- **Understandable in isolation:** shown alone on white, a rater can say what to draw and where without seeing the composite.
+- **Unnoticed change:** a contour or paper defect in a `controlled` candidate that the owner's next-day re-review or a second rater finds after classification.
+- **Understands the instruction:** a participant correctly states location, tool, and the first two steps without prompting.
+- **Worsens the work:** any rater judges the after photograph worse than the before photograph under the rubric.
 
-The pivot product is Quick Compare + sourced critique + manually confirmed stroke/SVG plan + checkpoint comparison.
+### 15.3 Classification
+
+- **controlled:** an S2 or S3 candidate that passes the automated boundary audit and every rubric criterion: correct location, matches the requested change, no critical contour destruction, no paper texture, global cast, shadow, or large opaque area in the layer, plausible for a black fineliner, physically executable, and understandable in isolation.
+- **experimental:** any S1 candidate that is registered and passes the boundary audit after copyback; any S2 or S3 candidate that fails a rubric criterion but is on-task and readable.
+- **rejected:** off-task or unreadable output, failed registration, or content that cannot be shown.
+
+S1 can never be `controlled`. Pixel ratios are reported as diagnostics only.
+
+### 15.4 Decision
+
+**GO** requires one strategy, S2 or S3, to meet every criterion; that strategy is the only preview path Phase 4 may retain:
+
+- at least 70% of cases (21 of 30) are case successes;
+- zero critical contour destruction among `controlled` candidates;
+- at least 80% of `controlled` candidates are understandable in isolation;
+- at least 70% of beginner participants understand the instruction;
+- at least 60% of beginner participants execute without worsening the work;
+- no crash or reload in the ten-cycle real-device run on the available device;
+- median latency per case success, including attempts used, under 60 seconds and estimated cost under USD 0.30.
+
+**PIVOT** applies when any GO criterion is unmet, including when evidence is missing at the end of the timebox, or when any of these triggers holds for the best strategy:
+
+- more than 10% of `controlled` candidates contain unnoticed contour or paper changes;
+- more than 50% of cases need mask repair or have no `controlled` result on the first attempt;
+- reported quality depends on unreported selection;
+- S2 and S3 both fail while S1 is the only usable visual route.
+
+The default pivot target for preview failures is Quick Compare + sourced critique + manually confirmed stroke/SVG plan + checkpoint comparison. For beginner, device, or cost failures, the owner selects and records the pivot. There is no STOP outcome (D-031); the owner decides after reviewing the report.
+
+Phase 0 evidence is manual and partly unblinded. Before a public beta, Phase 4 must reconfirm the retained strategy through the production API path on a fresh holdout set, and the iPhone 11-class device test must pass before the Phase 2 exit gate.
 
 ## 16. Roadmap
 
