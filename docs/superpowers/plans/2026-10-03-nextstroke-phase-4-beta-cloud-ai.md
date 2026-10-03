@@ -25,11 +25,13 @@
 4. Timeout/retry creates duplicate cost or inconsistent project state.
 5. Warning labels disappear in immersive mode, share, or export.
 
-## Task 1: Retain one preview adapter
+## Task 1: Retain one preview adapter (D-051)
 
-- [ ] Implement only the Phase 0-approved direct-alpha or structured-stroke/SVG adapter.
-- [ ] If full-composite generation is retained, classify it experimental by default.
-- [ ] Validate runtime responses and record version/cost/latency metadata.
+- [ ] Implement the hybrid route: masked image edit as template (S1, experimental), then a stroke-plan transfer (S3 with hatch fills) rendered and composited locally; fall back to plain S3, then to "no controlled preview available".
+- [ ] Never promote the template image; show it only as labeled inspiration.
+- [ ] Validate runtime responses and record version/cost/latency metadata for both calls.
+- [ ] Gate: median latency per controlled preview under 60 s on the production path.
+- [ ] Gate: reconfirm the hybrid on a fresh holdout of real, consented photos with owner-reviewed masks.
 
 ## Task 2: Local safety compositor
 

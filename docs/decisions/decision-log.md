@@ -465,3 +465,18 @@
 - **Reason:** Owner choice after D-049: S1 looked most natural, S3 was safest but mechanical.
 - **Consequence:** If the hybrid is controlled and looks natural, the preview route becomes S1 (inspiration) + S3 transfer (controlled), at about USD 0.07 per image call plus the stroke-plan call. The S1 template depends on OpenAI and inherits its refusal and server-error risk.
 - **Reconsider when:** The results are in.
+
+## D-051 — Phase 4 preview route: hybrid S1 template → S3 stroke plan
+
+- **Date:** 2026-10-03
+- **Refines:** D-048 (S3 retained). The retained controlled route is S3 stroke plans, now preferably transferred from an S1 template.
+- **Selected:**
+  - Phase 4 builds the hybrid preview route: a masked OpenAI edit (S1) produces a template image; a stroke-plan model transfers the template's new strokes into an S3 plan (strokes and hatch fills); the browser renders that plan and composites it locally. Only the rendered plan can be controlled.
+  - The S1 template may be shown only as labeled experimental inspiration (D-033), never as the controlled result.
+  - If the template call is refused or fails, the route falls back to plain S3 (stroke plan from the photo alone); if that fails too, "no controlled preview available" is a complete outcome.
+  - S2 (direct transparent layer) is not built.
+  - New Phase 4 gates: median latency per controlled preview under 60 s on the production path (the lab measured 70 s; candidates are a faster image model or quality, a faster transfer model, and showing the inspiration while the plan is computed) and reconfirmation of the hybrid on a fresh holdout of real, consented photos with owner-reviewed masks.
+- **Alternatives:** Plain S3 only (D-048); allowing S1 as controlled (would change product rule 3).
+- **Reason:** Owner choice after D-049/D-050: the hybrid was controlled most often on shading (5 of 7) and fit the drawing's style in 6 of 7 cases, while plain S3 looked mechanical and S2 misplaced strokes.
+- **Consequence:** Phase 4 needs a server-side secret for OpenAI plus a stroke-plan model, so the minimal API of Phase 4 Task 4 is required. Two provider calls per preview raise cost (about USD 0.07 plus the plan call) and latency. Phases 1–3 are unchanged, except that contracts must represent an S1 template as an untrusted, experimental asset linked to the controlled stroke plan derived from it.
+- **Reconsider when:** The latency gate or the holdout reconfirmation fails.

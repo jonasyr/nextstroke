@@ -383,7 +383,7 @@ S1 can never be `controlled`. Pixel ratios are reported as diagnostics only.
 
 The default pivot target for preview failures is Quick Compare + sourced critique + manually confirmed stroke/SVG plan + checkpoint comparison. For beginner, device, or cost failures, the owner selects and records the pivot. There is no STOP outcome (D-032); the owner decides after reviewing the report.
 
-**Outcome (D-048):** PIVOT. S3 met every technical criterion and is the only retained preview strategy; the beginner criteria above were not measured and become the Phase 3 exit gate. Report: `docs/research/phase-0-results.md`.
+**Outcome (D-048):** PIVOT. S3 met every technical criterion and is the only retained preview strategy; the beginner criteria above were not measured and become the Phase 3 exit gate. Report: `docs/research/phase-0-results.md`. Follow-up tests (D-049, D-050) led to the retained route: an S1 template transferred into an S3 stroke plan, with the template shown only as experimental inspiration (D-051).
 
 Phase 0 evidence is manual and partly unblinded. Before a public beta, Phase 4 must reconfirm the retained strategy through the production API path on a fresh holdout set, and the iPhone 11-class device test must pass before the Phase 2 exit gate.
 

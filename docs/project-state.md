@@ -8,7 +8,7 @@
 
 **Implementation status:** Working legacy comparison prototype imported; disposable Phase 0 lab in progress under `lab/`; production rewrite not started
 
-**Active phase:** Phase 0 closed 2026-10-03 with PIVOT (D-048): S3 retained as the only preview strategy (6 of 7 cases controlled, all technical criteria met); the beginner criteria were not measured and become a hard Phase 3 exit gate. Report: `docs/research/phase-0-results.md`. Next: Phase 1 lean foundation (`docs/superpowers/plans/2026-10-03-nextstroke-phase-1-foundation.md`) Follow-up shading test (D-049) done: S3 4/7 controlled but looks mechanical, S2-v2 2/7 (placement), S1-v2 best looking but experimental by rule; owner decision on the preview route pending. Hybrid test (D-050): S1 template transferred to an S3 stroke plan, 5/7 controlled and 6/7 fit the style, median 70 s; owner decision on adopting it pending.
+**Active phase:** Phase 1 lean foundation (`docs/superpowers/plans/2026-10-03-nextstroke-phase-1-foundation.md`). Phase 0 closed with PIVOT (D-048); follow-up tests D-049/D-050 set the Phase 4 preview route to the hybrid S1 template → S3 stroke plan (D-051: 5/7 controlled on shading, 6/7 fit the style, latency gate open). Beginner study is a hard Phase 3 exit gate. Report: `docs/research/phase-0-results.md`
 
 **Latest review:** `docs/reviews/2026-10-03-documentation-readiness-review.md`
 
@@ -44,6 +44,7 @@ NextStroke is an iPhone-first physical-art coach that compares an artwork with a
 24. **OpenAI run parameters:** `gpt-image-2.5-sunburst`, medium quality, edits endpoint with reference photo, measured cost from `usage`, refusals count as attempts (D-046).
 25. **Rating:** round 2 skipped; round-1 owner ratings are final (D-047).
 26. **Phase 0 outcome:** PIVOT; S3 is the only retained preview strategy; beginner study is the Phase 3 exit gate before any Phase 4 preview work or public test (D-048).
+27. **Preview route:** hybrid S1 template → S3 stroke plan for Phase 4; S2 not built; latency under 60 s and holdout reconfirmation are Phase 4 gates (D-051).
 
 ## Evidence status
 
@@ -79,6 +80,6 @@ The prototype is not Phase 0 evidence by itself. It is the reference for upload,
 ## Definition of the next successful handoff
 
 - Phase 1 workspace and quality gates exist and pass from a fresh clone;
-- contracts encode the preview vocabulary with S3 stroke plans as the only controlled route;
+- contracts encode the preview vocabulary with S3 stroke plans as the only controlled route and S1 templates as untrusted experimental assets linked to their derived plans (D-051);
 - no account, sync, D1, or R2 scaffolding exists;
 - the Phase 3 beginner gate from D-048 is still open and not assumed passed.
