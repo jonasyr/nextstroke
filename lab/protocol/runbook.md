@@ -6,7 +6,8 @@ Operational checklist for the approved plan (`docs/superpowers/plans/2026-10-03-
 
 - [ ] ChatGPT: Settings → Data controls → turn off model improvement. Claude: Settings → Privacy → turn off training use. Note date and state in `private/settings.md`.
 - [ ] Create `lab/private/` (git-ignored) with `cases/`, `outputs/`, `candidates/`, `keys/`.
-- [ ] Commit the material sheet (Task 2a) and freeze `protocol/prompts.md`.
+- [x] Material sheet drafted (Task 2a): `protocol/material-sheet.json`, 43 manufacturer claims (evidence B, at most medium confidence) and 7 generic caution rules, validated by tests. Owner review pending; add the pens actually used in the study if missing.
+- [ ] Freeze `protocol/prompts.md`.
 - [ ] Create the Claude Project with the `ideas-s3-v1` instructions, the stroke schema from `stroke-plan.schema.json`, and the material sheet.
 - [ ] Deploy `lab/probe` privately on ChatGPT Sites and run it on the iPhone (Task 6 can start early).
 - [ ] Signed consent (`consent-de.md`) for every person whose artwork or session data is used.

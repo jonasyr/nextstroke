@@ -21,6 +21,7 @@ from nextstroke_lab.adapters.image_io import load_working_image, save_png
 from nextstroke_lab.domain.classification import Strategy, Trust
 from nextstroke_lab.domain.decision import DeviceEvidence, StudyEvidence, decide
 from nextstroke_lab.domain.geometry import crop_box_3_2
+from nextstroke_lab.domain.materials import MaterialSheet, render_prompt_block
 from nextstroke_lab.evaluation import (
     EvaluationError,
     build_outcomes,
@@ -76,6 +77,12 @@ def _annotate(args: argparse.Namespace) -> int:
     )
     annotation = annotate_case(args.case_dir, request)
     print(annotation.model_dump_json())
+    return 0
+
+
+def _material_sheet(args: argparse.Namespace) -> int:
+    sheet = MaterialSheet.model_validate_json(args.path.read_text(encoding="utf-8"))
+    print(render_prompt_block(sheet))
     return 0
 
 
@@ -173,6 +180,12 @@ def build_parser() -> argparse.ArgumentParser:
     ann.add_argument("--ink-window", type=int, default=31)
     ann.add_argument("--ink-offset", type=int, default=25)
     ann.set_defaults(run=_annotate)
+
+    mats = sub.add_parser(
+        "material-sheet", help="validate the material sheet and print the prompt block"
+    )
+    mats.add_argument("path", type=Path)
+    mats.set_defaults(run=_material_sheet)
 
     sheet = sub.add_parser("sheet", help="render a review sheet of annotated cases")
     sheet.add_argument("cases_root", type=Path)
