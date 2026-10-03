@@ -1,4 +1,4 @@
-"""Command line for the Phase 0 lab: candidate, pack, decide."""
+"""Command line for the Phase 0 lab (one small registration function per command)."""
 
 from __future__ import annotations
 
@@ -17,6 +17,7 @@ from nextstroke_lab.adapters.annotation import (
     review_sheet,
 )
 from nextstroke_lab.adapters.attempt_log import AttemptLog
+from nextstroke_lab.adapters.case_prompts import DEFAULT_PAPER, DEFAULT_PEN, write_case_prompts
 from nextstroke_lab.adapters.image_io import load_working_image, save_png
 from nextstroke_lab.domain.classification import Strategy, Trust
 from nextstroke_lab.domain.decision import DeviceEvidence, StudyEvidence, decide
@@ -83,6 +84,12 @@ def _annotate(args: argparse.Namespace) -> int:
 def _material_sheet(args: argparse.Namespace) -> int:
     sheet = MaterialSheet.model_validate_json(args.path.read_text(encoding="utf-8"))
     print(render_prompt_block(sheet))
+    return 0
+
+
+def _prompts(args: argparse.Namespace) -> int:
+    count = write_case_prompts(args.cases_root, args.out, args.pen, args.paper)
+    print(json.dumps({"cases": count, "prompts": str(args.out)}))
     return 0
 
 
@@ -163,15 +170,14 @@ def _decide(args: argparse.Namespace) -> int:
     return 0
 
 
-def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="nextstroke-lab", description=__doc__)
-    sub = parser.add_subparsers(dest="command", required=True)
-
+def _add_prepare(sub: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     prep = sub.add_parser("prepare", help="orient, scale, crop to 3:2, and add blank masks")
     prep.add_argument("source", type=Path)
     prep.add_argument("--case-dir", type=Path, required=True)
     prep.set_defaults(run=_prepare)
 
+
+def _add_annotate(sub: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     ann = sub.add_parser(
         "annotate", help="draft masks: editable polygons + automatic ink protection"
     )
@@ -184,17 +190,32 @@ def build_parser() -> argparse.ArgumentParser:
     ann.add_argument("--ink-offset", type=int, default=25)
     ann.set_defaults(run=_annotate)
 
+
+def _add_material_sheet(sub: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     mats = sub.add_parser(
         "material-sheet", help="validate the material sheet and print the prompt block"
     )
     mats.add_argument("path", type=Path)
     mats.set_defaults(run=_material_sheet)
 
+
+def _add_prompts(sub: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
+    prom = sub.add_parser("prompts", help="write copy-ready prompts for every annotated case")
+    prom.add_argument("cases_root", type=Path)
+    prom.add_argument("--out", type=Path, required=True)
+    prom.add_argument("--pen", default=DEFAULT_PEN)
+    prom.add_argument("--paper", default=DEFAULT_PAPER)
+    prom.set_defaults(run=_prompts)
+
+
+def _add_sheet(sub: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     sheet = sub.add_parser("sheet", help="render a review sheet of annotated cases")
     sheet.add_argument("cases_root", type=Path)
     sheet.add_argument("--out", type=Path, required=True)
     sheet.set_defaults(run=_sheet)
 
+
+def _add_candidate(sub: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     cand = sub.add_parser("candidate", help="composite and audit one provider output")
     cand.add_argument("case_dir", type=Path)
     cand.add_argument("strategy", choices=sorted(SHORT))
@@ -203,6 +224,8 @@ def build_parser() -> argparse.ArgumentParser:
     cand.add_argument("--out", type=Path, required=True)
     cand.set_defaults(run=_candidate)
 
+
+def _add_pack(sub: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     pack = sub.add_parser("pack", help="build a blinded rating pack")
     pack.add_argument("root", type=Path)
     pack.add_argument("--out", type=Path, required=True)
@@ -210,6 +233,8 @@ def build_parser() -> argparse.ArgumentParser:
     pack.add_argument("--seed", type=int, required=True)
     pack.set_defaults(run=_pack)
 
+
+def _add_decide(sub: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     dec = sub.add_parser("decide", help="evaluate spec §15.4 GO/PIVOT")
     dec.add_argument("root", type=Path)
     dec.add_argument("--key", type=Path, required=True)
@@ -221,6 +246,19 @@ def build_parser() -> argparse.ArgumentParser:
     dec.add_argument("--cost", type=_cost, action="append", default=[])
     dec.add_argument("--corpus-size", type=int, default=30, help="GO-eligible cases (D-044)")
     dec.set_defaults(run=_decide)
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(prog="nextstroke-lab", description=__doc__)
+    sub = parser.add_subparsers(dest="command", required=True)
+    _add_prepare(sub)
+    _add_annotate(sub)
+    _add_material_sheet(sub)
+    _add_prompts(sub)
+    _add_sheet(sub)
+    _add_candidate(sub)
+    _add_pack(sub)
+    _add_decide(sub)
     return parser
 
 
