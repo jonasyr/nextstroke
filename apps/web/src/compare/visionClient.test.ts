@@ -49,6 +49,8 @@ function setup(reply: (message: VisionRequest) => VisionResponse | "error" | nul
 
 const answer = (message: VisionRequest): VisionResponse => {
   if (message.type === "load") return { id: message.id, type: "load", ms: 420 };
+  if (message.type === "corners")
+    return { id: message.id, type: "corners", found: [{ x: 0.12, y: 0.1 }] };
   if (message.type === "paper") {
     return { id: message.id, type: "paper", paper: { corners: quad, confidence: 0.97 } };
   }
@@ -86,6 +88,8 @@ describe("vision client", () => {
     expect(await client.refine(bitmap(), bitmap(), quad)).toMatchObject({ accepted: true });
     expect(workers[0]?.sent[3]?.message).toMatchObject({ type: "refine", paper: quad });
     expect(workers[0]?.sent[3]?.transfer).toHaveLength(2);
+    expect(await client.corners(bitmap(), quad, [2])).toEqual([{ x: 0.12, y: 0.1 }]);
+    expect(workers[0]?.sent[4]?.message).toMatchObject({ type: "corners", quad, indices: [2] });
   });
 
   it("reports unavailable when opencv.js fails to load, without retrying", async () => {
@@ -96,6 +100,7 @@ describe("vision client", () => {
     expect(workers[0]?.terminated).toBe(true);
     expect(await client.detectPaper(bitmap())).toBeNull();
     expect(await client.align(bitmap(), bitmap())).toBeNull();
+    expect(await client.corners(bitmap(), quad, [0])).toBeNull();
     expect(workers).toHaveLength(1);
   });
 

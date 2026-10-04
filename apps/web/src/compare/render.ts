@@ -83,11 +83,14 @@ export interface CornerOverlay {
   handles: readonly Point[];
   active: number;
   loupe?: boolean;
+  /** Rings of an automatic guess still to be checked: amber and dashed (D-061). */
+  unsure?: readonly number[];
 }
 
 const HANDLE = 15;
 const HANDLE_ACTIVE = 18;
 const ACCENT = "#8fb0ff";
+const WARN = "#ffd479";
 const LABEL_FONT = "600 12px -apple-system, system-ui, sans-serif";
 const LOUPE_RADIUS = 56;
 const LOUPE_ZOOM = 3;
@@ -115,7 +118,7 @@ function drawOverlay(
   ctx: CanvasRenderingContext2D,
   viewport: Viewport,
   scene: () => void,
-  { handles, active, loupe }: CornerOverlay,
+  { handles, active, loupe, unsure = [] }: CornerOverlay,
 ) {
   if (handles.length === 4) {
     // The quad: a dark line under a light one, visible on any paper.
@@ -139,17 +142,20 @@ function drawOverlay(
   for (const [i, p] of handles.entries()) {
     // Rings with a crosshair, not dots: the corner itself stays visible inside the handle.
     const on = i === active;
+    const check = !on && unsure.includes(i);
     const r = on ? HANDLE_ACTIVE : HANDLE;
     for (const [width, color] of [
       [5, "rgba(0,0,0,0.55)"],
-      [on ? 3 : 2.5, on ? ACCENT : "rgba(255,255,255,0.95)"],
+      [on ? 3 : 2.5, on ? ACCENT : check ? WARN : "rgba(255,255,255,0.95)"],
     ] as const) {
       ctx.beginPath();
+      ctx.setLineDash(check ? [5, 4] : []);
       ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
       ctx.lineWidth = width;
       ctx.strokeStyle = color;
       ctx.stroke();
     }
+    ctx.setLineDash([]);
     ctx.beginPath();
     ctx.moveTo(p.x - 5, p.y);
     ctx.lineTo(p.x + 5, p.y);

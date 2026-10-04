@@ -303,6 +303,16 @@ export function AlignPanel({
   );
 }
 
+/** "Ecke 3 prüfen", "Ecken 1 und 3 prüfen", or "Ecken prüfen" for all four (D-061). */
+function checkText(unsure: readonly number[]): string {
+  const n = unsure.map((i) => String(i + 1));
+  if (n.length === 1) return t("corners.checkOne", { n: n[0] ?? "" });
+  if (n.length === 4) return t("corners.check");
+  return t("corners.checkSome", {
+    list: `${n.slice(0, -1).join(", ")} ${t("common.and")} ${n.at(-1)}`,
+  });
+}
+
 /** Corner buttons laid out like the paper: 1 2 over 4 3. */
 const CORNER_ORDER = [0, 1, 3, 2] as const;
 
@@ -312,7 +322,7 @@ export function CornersPanel({
   size,
   fine,
   onFine,
-  lowConfidence,
+  unsure,
   onAuto,
   onTouchCorner,
 }: {
@@ -322,10 +332,11 @@ export function CornersPanel({
   size: { width: number; height: number };
   fine: boolean;
   onFine: (fine: boolean) => void;
-  lowConfidence: boolean;
+  /** Rings of an automatic guess still to be checked (D-061). */
+  unsure: readonly number[];
   onAuto: () => void;
-  /** A corner was selected or nudged: show the magnifier for a moment. */
-  onTouchCorner: () => void;
+  /** Corner `index` was selected or nudged: magnify it, and it no longer needs checking. */
+  onTouchCorner: (index: number) => void;
 }) {
   const px = fine ? 1 : 10;
   const first = state.cornerStep === "reference";
@@ -335,9 +346,9 @@ export function CornersPanel({
         {t(first ? "corners.reference" : "corners.original")}
         <small>{t("corners.step", { n: first ? "1" : "2" })}</small>
       </h2>
-      {lowConfidence && (
+      {unsure.length > 0 && (
         <p className="ns-note">
-          <b>{t("corners.check")}</b> · {t("corners.checkDetail")}
+          <b>{checkText(unsure)}</b> · {t("corners.checkDetail")}
         </p>
       )}
       <div className="ns-crow">
@@ -353,7 +364,7 @@ export function CornersPanel({
               })}
               onClick={() => {
                 apply({ type: "select-corner", index: i });
-                onTouchCorner();
+                onTouchCorner(i);
               }}
             >
               {i + 1}
@@ -371,7 +382,7 @@ export function CornersPanel({
                   { type: "corner-nudge", dx: (dx * px) / size.width, dy: (dy * px) / size.height },
                   true,
                 );
-                onTouchCorner();
+                onTouchCorner(state.activeCorner);
               }}
             >
               <Icon {...ICON} />

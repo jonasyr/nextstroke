@@ -6,6 +6,7 @@ import {
   blocksOnPaper,
   chooseLineQuad,
   choosePaper,
+  cornerNear,
   fitSimilarity,
   type HoughLine,
   type Neighbour,
@@ -13,6 +14,7 @@ import {
   type Point,
   type Quad,
   ratioTest,
+  SNAP,
   workingSize,
 } from "@nextstroke/compare";
 import opencvUrl from "@techstark/opencv-js/dist/opencv.js?url";
@@ -260,6 +262,44 @@ function refine(original: ImageBitmap, prewarped: ImageBitmap, paper: Quad) {
   }
 }
 
+/**
+ * Paper corners near rings of a quad (D-061), searched along the directions to each ring's
+ * neighbours (`cornerNear`) on a lightly blurred grey copy; null where none is clear.
+ */
+function findCorners(image: ImageBitmap, quad: Quad, indices: readonly number[]): (Point | null)[] {
+  const track: Mat[] = [];
+  try {
+    const { gray, size } = grayOf(image, track);
+    const smooth = new cv.Mat();
+    track.push(smooth);
+    cv.GaussianBlur(gray, smooth, new cv.Size(5, 5), 0);
+    const { data, cols, rows } = smooth;
+    const intensity = (x: number, y: number) => {
+      if (x < 0 || y < 0 || x > cols - 1 || y > rows - 1) return Number.NaN;
+      const x0 = Math.floor(x);
+      const y0 = Math.floor(y);
+      const x1 = Math.min(x0 + 1, cols - 1);
+      const y1 = Math.min(y0 + 1, rows - 1);
+      const fx = x - x0;
+      const fy = y - y0;
+      const at = (xx: number, yy: number) => data[yy * cols + xx] as number;
+      const top = at(x0, y0) * (1 - fx) + at(x1, y0) * fx;
+      const bottom = at(x0, y1) * (1 - fx) + at(x1, y1) * fx;
+      return top * (1 - fy) + bottom * fy;
+    };
+    const px = quad.map((p) => ({ x: p.x * size.width, y: p.y * size.height }));
+    const radius = SNAP.radius * Math.max(size.width, size.height);
+    return indices.map((i) => {
+      const ring = px[i] as Point;
+      const neighbours = [px[(i + 1) % 4], px[(i + 3) % 4]] as [Point, Point];
+      const at = cornerNear(ring, neighbours, intensity, radius);
+      return at && { x: at.x / size.width, y: at.y / size.height };
+    });
+  } finally {
+    for (const m of track) m.delete();
+  }
+}
+
 let loaded: Promise<number> | null = null;
 
 scope.onmessage = async (event: MessageEvent<VisionRequest>) => {
@@ -271,6 +311,12 @@ scope.onmessage = async (event: MessageEvent<VisionRequest>) => {
     if (message.type === "load") reply({ id: message.id, type: "load", ms });
     else if (message.type === "paper") {
       reply({ id: message.id, type: "paper", paper: detectPaper(message.image) });
+    } else if (message.type === "corners") {
+      reply({
+        id: message.id,
+        type: "corners",
+        found: findCorners(message.image, message.quad, message.indices),
+      });
     } else if (message.type === "refine") {
       reply({
         id: message.id,
