@@ -14,6 +14,7 @@ import {
   RotateCcw,
   RotateCw,
   Scan,
+  Sparkles,
 } from "lucide-react";
 import { useRef } from "react";
 import { ICON, IconButton } from "./IconButton.tsx";
@@ -22,6 +23,8 @@ import { Thumb } from "./Thumb.tsx";
 /** Bottom panels of the editor: one mode, one primary control (D-056). */
 
 export type Mode = "compare" | "align" | "corners";
+/** Modes with a tab; the corner flow opens from Ausrichten. */
+type TabMode = "compare" | "align";
 /** Dispatch an action; `record` first saves an undo checkpoint. */
 export type Apply = (action: CompareAction, record?: boolean) => void;
 
@@ -88,7 +91,7 @@ export function ComparePanel({
   state: CompareState;
   apply: Apply;
   images: Images;
-  onMode: (mode: Mode) => void;
+  onMode: (mode: TabMode) => void;
 }) {
   const split = state.split !== null;
   const value = Math.round((split ? (state.split ?? 0) : state.opacity) * 100);
@@ -96,16 +99,15 @@ export function ComparePanel({
   const changed = {
     compare: split || state.opacity !== 0.5,
     align:
+      state.corners !== null ||
       state.layer.x !== 0 ||
       state.layer.y !== 0 ||
       state.layer.scale !== 1 ||
       state.layer.rotationDeg !== 0,
-    corners: state.corners !== null,
   };
   const tabs = [
     { mode: "compare", Icon: Blend },
     { mode: "align", Icon: Move },
-    { mode: "corners", Icon: Scan },
   ] as const;
   return (
     <>
@@ -166,19 +168,6 @@ export function ComparePanel({
   );
 }
 
-function StepToggle({ fine, onFine }: { fine: boolean; onFine: (fine: boolean) => void }) {
-  return (
-    <fieldset className="ns-seg" aria-label={t("step.label")}>
-      <button type="button" aria-pressed={fine} onClick={() => onFine(true)}>
-        {t("step.fine")}
-      </button>
-      <button type="button" aria-pressed={!fine} onClick={() => onFine(false)}>
-        {t("step.coarse")}
-      </button>
-    </fieldset>
-  );
-}
-
 const ARROWS = [
   { key: "up", dx: 0, dy: -1, Icon: ChevronUp, area: "u" },
   { key: "left", dx: -1, dy: 0, Icon: ChevronLeft, area: "l" },
@@ -194,6 +183,7 @@ export function AlignPanel({
   onFine,
   busy,
   onAuto,
+  onCorners,
 }: {
   state: CompareState;
   apply: Apply;
@@ -201,7 +191,10 @@ export function AlignPanel({
   fine: boolean;
   onFine: (fine: boolean) => void;
   busy: boolean;
+  /** Everything automatic: content, paper corners, position search (D-058). */
   onAuto: () => void;
+  /** The manual four-corner flow. */
+  onCorners: () => void;
 }) {
   const px = fine ? 1 : 10;
   const unit = px / images.original.width;
@@ -225,6 +218,22 @@ export function AlignPanel({
           {t("common.done")}
         </button>
       </div>
+      <div className="ns-row">
+        <button
+          type="button"
+          className="ns-auto"
+          aria-label={t("align.autoAll")}
+          onClick={onAuto}
+          disabled={busy}
+        >
+          <Sparkles {...ICON} />
+          {t("align.auto")}
+        </button>
+        <button type="button" className="ns-auto ns-auto-2" onClick={onCorners}>
+          <Scan {...ICON} />
+          {t(state.corners ? "align.cornersEdit" : "align.corners")}
+        </button>
+      </div>
       <div className="ns-fine">
         <fieldset className="ns-pad" aria-label={t("align.move")}>
           {ARROWS.map(({ key, dx, dy, Icon, area }) => (
@@ -237,9 +246,15 @@ export function AlignPanel({
               <Icon {...ICON} />
             </IconButton>
           ))}
-          <span className="ns-pad-c" style={{ gridArea: "c" }}>
+          <button
+            type="button"
+            className="ns-pad-c ns-pad-step"
+            style={{ gridArea: "c" }}
+            aria-label={t(fine ? "corners.stepFine" : "corners.stepCoarse")}
+            onClick={() => onFine(!fine)}
+          >
             {px} px
-          </span>
+          </button>
         </fieldset>
         <div className="ns-steppers">
           <div className="ns-stepper">
@@ -274,7 +289,13 @@ export function AlignPanel({
               <RotateCw {...ICON} />
             </IconButton>
           </div>
-          <StepToggle fine={fine} onFine={onFine} />
+          <button
+            type="button"
+            className="ns-text ns-accent ns-end"
+            onClick={() => apply({ type: "reset-layer" }, true)}
+          >
+            {t("align.reset")}
+          </button>
         </div>
       </div>
       <EndCapSlider
@@ -286,18 +307,6 @@ export function AlignPanel({
         onStart={() => apply({ type: "checkpoint" })}
         onValue={(percent) => apply({ type: "opacity", percent })}
       />
-      <div className="ns-links">
-        <button type="button" className="ns-text ns-accent" onClick={onAuto} disabled={busy}>
-          {t("align.auto")}
-        </button>
-        <button
-          type="button"
-          className="ns-text ns-accent"
-          onClick={() => apply({ type: "reset-layer" }, true)}
-        >
-          {t("align.reset")}
-        </button>
-      </div>
     </>
   );
 }

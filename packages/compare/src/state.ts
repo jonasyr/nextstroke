@@ -40,8 +40,8 @@ export interface CompareState {
   view: View;
   layer: Layer;
   aligning: boolean;
-  /** Layer from before alignment opened, restored on cancel. */
-  alignBefore: Layer | null;
+  /** Layer and corners from before alignment opened, restored on cancel. */
+  alignBefore: Pick<CompareState, "layer" | "corners" | "refCorners"> | null;
   /**
    * Paper corners on the original; when set, a perspective warp that maps `refCorners` onto
    * them replaces the affine layer for drawing.
@@ -154,6 +154,9 @@ export type CompareAction =
   | { type: "undo" }
   | { type: "redo" };
 
+/** Leaves the corner steps without touching the corners themselves. */
+const NO_CORNERS_FLOW = { cornerStep: null, cornersBefore: null, stepStart: null };
+
 const NO_CORNERS = {
   corners: null,
   refCorners: null,
@@ -220,13 +223,18 @@ export function compare(state: CompareState, action: CompareAction): CompareStat
       if (!action.open) return { ...state, aligning: false, alignBefore: null };
       // Aligning needs both images visible at once.
       const visible = state.opacity > 0 && state.opacity < 1 ? state.opacity : 0.5;
-      return { ...setOpacity(state, visible), aligning: true, alignBefore: state.layer };
+      return {
+        ...setOpacity(state, visible),
+        aligning: true,
+        alignBefore: { layer: state.layer, corners: state.corners, refCorners: state.refCorners },
+      };
     }
     case "alignment-cancel":
       return {
         ...state,
+        ...(state.alignBefore ?? {}),
+        ...NO_CORNERS_FLOW,
         aligning: false,
-        layer: state.alignBefore ?? state.layer,
         alignBefore: null,
       };
     case "set-layer":
@@ -300,7 +308,6 @@ export function compare(state: CompareState, action: CompareAction): CompareStat
         activeCorner: 0,
         cornerEdited: state.refCorners !== null,
         view: CORNER_VIEW,
-        aligning: false,
         split: null,
         tapReveal: false,
         holdReveal: false,

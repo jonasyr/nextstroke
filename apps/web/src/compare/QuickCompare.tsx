@@ -1,3 +1,4 @@
+import type { PaperResult } from "@nextstroke/compare";
 import {
   autoAlign,
   CORNER_VIEW,
@@ -267,6 +268,7 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
 
   // On opening a new pair: align by the drawing's content, else at sure paper corners, else
   // explain (D-056, D-057). A paper guess is never applied without the user seeing it.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: alignByVision reads these same images; the effect runs once per new pair
   useEffect(() => {
     if (!open || !original || !reference || autoForPair.current === pairRef.current) return;
     autoForPair.current = pairRef.current;
@@ -277,37 +279,57 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
     void (async () => {
       const vision = await visionLoaded();
       if (stale()) return;
-      if (!vision) return setStatus(t("status.autoHint"));
-      const verdict = await vision.align(original.bitmap, reference.bitmap);
-      if (stale()) return;
-      if (verdict?.accepted) {
-        dispatch({ type: "checkpoint" });
-        dispatch({ type: "corners-set", corners: verdict.corners });
-        return setStatus(t("status.aligned"));
-      }
-      const photo = await vision.detectPaper(original.bitmap);
-      if (stale()) return;
-      if (photo && photo.confidence >= SURE) {
-        const template = await vision.detectPaper(reference.bitmap);
-        if (stale()) return;
-        dispatch({ type: "checkpoint" });
-        dispatch({
-          type: "corners-auto",
-          refCorners: template?.corners ?? IMAGE_CORNERS,
-          corners: photo.corners,
-        });
-        setUnsure({
-          reference: template ? template.confidence < SURE : false,
-          original: photo.confidence < SURE,
-        });
-        return setStatus(t("status.autoPaper"));
-      }
+      const outcome = vision ? await alignByVision(vision, stale) : null;
+      if (outcome === "stale") return;
+      if (outcome === "content") return setStatus(t("status.aligned"));
+      if (outcome === "paper") return setStatus(t("status.autoPaper"));
       setStatus(t("status.autoHint"));
     })();
     return () => {
       cancelled = true;
     };
   }, [open, original, reference, visionLoaded]);
+
+  function applyPaper(photo: PaperResult, template: PaperResult | null) {
+    dispatch({ type: "checkpoint" });
+    dispatch({
+      type: "corners-auto",
+      refCorners: template?.corners ?? IMAGE_CORNERS,
+      corners: photo.corners,
+    });
+    setUnsure({
+      reference: template ? template.confidence < SURE : false,
+      original: photo.confidence < SURE,
+    });
+  }
+
+  /**
+   * Content alignment, else sure paper corners (D-057); applies what it finds. An unsure paper
+   * guess is returned, not applied, so the caller decides whether to show it.
+   */
+  async function alignByVision(
+    vision: VisionDeps,
+    stale: () => boolean,
+  ): Promise<
+    "stale" | "content" | "paper" | { photo: PaperResult; template: PaperResult | null } | null
+  > {
+    if (!original || !reference) return null;
+    const verdict = await vision.align(original.bitmap, reference.bitmap);
+    if (stale()) return "stale";
+    if (verdict?.accepted) {
+      dispatch({ type: "checkpoint" });
+      dispatch({ type: "corners-set", corners: verdict.corners });
+      return "content";
+    }
+    const photo = await vision.detectPaper(original.bitmap);
+    if (stale()) return "stale";
+    if (!photo) return null;
+    const template = await vision.detectPaper(reference.bitmap);
+    if (stale()) return "stale";
+    if (photo.confidence < SURE) return { photo, template };
+    applyPaper(photo, template);
+    return "paper";
+  }
 
   /**
    * Place the rings of a corner step automatically. On the drawing, the content alignment
@@ -519,7 +541,10 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
   function onMode(next: Mode) {
     setStatus("");
     if (next === "align") apply({ type: "alignment", open: true });
-    if (next !== "corners") return;
+  }
+
+  function beginCorners() {
+    setStatus("");
     const fresh = stateRef.current.refCorners === null;
     apply({ type: "corners-begin" });
     if (fresh) void detectStep("reference", false);
@@ -542,17 +567,16 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
     setAligningAuto(true);
     const w = 160;
     const h = Math.max(16, Math.round((w * original.height) / original.width));
-    const layer = stateRef.current.layer;
+    // The correlation search is affine: it starts from the layer, or from scratch under corners.
+    const layer = stateRef.current.corners ? initialState().layer : stateRef.current.layer;
     try {
-      // Feature homography first (handles perspective); the correlation search is the fallback.
+      // Content first, then sure paper corners, then the correlation search, and only then an
+      // unsure paper guess, flagged for checking (D-057, D-058).
       const vision = await visionLoaded();
-      const verdict = vision && (await vision.align(original.bitmap, reference.bitmap));
-      if (controller.signal.aborted) return;
-      if (verdict?.accepted) {
-        apply({ type: "corners-set", corners: verdict.corners }, true);
-        setStatus(t("status.aligned"));
-        return;
-      }
+      const outcome = vision ? await alignByVision(vision, () => controller.signal.aborted) : null;
+      if (outcome === "stale") return;
+      if (outcome === "content") return setStatus(t("status.aligned"));
+      if (outcome === "paper") return setStatus(t("status.autoPaper"));
       const result = await autoAlign(
         deps.gray(original.bitmap, w, h),
         deps.gray(reference.bitmap, w, h),
@@ -565,14 +589,15 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
       );
       if (result.accepted) {
         const tr = result.transform;
-        apply(
-          {
-            type: "set-layer",
-            layer: { x: tr.x / w, y: tr.y / w, scale: tr.scale, rotationDeg: tr.rotationDeg },
-          },
-          true,
-        );
+        apply({ type: "corners-clear" }, true);
+        apply({
+          type: "set-layer",
+          layer: { x: tr.x / w, y: tr.y / w, scale: tr.scale, rotationDeg: tr.rotationDeg },
+        });
         setStatus(t("status.aligned"));
+      } else if (outcome) {
+        applyPaper(outcome.photo, outcome.template);
+        setStatus(t("status.paperGuess"));
       } else {
         setStatus(t("status.noMatch"));
       }
@@ -667,6 +692,7 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
           onFine={setFine}
           busy={busy}
           onAuto={() => void runAutoAlign()}
+          onCorners={beginCorners}
         />
       ) : (
         <ComparePanel state={state} apply={apply} images={both} onMode={onMode} />

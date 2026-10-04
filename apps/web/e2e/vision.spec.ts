@@ -95,12 +95,13 @@ test("aligns a new pair by its content on opening, and carries the Vorlage's cor
   await loadPair(page);
   const aligned = page.getByText("Ausgerichtet. Prüfe die Kanten bei 50 %.");
   await expect(aligned).toBeVisible({ timeout: 30_000 });
-  await expect(page.getByRole("tab", { name: /Ecken/ }).locator(".ns-dot")).toBeVisible();
-  await page.getByRole("tab", { name: /Ecken/ }).click();
+  await expect(page.getByRole("tab", { name: /Ausrichten/ }).locator(".ns-dot")).toBeVisible();
+  await page.getByRole("tab", { name: /Ausrichten/ }).click();
+  await page.getByRole("button", { name: "Ecken ändern" }).click();
   await expect(page.getByText("Ecken 1/2")).toBeVisible();
   await page.getByRole("button", { name: "Weiter" }).click();
   await expect(page.getByText("Ecken 2/2")).toBeVisible();
-  await page.getByRole("button", { name: "Automatisch" }).click();
+  await page.getByRole("button", { name: "Automatisch", exact: true }).click();
   await expect(page.getByText("Ecken über die Zeichnung gefunden")).toBeVisible({
     timeout: 30_000,
   });
@@ -115,6 +116,6 @@ test("aligns on request with the feature homography", async ({ page }) => {
   await expect(aligned).toBeVisible({ timeout: 30_000 });
   await expect(aligned).toBeHidden({ timeout: 10_000 });
   await page.getByRole("tab", { name: /Ausrichten/ }).click();
-  await page.getByRole("button", { name: "Automatisch" }).click();
+  await page.getByRole("button", { name: "Automatisch ausrichten" }).click();
   await expect(aligned).toBeVisible({ timeout: 30_000 });
 });
