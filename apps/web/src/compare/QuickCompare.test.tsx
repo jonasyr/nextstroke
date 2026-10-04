@@ -427,6 +427,25 @@ describe("editor: aligning", () => {
     expect(screen.getByRole("tab", { name: /Ausrichten/ }).querySelector(".ns-dot")).toBeNull();
   });
 
+  it("pans and zooms the view instead of the Vorlage while fine-aligning", async () => {
+    await loadBoth(makeDeps());
+    fireEvent.click(screen.getByRole("tab", { name: /Ausrichten/ }));
+    const toggle = button("Ansicht verschieben");
+    expect(toggle.getAttribute("aria-pressed")).toBe("false");
+    fireEvent.click(toggle);
+    expect(toggle.getAttribute("aria-pressed")).toBe("true");
+    drag(1, [100, 100], [160, 120]);
+    // The view moved, the Vorlage did not.
+    expect((button("Einpassen") as HTMLButtonElement).disabled).toBe(false);
+    expect((button("Rückgängig") as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.click(button("Nach rechts"));
+    expect((button("Rückgängig") as HTMLButtonElement).disabled).toBe(false);
+    fireEvent.click(toggle);
+    drag(2, [100, 100], [160, 120]);
+    fireEvent.click(button("Fertig"));
+    expect(screen.queryByRole("button", { name: "Ansicht verschieben" })).toBeNull();
+  });
+
   it("keeps the alignment when auto-align finds no safe match", async () => {
     await loadBoth(makeDeps());
     fireEvent.click(screen.getByRole("tab", { name: /Ausrichten/ }));
