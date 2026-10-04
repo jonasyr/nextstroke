@@ -57,7 +57,8 @@ export const de = {
   "split.left": "Zeichnung",
   "split.right": "Vorlage",
   "hint.compare": "Antippen: nur Zeichnung · halten: kurz · zwei Finger: zoomen",
-  "hint.align": "Ziehen verschiebt die Vorlage · zwei Finger: Größe und Drehung",
+  "hint.align":
+    "Ziehen verschiebt die Vorlage · zwei Finger: Größe und Drehung · „Ansicht“: zoomen und umsehen",
   "hint.corners": "Ringe auf die Blattecken ziehen – die Lupe zeigt die Stelle",
   "hint.close": "Hinweis schließen",
   "common.cancel": "Abbrechen",
@@ -79,6 +80,8 @@ export const de = {
   "align.ccw": "Nach links drehen",
   "align.cw": "Nach rechts drehen",
   "align.auto": "Automatisch",
+  "align.view": "Ansicht",
+  "align.viewToggle": "Ansicht verschieben",
   "align.reset": "Zurücksetzen",
   "corners.reference": "Vorlage",
   "corners.original": "Zeichnung",

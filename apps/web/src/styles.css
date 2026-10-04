@@ -375,6 +375,25 @@ h2 {
 .ns-pct:disabled {
   color: var(--fg);
 }
+/* Ausrichten: switch gestures between the Vorlage and the view. */
+.ns-viewtoggle {
+  position: absolute;
+  left: 24px;
+  bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: 14px;
+  background: var(--plate);
+  font-size: 13px;
+  font-weight: 600;
+}
+.ns-viewtoggle[aria-pressed="true"] {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
 .ns-restore {
   position: absolute;
   top: 12px;

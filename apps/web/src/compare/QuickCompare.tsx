@@ -133,6 +133,8 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
   const [sheet, setSheet] = useState<Sheet>(null);
   const [chrome, setChrome] = useState(true);
   const [fine, setFine] = useState(true);
+  /** While aligning: gestures move the view instead of the Vorlage, for fine work up close. */
+  const [moveView, setMoveView] = useState(false);
   const [loupe, setLoupe] = useState(false);
   const [unsure, setUnsure] = useState<Record<CornerStep, boolean>>({
     reference: false,
@@ -381,7 +383,7 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
       scale: Math.min(width / base.width, height / base.height),
       view: s.view,
       layer: s.layer,
-      moveLayer: s.aligning && !s.cornerStep,
+      moveLayer: s.aligning && !s.cornerStep && !moveView,
       originalWidth: base.width,
     });
     gestureRef.current = step.state;
@@ -424,7 +426,7 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
       setDragging({ pointer: event.pointerId, target: "split", dx: 0, dy: 0 });
       return;
     }
-    if (s.aligning) apply({ type: "checkpoint" });
+    if (s.aligning && !moveView) apply({ type: "checkpoint" });
     feed({ type: "down", id: event.pointerId, x: event.clientX, y: event.clientY, t: deps.now() });
     clearTimeout(holdTimer.current);
     holdTimer.current = setTimeout(() => feed({ type: "tick", t: deps.now() }), HOLD_MS);
@@ -483,6 +485,11 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
   }, [open, sheet]);
 
   useEffect(() => () => clearTimeout(loupeTimer.current), []);
+
+  // Leaving Ausrichten hands gestures back to the Vorlage for next time.
+  useEffect(() => {
+    if (!state.aligning) setMoveView(false);
+  }, [state.aligning]);
 
   function showLoupe() {
     setLoupe(true);
@@ -743,6 +750,19 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
                   <Plus {...ICON} />
                 </IconButton>
               </div>
+            )}
+            {mode === "align" && (
+              <button
+                type="button"
+                className="ns-viewtoggle"
+                aria-pressed={moveView}
+                aria-label={t("align.viewToggle")}
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={() => setMoveView((on) => !on)}
+              >
+                <Hand {...ICON} />
+                <span aria-hidden="true">{t("align.view")}</span>
+              </button>
             )}
             {!chrome && (
               <IconButton
