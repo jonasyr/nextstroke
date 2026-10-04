@@ -60,6 +60,29 @@ describe("comparison state (D-056; legacy C1, C4, C5, V1, V4, V5)", () => {
     expect(kept.layer.x).toBeCloseTo(0.01);
   });
 
+  it("cancels corner work done inside alignment too, and returns there from the corners", () => {
+    const quad = [
+      { x: 0.1, y: 0.1 },
+      { x: 0.9, y: 0.1 },
+      { x: 0.9, y: 0.9 },
+      { x: 0.1, y: 0.9 },
+    ] as const;
+    let s = run({ type: "alignment", open: true }, { type: "corners-begin" });
+    expect(s.aligning).toBe(true);
+    s = compare(s, { type: "corners-next", corners: quad });
+    s = compare(s, { type: "corners-done" });
+    expect([s.cornerStep, s.aligning]).toEqual([null, true]);
+    expect(s.corners).toEqual(quad);
+    s = compare(s, { type: "alignment-cancel" });
+    expect([s.corners, s.refCorners, s.aligning]).toEqual([null, null, false]);
+    const kept = run(
+      { type: "alignment", open: true },
+      { type: "corners-set", corners: quad },
+      { type: "alignment", open: false },
+    );
+    expect(kept.corners).toEqual(quad);
+  });
+
   it("scales and rotates the layer in steps within their ranges", () => {
     let s = run({ type: "layer-scale", delta: 0.02 }, { type: "layer-rotate", delta: -1 });
     expect(s.layer.scale).toBeCloseTo(1.02);

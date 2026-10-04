@@ -346,9 +346,9 @@ describe("editor: comparing", () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     try {
       await loadBoth(makeDeps());
-      expect(await screen.findByText(/Ist das Foto schräg/)).toBeTruthy();
+      expect(await screen.findByText(/Nicht automatisch ausgerichtet/)).toBeTruthy();
       await act(async () => vi.advanceTimersByTime(4100));
-      expect(screen.queryByText(/Ist das Foto schräg/)).toBeNull();
+      expect(screen.queryByText(/Nicht automatisch ausgerichtet/)).toBeNull();
     } finally {
       vi.useRealTimers();
     }
@@ -403,13 +403,13 @@ describe("editor: aligning", () => {
     expect(screen.getByText("100,2 %")).toBeTruthy();
     fireEvent.click(button("Nach rechts drehen"));
     expect(screen.getByText("0,1°")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Grob" }));
+    fireEvent.click(button("Schrittweite fein, 1 Pixel"));
     expect(screen.getByText("10 px")).toBeTruthy();
     fireEvent.click(button("Vorlage verkleinern"));
     fireEvent.click(button("Nach links drehen"));
     expect(screen.getByText("98,2 %")).toBeTruthy();
     expect(screen.getByText("-0,9°")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Fein" }));
+    fireEvent.click(button("Schrittweite grob, 10 Pixel"));
     fireEvent.change(slider(), { target: { value: "40" } });
     fireEvent.click(button("Zurücksetzen"));
     expect(screen.getByText("100,0 %")).toBeTruthy();
@@ -449,7 +449,7 @@ describe("editor: aligning", () => {
   it("keeps the alignment when auto-align finds no safe match", async () => {
     await loadBoth(makeDeps());
     fireEvent.click(screen.getByRole("tab", { name: /Ausrichten/ }));
-    fireEvent.click(button("Automatisch"));
+    fireEvent.click(button("Automatisch ausrichten"));
     await screen.findByText("Keine sichere Ausrichtung – manuell weiter ausrichten.");
   });
 
@@ -462,7 +462,7 @@ describe("editor: aligning", () => {
     };
     await loadBoth(makeDeps({ gray: vi.fn((_img, w: number, h: number) => pattern(w, h)) }));
     fireEvent.click(screen.getByRole("tab", { name: /Ausrichten/ }));
-    fireEvent.click(button("Automatisch"));
+    fireEvent.click(button("Automatisch ausrichten"));
     expect(await screen.findByText("Ausgerichtet. Prüfe die Kanten bei 50 %.")).toBeTruthy();
   });
 });
@@ -470,7 +470,8 @@ describe("editor: aligning", () => {
 describe("editor: paper corners on both images", () => {
   async function toCorners(deps: CompareDeps) {
     await loadBoth(deps);
-    fireEvent.click(screen.getByRole("tab", { name: /Ecken/ }));
+    fireEvent.click(screen.getByRole("tab", { name: /Ausrichten/ }));
+    fireEvent.click(button("Ecken setzen"));
     expect(screen.getByText("Ecken 1/2")).toBeTruthy();
   }
 
@@ -498,8 +499,12 @@ describe("editor: paper corners on both images", () => {
     expect(screen.getByText("Ecken 1/2")).toBeTruthy();
     fireEvent.click(button("Weiter"));
     fireEvent.click(button("Fertig"));
-    expect(screen.getByRole("tab", { name: /Ecken/ }).querySelector(".ns-dot")).toBeTruthy();
+    // Back in Ausrichten, where the corners came from; its "Fertig" returns to comparing.
+    expect(screen.getByRole("heading", { name: "Vorlage ausrichten" })).toBeTruthy();
+    expect(button("Ecken ändern")).toBeTruthy();
     expect(slider().value).toBe("50");
+    fireEvent.click(button("Fertig"));
+    expect(screen.getByRole("tab", { name: /Ausrichten/ }).querySelector(".ns-dot")).toBeTruthy();
   });
 
   it("pans instead of tapping while placing corners", async () => {
@@ -519,10 +524,16 @@ describe("editor: paper corners on both images", () => {
     expect(deps.fromRgba).toHaveBeenCalledTimes(1);
   });
 
-  it("cancels back to the corners from before", async () => {
+  it("cancels the corners back to Ausrichten, and Ausrichten back to before", async () => {
     await toCorners(makeDeps());
+    fireEvent.click(button("Weiter"));
+    fireEvent.click(button("Fertig"));
+    fireEvent.click(button("Ecken ändern"));
     fireEvent.click(button("Abbrechen"));
-    expect(screen.getByRole("tab", { name: /Ecken/ }).querySelector(".ns-dot")).toBeNull();
+    expect(screen.getByRole("heading", { name: "Vorlage ausrichten" })).toBeTruthy();
+    expect(button("Ecken ändern")).toBeTruthy();
+    fireEvent.click(button("Abbrechen"));
+    expect(screen.getByRole("tab", { name: /Ausrichten/ }).querySelector(".ns-dot")).toBeNull();
   });
 });
 
@@ -550,11 +561,11 @@ describe("editor: opencv.js vision (D-055, D-056)", () => {
     // A guess (here from straight lines) is never applied without the user seeing it.
     const guess = vi.fn(async () => paper(0.1, 0.9));
     await loadBoth(makeDeps({ vision: fakeVision({ detectPaper: guess }) }));
-    expect(await screen.findByText(/Ist das Foto schräg/)).toBeTruthy();
+    expect(await screen.findByText(/Nicht automatisch ausgerichtet/)).toBeTruthy();
     cleanup();
     const offline = fakeVision({ load: vi.fn(async () => ({ ok: false, ms: 0 })) });
     await loadBoth(makeDeps({ vision: offline }));
-    expect(await screen.findByText(/Ist das Foto schräg/)).toBeTruthy();
+    expect(await screen.findByText(/Nicht automatisch ausgerichtet/)).toBeTruthy();
     expect(offline.detectPaper).not.toHaveBeenCalled();
   });
 
@@ -566,8 +577,9 @@ describe("editor: opencv.js vision (D-055, D-056)", () => {
       .mockResolvedValue(null);
     const detectPaper = vi.fn(async () => paper(0.2, 0.85));
     await loadBoth(makeDeps({ vision: fakeVision({ align, detectPaper }) }));
-    await screen.findByText(/Ist das Foto schräg/);
-    fireEvent.click(screen.getByRole("tab", { name: /Ecken/ }));
+    await screen.findByText(/Nicht automatisch ausgerichtet/);
+    fireEvent.click(screen.getByRole("tab", { name: /Ausrichten/ }));
+    fireEvent.click(button("Ecken setzen"));
     fireEvent.click(button("Weiter"));
     expect(await screen.findByText("Ecken über die Zeichnung gefunden")).toBeTruthy();
     expect(screen.queryByText("Ecken prüfen")).toBeNull();
@@ -587,7 +599,8 @@ describe("editor: opencv.js vision (D-055, D-056)", () => {
     const vision = fakeVision({ load: vi.fn(() => loading), detectPaper });
     await loadBoth(makeDeps({ vision }));
     expect(await screen.findByText("Bilderkennung wird geladen …")).toBeTruthy();
-    fireEvent.click(screen.getByRole("tab", { name: /Ecken/ }));
+    fireEvent.click(screen.getByRole("tab", { name: /Ausrichten/ }));
+    fireEvent.click(button("Ecken setzen"));
     await act(async () => loaded({ ok: true, ms: 5 }));
     expect(await screen.findByText("Blattecken erkannt")).toBeTruthy();
     // The detected bottom-right corner (0.8, 0.8) sits at (302, 151).
@@ -595,6 +608,18 @@ describe("editor: opencv.js vision (D-055, D-056)", () => {
     expect(button("Ecke 3 unten rechts wählen").getAttribute("aria-pressed")).toBe("true");
     fireEvent.click(button("Automatisch"));
     expect(await screen.findByText(/Blatt nicht erkannt/)).toBeTruthy();
+  });
+
+  it("uses an unsure paper guess only on request, and only as the last resort", async () => {
+    const detectPaper = vi.fn(async () => paper(0.1, 0.85));
+    await loadBoth(makeDeps({ vision: fakeVision({ detectPaper }) }));
+    await screen.findByText(/Nicht automatisch ausgerichtet/);
+    fireEvent.click(screen.getByRole("tab", { name: /Ausrichten/ }));
+    fireEvent.click(button("Automatisch ausrichten"));
+    expect(await screen.findByText(/An vermuteten Blattecken ausgerichtet/)).toBeTruthy();
+    fireEvent.click(button("Ecken ändern"));
+    fireEvent.click(button("Weiter"));
+    expect(screen.getByText("Ecken prüfen")).toBeTruthy();
   });
 
   it("aligns with the feature homography first, then the correlation search", async () => {
@@ -606,10 +631,10 @@ describe("editor: opencv.js vision (D-055, D-056)", () => {
     const deps = makeDeps({ vision: fakeVision({ align }) });
     await loadBoth(deps);
     fireEvent.click(screen.getByRole("tab", { name: /Ausrichten/ }));
-    fireEvent.click(button("Automatisch"));
+    fireEvent.click(button("Automatisch ausrichten"));
     expect(await screen.findByText("Ausgerichtet. Prüfe die Kanten bei 50 %.")).toBeTruthy();
     expect(deps.gray).not.toHaveBeenCalled();
-    fireEvent.click(button("Automatisch"));
+    fireEvent.click(button("Automatisch ausrichten"));
     await screen.findByText("Keine sichere Ausrichtung – manuell weiter ausrichten.");
     expect(deps.gray).toHaveBeenCalled();
   });

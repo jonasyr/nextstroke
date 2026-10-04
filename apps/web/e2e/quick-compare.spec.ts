@@ -33,8 +33,8 @@ test("compares two photos, aligns, and exports a bounded comparison", async ({ p
   await expect.poll(() => canvasHasInk(page)).toBe(true);
 
   await page.getByRole("tab", { name: /Ausrichten/ }).click();
-  await page.getByRole("button", { name: "Automatisch" }).click();
-  await expect(page.getByText(/Ausgerichtet|Keine sichere Ausrichtung/)).toBeVisible({
+  await page.getByRole("button", { name: "Automatisch ausrichten" }).click();
+  await expect(page.getByText(/Ausgerichtet|Keine sichere Ausrichtung|vermuteten/)).toBeVisible({
     timeout: 30_000,
   });
   await page.getByRole("button", { name: "Fertig" }).click();
@@ -89,8 +89,9 @@ test("works offline after the first visit", async ({ page, context }) => {
   await expect(page.getByRole("dialog", { name: "Vergleich" })).toBeVisible();
   await expect(page.getByRole("status").filter({ hasText: "Offline" })).toBeVisible();
   // opencv.js comes from the precache too: paper detection answers (D-055).
-  await page.getByRole("tab", { name: /Ecken/ }).click();
-  await page.getByRole("button", { name: "Automatisch" }).click();
+  await page.getByRole("tab", { name: /Ausrichten/ }).click();
+  await page.getByRole("button", { name: "Ecken setzen" }).click();
+  await page.getByRole("button", { name: "Automatisch", exact: true }).click();
   await expect(page.getByText(/Blatt nicht erkannt|Blattecken erkannt/)).toBeVisible({
     timeout: 30_000,
   });
@@ -126,7 +127,7 @@ test("places paper corners on both images and warps the reference", async ({ pag
     });
   // Whatever the automatic alignment on opening did, start the manual corners from scratch.
   await expect(
-    page.getByText(/Ist das Foto schräg|Automatisch an den Blattecken|Ausgerichtet/),
+    page.getByText(/Nicht automatisch ausgerichtet|Automatisch an den Blattecken|Ausgerichtet/),
   ).toBeVisible({ timeout: 30_000 });
   await page.getByRole("button", { name: "Mehr" }).click();
   await page.getByRole("menuitem", { name: "Alles zurücksetzen" }).click();
@@ -152,7 +153,8 @@ test("places paper corners on both images and warps the reference", async ({ pag
     await page.mouse.up();
   }
 
-  await page.getByRole("tab", { name: /Ecken/ }).click();
+  await page.getByRole("tab", { name: /Ausrichten/ }).click();
+  await page.getByRole("button", { name: "Ecken setzen" }).click();
   await expect(page.getByText("Ecken 1/2")).toBeVisible();
   await drag([at(0, 0)[0] + 2, at(0, 0)[1] + 2], at(0.1, 0.1));
   await page.getByRole("button", { name: "Weiter" }).click();
@@ -160,7 +162,9 @@ test("places paper corners on both images and warps the reference", async ({ pag
   // A keystone the affine layer cannot express: pull the top-right corner inwards.
   await drag([at(1, 0)[0] - 2, at(1, 0)[1] + 2], at(0.8, 0.15));
   await page.getByRole("button", { name: "Fertig" }).click();
-  await expect(page.getByRole("tab", { name: /Ecken/ }).locator(".ns-dot")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Vorlage ausrichten" })).toBeVisible();
+  await page.getByRole("button", { name: "Fertig" }).click();
+  await expect(page.getByRole("tab", { name: /Ausrichten/ }).locator(".ns-dot")).toBeVisible();
   await expect.poll(snapshot, { timeout: 5_000 }).not.toBe(plain);
 });
 

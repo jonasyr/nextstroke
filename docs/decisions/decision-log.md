@@ -559,3 +559,13 @@
 - **Reason:** Comparing drawings needs the drawings aligned; the paper outline is a proxy that fails on white-on-white setups. Content alignment worked on the owner's pair; the line detector found the Vorlage's board, and its known failure (a white table taken for the board) is flagged for checking instead of applied.
 - **Consequence:** On the owner's pair, step 2's carried corners sit a few percent off the board corners because the two drawings differ; that is the best fit for the drawings and the rings stay draggable. Real-photo fixtures with known corners are still needed to tune the thresholds.
 - **Reconsider when:** Real fixtures show the content alignment misleading on early, sparse drawings, or the line detector picking tables often.
+
+## D-058 — One "Ausrichten" mode with one automatic button
+
+- **Date:** 2026-10-04
+- **Refines:** D-056 (three editor modes), D-057 (order of automatic alignment).
+- **Trigger:** Owner feedback: automatic alignment was only reachable inside the corner flow; asked for one overall automatic button, then position, size, rotation and the manual corners, simpler but with every function kept.
+- **Selected:** The editor has two modes, "Vergleich" and "Ausrichten". Ausrichten shows, top to bottom: "Automatisch" (accessible name "Automatisch ausrichten") next to "Ecken setzen"/"Ecken ändern"; the arrow pad, whose centre toggles the step (1 px/10 px, also for size 0.2 %/2 % and rotation 0.1°/1°); size and rotation steppers; "Zurücksetzen"; the opacity slider. The automatic button runs one pipeline: content alignment, else sure paper corners, else the correlation search (which clears corners, as it is affine), else an unsure paper guess flagged "An vermuteten Blattecken ausgerichtet – bitte unter „Ecken ändern“ prüfen", else "Keine sichere Ausrichtung". Opening a pair runs the first two steps only. The corner flow opens from Ausrichten and returns there; "Abbrechen" in Ausrichten restores the layer and the corners from before. The corner steps keep their own "Automatisch" for re-detecting the rings of one image.
+- **Alternatives:** Keeping a separate "Ecken" mode (automatic alignment hidden there), a single list of all controls.
+- **Reason:** One place for alignment, automatic first and manual refinement below it, matches how the owner works and the brief's "one mode, one primary control".
+- **Consequence:** The "Fein | Grob" segmented control is gone; the pad centre is the step toggle in both Ausrichten and the corner steps.

@@ -545,6 +545,32 @@ input[type="range"]::-moz-range-thumb {
   font-size: 12px;
   color: var(--muted);
 }
+.ns-auto {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  border-radius: 12px;
+  background: var(--surface-2);
+  font-weight: 600;
+}
+.ns-auto {
+  white-space: nowrap;
+}
+.ns-end {
+  justify-self: end;
+}
+.ns-auto:disabled {
+  color: var(--muted);
+}
+.ns-links .ns-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
 .ns-fine {
   display: grid;
   grid-template-columns: auto 1fr;
