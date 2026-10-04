@@ -21,6 +21,8 @@ interface Press extends Point {
 interface Start {
   mid: Point;
   dist: number;
+  /** Angle between the two fingers, radians. */
+  angle: number;
   view: View;
   layer: Layer;
 }
@@ -38,7 +40,7 @@ export interface GestureContext {
   scale: number;
   view: View;
   layer: Layer;
-  /** True while aligning with gesture alignment on and not immersive. */
+  /** True while aligning: gestures move, scale and twist the Vorlage layer. */
   moveLayer: boolean;
   originalWidth: number;
 }
@@ -67,6 +69,7 @@ function begin(pointers: ReadonlyMap<number, Point>, ctx: GestureContext): Start
   return {
     mid: b ? { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 } : a,
     dist: b ? Math.hypot(b.x - a.x, b.y - a.y) : 0,
+    angle: b ? Math.atan2(b.y - a.y, b.x - a.x) : 0,
     view: ctx.view,
     layer: ctx.layer,
   };
@@ -90,6 +93,14 @@ function moved(start: Start, pointers: ReadonlyMap<number, Point>, ctx: GestureC
       x: start.layer.x + dx / perUnit,
       y: start.layer.y + dy / perUnit,
       scale: clamp(start.layer.scale * ratio, min, max),
+      rotationDeg: b
+        ? clamp(
+            start.layer.rotationDeg +
+              ((Math.atan2(b.y - a.y, b.x - a.x) - start.angle) * 180) / Math.PI,
+            PARAMS.rotation.min,
+            PARAMS.rotation.max,
+          )
+        : start.layer.rotationDeg,
     };
     return { type: "layer", layer } as const;
   }

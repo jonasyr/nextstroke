@@ -14,6 +14,7 @@ function recorder() {
             `${String(prop)}(${args.map((a) => (typeof a === "number" ? +a.toFixed(3) : typeof a === "object" ? "img" : a)).join(",")})`,
           );
           if (prop === "getImageData") return { data: new Uint8ClampedArray(4 * 4 * 3).fill(255) };
+          if (prop === "measureText") return { width: 50 };
           return undefined;
         };
       },
@@ -44,7 +45,7 @@ describe("drawComparison (legacy C1, C3, C4)", () => {
     expect(calls).toContain("clearRect(0,0,400,200)");
     const draws = calls.filter((c) => c.startsWith("drawImage"));
     expect(draws).toHaveLength(2);
-    expect(calls).toContain("globalAlpha=0.65");
+    expect(calls).toContain("globalAlpha=0.5");
   });
 
   it("hides the reference while the original is revealed", () => {
@@ -153,6 +154,35 @@ describe("perspective drawing", () => {
     expect(calls).toContain("drawImage(img,-500,-250,1000,500)");
   });
 
+  it("shows only the Vorlage's paper and applies the fine adjustment on top", () => {
+    const { ctx, calls } = recorder();
+    const paper = [
+      { x: 0.1, y: 0.2 },
+      { x: 0.9, y: 0.2 },
+      { x: 0.9, y: 0.8 },
+      { x: 0.1, y: 0.8 },
+    ] as const;
+    drawComparison(ctx, {
+      original,
+      reference,
+      state: {
+        ...initialState(),
+        corners: paper,
+        layer: { x: 0.01, y: 0, scale: 1.5, rotationDeg: 90 },
+      },
+      viewport: { width: 400, height: 200 },
+      dpr: 1,
+      warped: { width: 1000, height: 500 } as ImageBitmap,
+    });
+    // corners in original-centred pixels: (0.1·1000 − 500, 0.2·500 − 250)
+    expect(calls).toContain("moveTo(-400,-150)");
+    expect(calls).toContain("lineTo(400,150)");
+    expect(calls).toContain("clip()");
+    expect(calls).toContain("translate(10,0)");
+    expect(calls).toContain("rotate(1.571)");
+    expect(calls).toContain("scale(1.5,1.5)");
+  });
+
   it("falls back to the affine layer until the warp is ready", () => {
     const { ctx, calls } = recorder();
     drawComparison(ctx, {
@@ -193,6 +223,20 @@ describe("drawComparison split view", () => {
     expect(calls).toContain("moveTo(100,0)");
     expect(calls).toContain("lineTo(100,200)");
   });
+
+  it("names both sides when labels are given", () => {
+    const { ctx, calls } = recorder();
+    drawComparison(ctx, {
+      original,
+      reference,
+      state: { ...initialState(), split: 0.5 },
+      viewport: { width: 400, height: 200 },
+      dpr: 1,
+      splitLabels: { left: "Zeichnung", right: "Vorlage" },
+    });
+    expect(calls.some((c) => c.startsWith("fillText(Zeichnung,"))).toBe(true);
+    expect(calls.some((c) => c.startsWith("fillText(Vorlage,"))).toBe(true);
+  });
 });
 
 describe("drawSingle (paper corner steps)", () => {
@@ -216,8 +260,19 @@ describe("drawSingle (paper corner steps)", () => {
     expect(calls).toContain("moveTo(100,150)");
     expect(calls).toContain("lineTo(300,150)");
     expect(calls).toContain("closePath()");
-    expect(calls.filter((c) => c.startsWith("arc(300,150,"))).toEqual(["arc(300,150,16,0,6.283)"]);
-    expect(calls.filter((c) => c.startsWith("arc(100,150,"))).toEqual(["arc(100,150,12,0,6.283)"]);
+    // each ring twice: a dark halo under a light (or accent) stroke
+    expect(calls.filter((c) => c.startsWith("arc(300,150,"))).toEqual([
+      "arc(300,150,18,0,6.283)",
+      "arc(300,150,18,0,6.283)",
+    ]);
+    expect(calls.filter((c) => c.startsWith("arc(100,150,"))[0]).toBe("arc(100,150,15,0,6.283)");
+    // numbered 1–4, just inside the quad
+    expect(calls.filter((c) => c.startsWith("fillText(")).map((c) => c.split(",")[0])).toEqual([
+      "fillText(1",
+      "fillText(2",
+      "fillText(3",
+      "fillText(4",
+    ]);
   });
 
   it("magnifies the active corner above the finger, or below it near the top", () => {

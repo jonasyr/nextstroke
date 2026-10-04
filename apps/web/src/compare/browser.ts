@@ -5,6 +5,7 @@
  */
 
 import { type BitmapFactory, type Decoded, decodeToWorking } from "./decode.ts";
+import { hintStore } from "./hints.ts";
 import { type PdfLib, renderPdfPage } from "./pdf.ts";
 import type { CompareDeps } from "./QuickCompare.tsx";
 import { renderToBlob, toGray, toRgba } from "./render.ts";
@@ -61,6 +62,15 @@ const share: ShareDeps = {
   download,
 };
 
+/** localStorage, or null where reading it throws (private mode, blocked site data). */
+function storage(): Storage | null {
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+}
+
 /** opencv.js in a classic worker (importScripts, as in the iPhone probe), loaded on first use (D-055). */
 const vision =
   typeof Worker !== "undefined" && typeof OffscreenCanvas !== "undefined"
@@ -75,6 +85,16 @@ export const browserDeps: CompareDeps = {
   renderPdf: (data, choose) =>
     renderPdfPage(data, choose, loadPdfjs, () => document.createElement("canvas")),
   share: (file) => shareOrDownload(file, share),
+  download,
+  keepAwake: async () => {
+    try {
+      await navigator.wakeLock.request("screen");
+      return true;
+    } catch {
+      return false;
+    }
+  },
+  hints: hintStore(storage()),
   renderBlob: renderToBlob,
   gray: toGray,
   rgba: (image) => toRgba(image),

@@ -104,6 +104,20 @@ describe("gesture machine (legacy C4, C5, C7, V1, V2)", () => {
     }
   });
 
+  it("rotates the reference with a two-finger twist while aligning", () => {
+    const out = drive(
+      [
+        { type: "down", id: 1, x: 100, y: 300, t: 0 },
+        { type: "down", id: 2, x: 300, y: 300, t: 0 },
+        // the second finger turns a quarter circle around the first: +90° (clamped to 30°)
+        { type: "move", id: 2, x: 100 + 200 * Math.cos(0.2), y: 300 + 200 * Math.sin(0.2), t: 5 },
+      ],
+      ctx({ moveLayer: true }),
+    );
+    const last = out.at(-1);
+    expect(last?.type === "layer" && last.layer.rotationDeg).toBeCloseTo((0.2 * 180) / Math.PI);
+  });
+
   it("ignores a third pointer", () => {
     const out = drive([
       { type: "down", id: 1, x: 150, y: 300, t: 0 },

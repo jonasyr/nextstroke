@@ -110,7 +110,7 @@ Beginners and hobby artists with a started fineliner artwork and an iPhone.
 3. Normalize both to a bounded working size.
 4. Accept automatic alignment, or place the four paper corners on the reference and then on the original, or adjust the transform manually (D-054).
 5. Compare using opacity, split, original reveal, zoom, and pan.
-6. Compare in the full-screen editor, which is the CSS immersive mode; going back to the images keeps the current settings (D-054).
+6. Compare in the full-screen editor, which is the CSS immersive mode; going back to the images keeps the current settings (D-054). Layout, controls and wording follow the UI brief (D-056).
 7. Export the current comparison or return without creating a project.
 
 Quick Compare must remain usable offline after the PWA shell is installed.
@@ -313,7 +313,8 @@ Every build must deploy to ChatGPT Sites. The web app therefore:
 | Split comparison | Own canvas clip in the comparison renderer (D-053) | — |
 | PDF page render | pdfjs-dist | Apache-2.0 |
 | HEIC fallback | heic-to, unmodified and lazy-loaded | LGPL-3.0 |
-| Accessible UI primitives | Radix UI | MIT |
+| Accessible UI primitives | Native elements for now; Base UI or Radix only when a control needs it (D-056) | MIT |
+| Icons | lucide-react (D-056) | ISC |
 | Project-package zip | fflate (JSZip as alternative) | MIT |
 | Optional mask handles | Konva | MIT |
 | Later, if Phase 0 shows need | TEED contours; SlimSAM-77 via transformers.js | MIT; Apache-2.0 |
