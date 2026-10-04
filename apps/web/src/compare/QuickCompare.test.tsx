@@ -251,8 +251,8 @@ describe("editor: comparing", () => {
     expect(screen.getByText("Nur Zeichnung")).toBeTruthy();
     fireEvent.keyDown(stage(), { key: " " });
     fireEvent.pointerDown(stage(), { pointerId: 2, clientX: 50, clientY: 50 });
-    await act(() => new Promise((r) => setTimeout(r, 320)));
-    expect(screen.getByText("Nur Zeichnung")).toBeTruthy();
+    // The hold timer (280 ms) fires on its own clock; wait for it rather than a fixed time.
+    expect(await screen.findByText("Nur Zeichnung")).toBeTruthy();
     fireEvent.pointerUp(stage(), { pointerId: 2 });
     expect(screen.queryByText("Nur Zeichnung")).toBeNull();
   });
@@ -337,7 +337,7 @@ describe("editor: comparing", () => {
   it("ends a hold when the window loses focus", async () => {
     await loadBoth(makeDeps({ now: () => performance.now() }));
     fireEvent.pointerDown(stage(), { pointerId: 2, clientX: 50, clientY: 50 });
-    await act(() => new Promise((r) => setTimeout(r, 320)));
+    await screen.findByText("Nur Zeichnung");
     await act(async () => window.dispatchEvent(new Event("blur")));
     expect(screen.queryByText("Nur Zeichnung")).toBeNull();
   });
@@ -527,39 +527,53 @@ describe("editor: paper corners on both images", () => {
 });
 
 describe("editor: opencv.js vision (D-055, D-056)", () => {
-  it("aligns a new pair at the paper corners when the editor opens", async () => {
-    const detectPaper = vi
-      .fn()
-      .mockResolvedValueOnce(paper(0.1, 0.9))
-      .mockResolvedValueOnce(null)
-      .mockResolvedValue(paper(0.2));
-    const deps = makeDeps({ vision: fakeVision({ detectPaper }) });
+  it("aligns a new pair by its content first when the editor opens", async () => {
+    const vision = fakeVision({
+      align: vi.fn(async () => ({
+        accepted: true as const,
+        corners: paper(0.1).corners,
+        confidence: 0.7,
+      })),
+    });
+    await loadBoth(makeDeps({ vision }));
+    expect(await screen.findByText("Ausgerichtet. Prüfe die Kanten bei 50 %.")).toBeTruthy();
+    expect(vision.detectPaper).not.toHaveBeenCalled();
+  });
+
+  it("falls back to sure paper corners, and to a hint otherwise", async () => {
+    const sure = vi.fn().mockResolvedValueOnce(paper(0.1, 0.97)).mockResolvedValueOnce(null);
+    const deps = makeDeps({ vision: fakeVision({ detectPaper: sure }) });
     await loadBoth(deps);
     expect(await screen.findByText("Automatisch an den Blattecken ausgerichtet")).toBeTruthy();
     await waitFor(() => expect(deps.fromRgba).toHaveBeenCalled());
-    fireEvent.click(screen.getByRole("tab", { name: /Ecken/ }));
-    fireEvent.click(button("Weiter"));
-    expect(screen.getByText("Ecken prüfen")).toBeTruthy();
-    fireEvent.click(button("Automatisch"));
-    expect(await screen.findByText("Blattecken erkannt")).toBeTruthy();
-    expect(screen.queryByText("Ecken prüfen")).toBeNull();
-  });
-
-  it("falls back to feature alignment, then to a hint, when no paper is found", async () => {
-    const align = vi
-      .fn()
-      .mockResolvedValueOnce({ accepted: true, corners: paper(0.1).corners, confidence: 0.6 })
-      .mockResolvedValue({ accepted: false, reason: "few-inliers" });
-    await loadBoth(makeDeps({ vision: fakeVision({ align }) }));
-    expect(await screen.findByText("Ausgerichtet. Prüfe die Kanten bei 50 %.")).toBeTruthy();
     cleanup();
-    await loadBoth(makeDeps({ vision: fakeVision({ align }) }));
+    // A guess (here from straight lines) is never applied without the user seeing it.
+    const guess = vi.fn(async () => paper(0.1, 0.9));
+    await loadBoth(makeDeps({ vision: fakeVision({ detectPaper: guess }) }));
     expect(await screen.findByText(/Ist das Foto schräg/)).toBeTruthy();
     cleanup();
     const offline = fakeVision({ load: vi.fn(async () => ({ ok: false, ms: 0 })) });
     await loadBoth(makeDeps({ vision: offline }));
     expect(await screen.findByText(/Ist das Foto schräg/)).toBeTruthy();
     expect(offline.detectPaper).not.toHaveBeenCalled();
+  });
+
+  it("places the drawing's corners through the content alignment, else from the paper", async () => {
+    const align = vi
+      .fn()
+      .mockResolvedValueOnce(null) // on opening
+      .mockResolvedValueOnce({ accepted: true, corners: paper(0.1).corners, confidence: 0.7 })
+      .mockResolvedValue(null);
+    const detectPaper = vi.fn(async () => paper(0.2, 0.85));
+    await loadBoth(makeDeps({ vision: fakeVision({ align, detectPaper }) }));
+    await screen.findByText(/Ist das Foto schräg/);
+    fireEvent.click(screen.getByRole("tab", { name: /Ecken/ }));
+    fireEvent.click(button("Weiter"));
+    expect(await screen.findByText("Ecken über die Zeichnung gefunden")).toBeTruthy();
+    expect(screen.queryByText("Ecken prüfen")).toBeNull();
+    fireEvent.click(button("Automatisch"));
+    expect(await screen.findByText("Blattecken erkannt")).toBeTruthy();
+    expect(screen.getByText("Ecken prüfen")).toBeTruthy();
   });
 
   it("pre-places detected corners in the corner steps and re-detects on request", async () => {

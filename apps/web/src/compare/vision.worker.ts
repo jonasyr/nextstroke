@@ -1,7 +1,9 @@
 /// <reference lib="webworker" />
 import {
   acceptHomography,
+  chooseLineQuad,
   choosePaper,
+  type HoughLine,
   type Neighbour,
   type PaperCandidate,
   ratioTest,
@@ -92,10 +94,48 @@ function detectPaper(image: ImageBitmap) {
       }
       candidates.push({ points, contourArea });
     }
-    return choosePaper(candidates, size.width, size.height, (x, y) => gray.ucharAt(y, x));
+    return (
+      choosePaper(candidates, size.width, size.height, (x, y) => gray.ucharAt(y, x)) ??
+      paperFromLines(gray, size, track)
+    );
   } finally {
     for (const m of track) m.delete();
   }
+}
+
+/**
+ * Second try for an outline with gaps (D-057): at 512 px with a stronger blur and a lower
+ * Canny threshold, straight Hough lines become the sides; the dilated edges score them.
+ */
+function paperFromLines(
+  gray: InstanceType<Cv["Mat"]>,
+  size: { width: number; height: number },
+  track: Mat[],
+) {
+  const small = workingSize(size.width, size.height, 512);
+  const scaled = new cv.Mat();
+  const blurred = new cv.Mat();
+  const edges = new cv.Mat();
+  const near = new cv.Mat();
+  const lines = new cv.Mat();
+  const kernel = cv.Mat.ones(5, 5, cv.CV_8U);
+  track.push(scaled, blurred, edges, near, lines, kernel);
+  cv.resize(gray, scaled, new cv.Size(small.width, small.height), 0, 0, cv.INTER_AREA);
+  cv.GaussianBlur(scaled, blurred, new cv.Size(7, 7), 0);
+  cv.Canny(blurred, edges, 15, 45);
+  cv.HoughLines(
+    edges,
+    lines,
+    1,
+    Math.PI / 180,
+    Math.round(0.2 * Math.min(small.width, small.height)),
+  );
+  const found: HoughLine[] = [];
+  for (let i = 0; i < Math.min(lines.rows, 60); i++) {
+    found.push({ rho: lines.data32F[2 * i] as number, theta: lines.data32F[2 * i + 1] as number });
+  }
+  cv.dilate(edges, near, kernel);
+  return chooseLineQuad(found, small.width, small.height, (x, y) => near.ucharAt(y, x) > 0);
 }
 
 function align(original: ImageBitmap, reference: ImageBitmap) {

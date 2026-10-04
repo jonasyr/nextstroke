@@ -3,7 +3,9 @@ import { applyHomography, type Homography, type Point, type Quad } from "./homog
 import { IMAGE_CORNERS } from "./state.ts";
 import {
   acceptHomography,
+  chooseLineQuad,
   choosePaper,
+  type HoughLine,
   MATCH,
   orderCorners,
   PAPER,
@@ -279,5 +281,131 @@ describe("acceptHomography", () => {
       accepted: false,
       reason: "implausible",
     });
+  });
+});
+
+describe("chooseLineQuad (a sheet whose outline has gaps)", () => {
+  const W = 400;
+  const H = 500;
+  /** Edge map: true within 2 px of any of the given segments. */
+  function edges(segments: [number, number, number, number][]) {
+    return (x: number, y: number) =>
+      segments.some(([x1, y1, x2, y2]) => {
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        const t = Math.max(0, Math.min(1, ((x - x1) * dx + (y - y1) * dy) / (dx * dx + dy * dy)));
+        return Math.hypot(x - (x1 + t * dx), y - (y1 + t * dy)) <= 2;
+      });
+  }
+  const horizontal = (y: number): HoughLine => ({ rho: y, theta: Math.PI / 2 });
+  const vertical = (x: number): HoughLine => ({ rho: x, theta: 0 });
+  const near = (q: readonly Point[], expected: [number, number][]) =>
+    q.forEach((p, i) => {
+      expect(p.x * W).toBeCloseTo((expected[i] as [number, number])[0], -0.5);
+      expect(p.y * H).toBeCloseTo((expected[i] as [number, number])[1], -0.5);
+    });
+
+  it("closes a board outline with gaps from its four edge lines", () => {
+    // Each side is 80 % visible: the outline never closes, so no contour would find it.
+    const seen = edges([
+      [60, 50, 300, 50],
+      [340, 60, 340, 380],
+      [100, 450, 340, 450],
+      [60, 120, 60, 450],
+    ]);
+    const lines = [horizontal(50), vertical(340), horizontal(450), vertical(60)];
+    const paper = chooseLineQuad(lines, W, H, seen);
+    near(paper?.corners ?? [], [
+      [60, 50],
+      [340, 50],
+      [340, 450],
+      [60, 450],
+    ]);
+    expect(paper?.confidence).toBeGreaterThan(0.6);
+    // A guess from straight lines is never certain: the app asks to check the corners.
+    expect(paper?.confidence).toBeLessThan(0.95);
+  });
+
+  it("prefers the whole board over a better-supported smaller quad", () => {
+    // The board's left edge is outside the photo; the drawing's tower edge is a strong line.
+    const seen = edges([
+      [0, 40, 390, 40],
+      [390, 40, 390, 460],
+      [0, 460, 390, 460],
+      [200, 40, 200, 460],
+    ]);
+    const lines = [vertical(200), horizontal(40), vertical(390), horizontal(460)];
+    const corners = chooseLineQuad(lines, W, H, seen)?.corners ?? [];
+    expect((corners[0]?.x ?? 1) * W).toBeLessThan(2);
+  });
+
+  it("uses the image border for a side that lies outside the photo, with lower confidence", () => {
+    const seen = edges([
+      [0, 50, 340, 50],
+      [340, 50, 340, 450],
+      [0, 450, 340, 450],
+    ]);
+    const paper = chooseLineQuad([horizontal(50), vertical(340), horizontal(450)], W, H, seen);
+    expect((paper?.corners[0]?.x ?? 1) * W).toBeLessThan(2);
+    expect(paper?.confidence).toBeLessThan(0.95);
+  });
+
+  it("prefers the sheet over a longer table edge and the drawing's own lines", () => {
+    const seen = edges([
+      [0, 20, 400, 20], // table edge across the whole photo
+      [60, 80, 340, 80],
+      [340, 80, 340, 450],
+      [60, 450, 340, 450],
+      [60, 80, 60, 450],
+      [180, 150, 180, 400], // a straight stroke of the drawing
+    ]);
+    const lines = [
+      horizontal(20),
+      vertical(180),
+      horizontal(80),
+      vertical(340),
+      horizontal(450),
+      vertical(60),
+    ];
+    near(chooseLineQuad(lines, W, H, seen)?.corners ?? [], [
+      [60, 80],
+      [340, 80],
+      [340, 450],
+      [60, 450],
+    ]);
+  });
+
+  it("finds nothing without at least three well-supported edges", () => {
+    const seen = edges([
+      [60, 50, 340, 50],
+      [60, 450, 340, 450],
+    ]);
+    expect(chooseLineQuad([horizontal(50), horizontal(450)], W, H, seen)).toBeNull();
+    // Lines the edges do not back up (a drawing's long Hough votes) are not a sheet.
+    expect(
+      chooseLineQuad(
+        [horizontal(50), vertical(340), horizontal(450), vertical(60)],
+        W,
+        H,
+        () => false,
+      ),
+    ).toBeNull();
+  });
+
+  it("ignores steep diagonals and small quads", () => {
+    const seen = edges([
+      [150, 200, 250, 200],
+      [250, 200, 250, 300],
+      [150, 300, 250, 300],
+      [150, 200, 150, 300],
+    ]);
+    const lines = [
+      horizontal(200),
+      vertical(250),
+      horizontal(300),
+      vertical(150),
+      { rho: 100, theta: Math.PI / 4 },
+    ];
+    expect(chooseLineQuad(lines, W, H, seen)).toBeNull();
   });
 });

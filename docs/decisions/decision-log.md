@@ -544,3 +544,18 @@
 - **Reason:** The owner rejected the previous UI. Five research strands (photo editors, scanners, art-helper apps, UX evidence, iOS PWA constraints) converged on the photo-editor layout, scanner-style corner editing and visible alternatives for gestures; the owner approved the prototype built from them.
 - **Consequence:** UI copy uses "Vorlage" and "Zeichnung"; internal names stay `reference` and `original`. The usability test plan in the brief (three rounds of five beginners on a real iPhone) becomes part of the Phase 2 exit review. Open: a bundled demo pair ("Beispiel ansehen"), the Wake Lock and Dynamic Type checks on the iPhone, the light theme.
 - **Reconsider when:** The beginner test shows a task failing for two of five participants, or Projects and Coach ship and need a tab bar.
+
+## D-057 — Content alignment before paper corners; straight-line fallback for gappy outlines
+
+- **Date:** 2026-10-04
+- **Refines:** D-055 (paper detection), D-056 (automatic alignment on opening).
+- **Trigger:** The owner's first real pair (a painted canvas board photographed on a white table, and a photo of a finished version of the same motif) found no paper corners. Debugging on those photos (kept local, not committed): the board edges are white on white, so Canny at 50/150 left gaps and no closed contour reached 15 % of the image; the board in the Vorlage photo also runs off the image edge. The ORB feature homography, however, aligned the two drawings correctly.
+- **Selected:**
+  - **Order on opening:** feature (content) alignment first; paper corners only if that fails, and only when the closed-outline detector is sure (confidence ≥ 0.95); otherwise the hint to use "Ecken". A guess is never applied without the user seeing it.
+  - **Corner step 2 ("Automatisch" and the first visit):** the content alignment carries the Vorlage's rings into the drawing (`quadThroughCorners`), so both quads correspond; the paper outline is the fallback.
+  - **Second paper detector** (`chooseLineQuad`, pure, unit-tested): at 512 px with a 7 × 7 blur and Canny 15/45, OpenCV's standard Hough lines (threshold 0.2 × the shorter side) give near-horizontal and near-vertical candidates (≤ 35° tilt, 8 per direction); the image border may stand in for one side. Each side's cover is sampled against the 5 × 5-dilated edges (each measured side ≥ 0.6, mean ≥ 0.7); the quad with the highest mean² · √area wins. Its confidence is capped at 0.9, so the corner step always says "Ecken prüfen". It runs only when the closed-outline detector finds nothing.
+  - The hold timer fires 20 ms after the 280 ms hold threshold, because a timer can fire a fraction early by the gesture clock and the hold then never started (found by a timing-dependent test).
+- **Alternatives:** Lowering the contour detector's thresholds alone (still needs a closed outline), `HoughLinesP` (returned a single segment per photo in opencv.js 5.0), applying line guesses automatically.
+- **Reason:** Comparing drawings needs the drawings aligned; the paper outline is a proxy that fails on white-on-white setups. Content alignment worked on the owner's pair; the line detector found the Vorlage's board, and its known failure (a white table taken for the board) is flagged for checking instead of applied.
+- **Consequence:** On the owner's pair, step 2's carried corners sit a few percent off the board corners because the two drawings differ; that is the best fit for the drawings and the rings stay draggable. Real-photo fixtures with known corners are still needed to tune the thresholds.
+- **Reconsider when:** Real fixtures show the content alignment misleading on early, sparse drawings, or the line detector picking tables often.

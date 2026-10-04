@@ -89,22 +89,21 @@ test("the opencv.js worker finds the photographed sheet and the feature homograp
   expect(alignError).toBeLessThan(0.02);
 });
 
-test("aligns a new pair at the photographed sheet on opening, and the corner steps show it", async ({
+test("aligns a new pair by its content on opening, and carries the Vorlage's corners over", async ({
   page,
 }) => {
-  await page.goto("#/compare");
-  const { reference, photo } = await paperPhoto(page);
-  await page.getByLabel("Zeichnung wählen").setInputFiles(photo);
-  await expect(page.getByText("Bild geladen. Jetzt das zweite Bild wählen.")).toBeVisible();
-  await page.getByLabel("Vorlage wählen").setInputFiles(reference);
-  await expect(page.getByText("Automatisch an den Blattecken ausgerichtet")).toBeVisible({
-    timeout: 30_000,
-  });
+  await loadPair(page);
+  const aligned = page.getByText("Ausgerichtet. Prüfe die Kanten bei 50 %.");
+  await expect(aligned).toBeVisible({ timeout: 30_000 });
   await expect(page.getByRole("tab", { name: /Ecken/ }).locator(".ns-dot")).toBeVisible();
   await page.getByRole("tab", { name: /Ecken/ }).click();
   await expect(page.getByText("Ecken 1/2")).toBeVisible();
   await page.getByRole("button", { name: "Weiter" }).click();
   await expect(page.getByText("Ecken 2/2")).toBeVisible();
+  await page.getByRole("button", { name: "Automatisch" }).click();
+  await expect(page.getByText("Ecken über die Zeichnung gefunden")).toBeVisible({
+    timeout: 30_000,
+  });
   const before = await canvasSum(page);
   await page.getByRole("button", { name: "Fertig" }).click();
   await expect.poll(() => canvasSum(page), { timeout: 10_000 }).not.toBe(before);
@@ -112,12 +111,10 @@ test("aligns a new pair at the photographed sheet on opening, and the corner ste
 
 test("aligns on request with the feature homography", async ({ page }) => {
   await loadPair(page);
-  await expect(page.getByText("Automatisch an den Blattecken ausgerichtet")).toBeVisible({
-    timeout: 30_000,
-  });
+  const aligned = page.getByText("Ausgerichtet. Prüfe die Kanten bei 50 %.");
+  await expect(aligned).toBeVisible({ timeout: 30_000 });
+  await expect(aligned).toBeHidden({ timeout: 10_000 });
   await page.getByRole("tab", { name: /Ausrichten/ }).click();
   await page.getByRole("button", { name: "Automatisch" }).click();
-  await expect(page.getByText("Ausgerichtet. Prüfe die Kanten bei 50 %.")).toBeVisible({
-    timeout: 30_000,
-  });
+  await expect(aligned).toBeVisible({ timeout: 30_000 });
 });

@@ -145,6 +145,7 @@ export const de = {
   "status.noMatch": "Keine sichere Ausrichtung – manuell weiter ausrichten.",
   "status.visionLoading": "Bilderkennung wird geladen …",
   "status.paperFound": "Blattecken erkannt",
+  "status.cornersByContent": "Ecken über die Zeichnung gefunden",
   "status.paperMissing": "Blatt nicht erkannt – bitte die Ringe selbst ziehen",
   "status.folded": "Die Ecken überkreuzen sich. Bitte eine Ecke zurückziehen.",
   "status.exportFailed": "Exportieren nicht möglich: Das Bild konnte nicht erzeugt werden.",

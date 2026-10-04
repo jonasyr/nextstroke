@@ -18,6 +18,7 @@ import {
   idleGesture,
   initialState,
   invertHomography,
+  quadThroughCorners,
   referenceHomography,
   screenToOriginal,
   splitFromScreen,
@@ -264,7 +265,8 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
     return ok ? vision : null;
   }, [deps]);
 
-  // On opening a new pair: align at the paper corners, else by features, else explain (D-056).
+  // On opening a new pair: align by the drawing's content, else at sure paper corners, else
+  // explain (D-056, D-057). A paper guess is never applied without the user seeing it.
   useEffect(() => {
     if (!open || !original || !reference || autoForPair.current === pairRef.current) return;
     autoForPair.current = pairRef.current;
@@ -276,9 +278,16 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
       const vision = await visionLoaded();
       if (stale()) return;
       if (!vision) return setStatus(t("status.autoHint"));
+      const verdict = await vision.align(original.bitmap, reference.bitmap);
+      if (stale()) return;
+      if (verdict?.accepted) {
+        dispatch({ type: "checkpoint" });
+        dispatch({ type: "corners-set", corners: verdict.corners });
+        return setStatus(t("status.aligned"));
+      }
       const photo = await vision.detectPaper(original.bitmap);
       if (stale()) return;
-      if (photo) {
+      if (photo && photo.confidence >= SURE) {
         const template = await vision.detectPaper(reference.bitmap);
         if (stale()) return;
         dispatch({ type: "checkpoint" });
@@ -293,13 +302,6 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
         });
         return setStatus(t("status.autoPaper"));
       }
-      const verdict = await vision.align(original.bitmap, reference.bitmap);
-      if (stale()) return;
-      if (verdict?.accepted) {
-        dispatch({ type: "checkpoint" });
-        dispatch({ type: "corners-set", corners: verdict.corners });
-        return setStatus(t("status.aligned"));
-      }
       setStatus(t("status.autoHint"));
     })();
     return () => {
@@ -307,11 +309,26 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
     };
   }, [open, original, reference, visionLoaded]);
 
-  /** Re-detect the paper of the current corner step. */
+  /**
+   * Place the rings of a corner step automatically. On the drawing, the content alignment
+   * carries the Vorlage's rings over, so both quads match; the paper outline is the fallback.
+   */
   async function detectStep(step: CornerStep, force: boolean) {
     const image = step === "reference" ? reference : original;
-    if (!image) return;
+    if (!image || !original || !reference) return;
     const vision = await visionLoaded();
+    if (vision && step === "original") {
+      const verdict = await vision.align(original.bitmap, reference.bitmap);
+      const carried =
+        verdict?.accepted &&
+        quadThroughCorners(stateRef.current.refCorners ?? IMAGE_CORNERS, verdict.corners);
+      if (carried) {
+        if (force) dispatch({ type: "checkpoint" });
+        dispatch({ type: "corners-suggest", step, corners: carried, force });
+        setUnsure((u) => ({ ...u, original: false }));
+        return setStatus(t("status.cornersByContent"));
+      }
+    }
     const paper = vision && (await vision.detectPaper(image.bitmap));
     if (!paper) return setStatus(force ? t("status.paperMissing") : "");
     if (force) dispatch({ type: "checkpoint" });
@@ -429,7 +446,9 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
     if (s.aligning && !moveView) apply({ type: "checkpoint" });
     feed({ type: "down", id: event.pointerId, x: event.clientX, y: event.clientY, t: deps.now() });
     clearTimeout(holdTimer.current);
-    holdTimer.current = setTimeout(() => feed({ type: "tick", t: deps.now() }), HOLD_MS);
+    // A small margin: a timer may fire a fraction early by the gesture clock, and the hold would
+    // then never start.
+    holdTimer.current = setTimeout(() => feed({ type: "tick", t: deps.now() }), HOLD_MS + 20);
   }
 
   function onPointerMove(event: PointerEvent<HTMLDivElement>) {
