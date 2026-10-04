@@ -31,4 +31,46 @@ describe("service worker cache policy", () => {
     expect(source).toContain("ignoreVary: true");
     expect(() => new Function(source)).not.toThrow();
   });
+
+  it("serves navigations from the non-redirecting root cache entry", async () => {
+    const source = renderServiceWorker("0.1.0+abc", precache);
+    const listeners = new Map<string, (event: unknown) => void>();
+    const cachedResponse = { body: "app shell" };
+    let matched: RequestInfo | URL | undefined;
+    let response: Promise<unknown> | undefined;
+    const cache = {
+      match(key: RequestInfo | URL) {
+        matched = key;
+        return Promise.resolve(cachedResponse);
+      },
+    };
+    const serviceWorker = {
+      registration: { scope },
+      clients: { claim: () => undefined },
+      addEventListener(type: string, listener: (event: unknown) => void) {
+        listeners.set(type, listener);
+      },
+      skipWaiting: () => undefined,
+    };
+
+    new Function("self", "caches", "fetch", source)(
+      serviceWorker,
+      {
+        open: () => Promise.resolve(cache),
+        keys: () => Promise.resolve([]),
+        delete: () => Promise.resolve(true),
+      },
+      () => Promise.reject(new Error("network fallback must not run")),
+    );
+
+    listeners.get("fetch")?.({
+      request: { method: "GET", mode: "navigate", url: `${scope}#/compare` },
+      respondWith(value: Promise<unknown>) {
+        response = value;
+      },
+    });
+
+    await expect(response).resolves.toBe(cachedResponse);
+    expect(matched).toBe("./");
+  });
 });
