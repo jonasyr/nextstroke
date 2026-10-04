@@ -16,7 +16,7 @@ import {
   Scan,
   Sparkles,
 } from "lucide-react";
-import { useRef } from "react";
+import { type ReactNode, useRef } from "react";
 import { ICON, IconButton } from "./IconButton.tsx";
 import { Thumb } from "./Thumb.tsx";
 
@@ -201,23 +201,6 @@ export function AlignPanel({
   const { layer } = state;
   return (
     <>
-      <div className="ns-phead">
-        <button
-          type="button"
-          className="ns-text"
-          onClick={() => apply({ type: "alignment-cancel" })}
-        >
-          {t("common.cancel")}
-        </button>
-        <h2>{t("align.title")}</h2>
-        <button
-          type="button"
-          className="ns-done"
-          onClick={() => apply({ type: "alignment", open: false })}
-        >
-          {t("common.done")}
-        </button>
-      </div>
       <div className="ns-row">
         <button
           type="button"
@@ -234,70 +217,79 @@ export function AlignPanel({
           {t(state.corners ? "align.cornersEdit" : "align.corners")}
         </button>
       </div>
-      <div className="ns-fine">
-        <fieldset className="ns-pad" aria-label={t("align.move")}>
-          {ARROWS.map(({ key, dx, dy, Icon, area }) => (
-            <IconButton
-              key={key}
-              label={t(`align.${key}`)}
-              style={{ gridArea: area }}
-              onClick={() => apply({ type: "layer-nudge", dx: dx * unit, dy: dy * unit }, true)}
-            >
-              <Icon {...ICON} />
-            </IconButton>
-          ))}
+      <section className="ns-section" aria-labelledby="ns-fine-title">
+        <div className="ns-section-head">
+          <h2 id="ns-fine-title">{t("align.fine")}</h2>
           <button
             type="button"
-            className="ns-pad-c ns-pad-step"
-            style={{ gridArea: "c" }}
-            aria-label={t(fine ? "corners.stepFine" : "corners.stepCoarse")}
-            onClick={() => onFine(!fine)}
-          >
-            {px} px
-          </button>
-        </fieldset>
-        <div className="ns-steppers">
-          <div className="ns-stepper">
-            <span>{t("align.size")}</span>
-            <IconButton
-              label={t("align.smaller")}
-              onClick={() => apply({ type: "layer-scale", delta: fine ? -0.002 : -0.02 }, true)}
-            >
-              <Minus {...ICON} />
-            </IconButton>
-            <output>{de(layer.scale * 100, 1)} %</output>
-            <IconButton
-              label={t("align.larger")}
-              onClick={() => apply({ type: "layer-scale", delta: fine ? 0.002 : 0.02 }, true)}
-            >
-              <Plus {...ICON} />
-            </IconButton>
-          </div>
-          <div className="ns-stepper">
-            <span>{t("align.rotate")}</span>
-            <IconButton
-              label={t("align.ccw")}
-              onClick={() => apply({ type: "layer-rotate", delta: fine ? -0.1 : -1 }, true)}
-            >
-              <RotateCcw {...ICON} />
-            </IconButton>
-            <output>{de(layer.rotationDeg, 1)}°</output>
-            <IconButton
-              label={t("align.cw")}
-              onClick={() => apply({ type: "layer-rotate", delta: fine ? 0.1 : 1 }, true)}
-            >
-              <RotateCw {...ICON} />
-            </IconButton>
-          </div>
-          <button
-            type="button"
-            className="ns-text ns-accent ns-end"
+            className="ns-text ns-accent"
             onClick={() => apply({ type: "reset-layer" }, true)}
           >
             {t("align.reset")}
           </button>
         </div>
-      </div>
+        <div className="ns-fine">
+          <fieldset className="ns-pad" aria-label={t("align.move")}>
+            {ARROWS.map(({ key, dx, dy, Icon, area }) => (
+              <IconButton
+                key={key}
+                label={t(`align.${key}`)}
+                style={{ gridArea: area }}
+                onClick={() => apply({ type: "layer-nudge", dx: dx * unit, dy: dy * unit }, true)}
+              >
+                <Icon {...ICON} />
+              </IconButton>
+            ))}
+            <button
+              type="button"
+              className="ns-pad-c ns-pad-step"
+              style={{ gridArea: "c" }}
+              aria-label={t(fine ? "corners.stepFine" : "corners.stepCoarse")}
+              onClick={() => onFine(!fine)}
+            >
+              {px} px
+            </button>
+          </fieldset>
+          <div className="ns-steppers">
+            <div className="ns-stepper">
+              <IconButton
+                label={t("align.smaller")}
+                onClick={() => apply({ type: "layer-scale", delta: fine ? -0.002 : -0.02 }, true)}
+              >
+                <Minus {...ICON} />
+              </IconButton>
+              <span className="ns-stepper-val">
+                <small>{t("align.size")}</small>
+                <output>{de(layer.scale * 100, 1)} %</output>
+              </span>
+              <IconButton
+                label={t("align.larger")}
+                onClick={() => apply({ type: "layer-scale", delta: fine ? 0.002 : 0.02 }, true)}
+              >
+                <Plus {...ICON} />
+              </IconButton>
+            </div>
+            <div className="ns-stepper">
+              <IconButton
+                label={t("align.ccw")}
+                onClick={() => apply({ type: "layer-rotate", delta: fine ? -0.1 : -1 }, true)}
+              >
+                <RotateCcw {...ICON} />
+              </IconButton>
+              <span className="ns-stepper-val">
+                <small>{t("align.rotate")}</small>
+                <output>{de(layer.rotationDeg, 1)}°</output>
+              </span>
+              <IconButton
+                label={t("align.cw")}
+                onClick={() => apply({ type: "layer-rotate", delta: fine ? 0.1 : 1 }, true)}
+              >
+                <RotateCw {...ICON} />
+              </IconButton>
+            </div>
+          </div>
+        </div>
+      </section>
       <EndCapSlider
         id="ns-slider"
         label={t("slider.opacity")}
@@ -321,7 +313,6 @@ export function CornersPanel({
   fine,
   onFine,
   lowConfidence,
-  onNext,
   onAuto,
   onTouchCorner,
 }: {
@@ -332,47 +323,18 @@ export function CornersPanel({
   fine: boolean;
   onFine: (fine: boolean) => void;
   lowConfidence: boolean;
-  onNext: () => void;
   onAuto: () => void;
   /** A corner was selected or nudged: show the magnifier for a moment. */
   onTouchCorner: () => void;
 }) {
-  const first = state.cornerStep === "reference";
   const px = fine ? 1 : 10;
+  const first = state.cornerStep === "reference";
   return (
     <>
-      <div className="ns-phead">
-        {first ? (
-          <button
-            type="button"
-            className="ns-text"
-            onClick={() => apply({ type: "corners-cancel" })}
-          >
-            {t("common.cancel")}
-          </button>
-        ) : (
-          <button type="button" className="ns-text" onClick={() => apply({ type: "corners-back" })}>
-            {t("corners.back")}
-          </button>
-        )}
-        <h2>
-          {t(first ? "corners.reference" : "corners.original")}
-          <small>{t("corners.step", { n: first ? "1" : "2" })}</small>
-        </h2>
-        {first ? (
-          <button type="button" className="ns-done" onClick={onNext}>
-            {t("corners.next")}
-          </button>
-        ) : (
-          <button
-            type="button"
-            className="ns-done"
-            onClick={() => apply({ type: "corners-done" }, true)}
-          >
-            {t("common.done")}
-          </button>
-        )}
-      </div>
+      <h2 className="ns-ptitle">
+        {t(first ? "corners.reference" : "corners.original")}
+        <small>{t("corners.step", { n: first ? "1" : "2" })}</small>
+      </h2>
       {lowConfidence && (
         <p className="ns-note">
           <b>{t("corners.check")}</b> · {t("corners.checkDetail")}
@@ -446,5 +408,31 @@ export function CornersPanel({
         </button>
       </div>
     </>
+  );
+}
+
+/**
+ * Top bar while aligning or placing corners (D-059): cancel on the leading edge, the one
+ * prominent action on the trailing edge, as in Apple Photos.
+ */
+export function ModeBar({
+  leading,
+  trailing,
+  children,
+}: {
+  leading: { label: string; onClick: () => void };
+  trailing: { label: string; onClick: () => void };
+  children: ReactNode;
+}) {
+  return (
+    <div className="ns-topbar ns-modebar">
+      <button type="button" className="ns-text" onClick={leading.onClick}>
+        {leading.label}
+      </button>
+      <div className="ns-modebar-center">{children}</div>
+      <button type="button" className="ns-done" onClick={trailing.onClick}>
+        {trailing.label}
+      </button>
+    </div>
   );
 }

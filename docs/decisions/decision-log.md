@@ -569,3 +569,13 @@
 - **Alternatives:** Keeping a separate "Ecken" mode (automatic alignment hidden there), a single list of all controls.
 - **Reason:** One place for alignment, automatic first and manual refinement below it, matches how the owner works and the brief's "one mode, one primary control".
 - **Consequence:** The "Fein | Grob" segmented control is gone; the pad centre is the step toggle in both Ausrichten and the corner steps.
+
+## D-059 — Calm Ausrichten: modal top bar, two-finger view, AAA text
+
+- **Date:** 2026-10-04
+- **Refines:** D-056 (editor layout, contrast), D-058 (Ausrichten layout).
+- **Trigger:** Owner feedback on the iPhone: the Ausrichten panel felt cramped (a header row inside the panel, an "Ansicht" toggle floating on the image next to the zoom capsule), not professional, and asked whether the UI meets WCAG AAA.
+- **Selected:** Ausrichten and the corner steps are modal edits. Their top bar replaces the editor bar: "Abbrechen" (or "Zurück" in step 2) leading, undo/redo centred, the prominent "Fertig"/"Weiter" trailing, as in Apple Photos' edit mode. The panel has no header row; it shows "Automatisch" and "Ecken setzen", then a "Feinjustieren" section (a divider, a small caption, "Zurücksetzen" on its trailing edge) with the arrow pad and the size and rotation steppers (label above the value), then the opacity slider. Spacing is on an 8-pt grid (16 px between groups); every button target is at least 44 × 44 px (WCAG 2.5.5 AAA). The "Ansicht" toggle is gone: while aligning, one finger moves the Vorlage and two fingers zoom and pan the view; a pure two-finger view change records no undo step. Text tokens meet AAA (≥ 7:1): `--muted` changed from #98a1ab (5.7–6.6:1) to #aab3bd (≥ 7.08:1 on bg, surface, surface-2); the accent (#8fb0ff, ≥ 7.03:1) and the accent ink on the accent (8.34:1) already did. Disabled icons use #6b727b (exempt from contrast, still visible).
+- **Alternatives:** Keeping the toggle (a mode switch the user has to remember); two-finger scale and rotation of the Vorlage (collides with zooming the view, and the steppers are more precise).
+- **Reason:** One way to move the Vorlage, one way to move the view, no hidden mode; the edit's commit and cancel sit where iOS users look for them, and the panel is left with only alignment controls.
+- **Consequence:** Scaling and rotating the Vorlage is by stepper only (or "Automatisch"/corners). The corner steps show their title ("Vorlage"/"Zeichnung", "Ecken n/2") as the first line of the panel.

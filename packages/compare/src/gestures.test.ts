@@ -86,36 +86,32 @@ describe("gesture machine (legacy C4, C5, C7, V1, V2)", () => {
     }
   });
 
-  it("moves and scales the reference layer in align mode (scale 0.4–2)", () => {
+  it("moves the reference with one finger while aligning (D-059)", () => {
     const out = drive(
       [
         { type: "down", id: 1, x: 100, y: 100, t: 0 },
-        { type: "down", id: 2, x: 200, y: 100, t: 0 },
-        { type: "move", id: 2, x: 600, y: 100, t: 10 },
+        { type: "move", id: 1, x: 300, y: 100, t: 10 },
       ],
       ctx({ moveLayer: true }),
     );
     const last = out.at(-1);
     expect(last?.type).toBe("layer");
-    if (last?.type === "layer") {
-      expect(last.layer.scale).toBe(2);
-      // midpoint moved 200 px on screen = 400 source px at scale 0.5 = 0.4 of the width
-      expect(last.layer.x).toBeCloseTo(0.4);
-    }
+    // 200 px on screen = 400 source px at scale 0.5 = 0.4 of the width
+    expect(last?.type === "layer" && last.layer.x).toBeCloseTo(0.4);
   });
 
-  it("rotates the reference with a two-finger twist while aligning", () => {
+  it("zooms and pans the view with two fingers while aligning, not the reference", () => {
     const out = drive(
       [
-        { type: "down", id: 1, x: 100, y: 300, t: 0 },
-        { type: "down", id: 2, x: 300, y: 300, t: 0 },
-        // the second finger turns a quarter circle around the first: +90° (clamped to 30°)
-        { type: "move", id: 2, x: 100 + 200 * Math.cos(0.2), y: 300 + 200 * Math.sin(0.2), t: 5 },
+        { type: "down", id: 1, x: 100, y: 100, t: 0 },
+        { type: "down", id: 2, x: 200, y: 100, t: 0 },
+        { type: "move", id: 2, x: 300, y: 100, t: 10 },
       ],
       ctx({ moveLayer: true }),
     );
     const last = out.at(-1);
-    expect(last?.type === "layer" && last.layer.rotationDeg).toBeCloseTo((0.2 * 180) / Math.PI);
+    expect(last?.type).toBe("view");
+    expect(last?.type === "view" && last.view.zoom).toBeCloseTo(2);
   });
 
   it("ignores a third pointer", () => {
