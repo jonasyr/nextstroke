@@ -12,10 +12,10 @@ const maxError = (a: readonly Pt[], b: readonly Pt[]) =>
 async function loadPair(page: Page) {
   await page.goto("#/compare");
   const { reference, photo } = await paperPhoto(page);
-  await page.getByLabel(/^Original wählen/).setInputFiles(photo);
+  await page.getByLabel("Zeichnung wählen").setInputFiles(photo);
   await expect(page.getByText("Bild geladen. Jetzt das zweite Bild wählen.")).toBeVisible();
-  await page.getByLabel(/^Referenz wählen/).setInputFiles(reference);
-  await expect(page.getByText("ÜBERLAGERUNG")).toBeVisible();
+  await page.getByLabel("Vorlage wählen").setInputFiles(reference);
+  await expect(page.getByRole("dialog", { name: "Vergleich" })).toBeVisible();
   return { reference, photo };
 }
 
@@ -89,34 +89,35 @@ test("the opencv.js worker finds the photographed sheet and the feature homograp
   expect(alignError).toBeLessThan(0.02);
 });
 
-test("pre-places the detected sheet in the corner steps and warps the reference", async ({
+test("aligns a new pair at the photographed sheet on opening, and the corner steps show it", async ({
   page,
 }) => {
-  await loadPair(page);
-  await page.waitForTimeout(300);
-  const before = await canvasSum(page);
-  await page.getByRole("button", { name: "Blattecken setzen" }).click();
-  await expect(page.getByText("Blattecken 1/2: Referenz")).toBeVisible();
-  // The flat reference has no sheet edge: its rings stay at the image corners.
-  await expect(page.getByText(/Blatt nicht erkannt/)).toBeVisible({ timeout: 30_000 });
+  await page.goto("#/compare");
+  const { reference, photo } = await paperPhoto(page);
+  await page.getByLabel("Zeichnung wählen").setInputFiles(photo);
+  await expect(page.getByText("Bild geladen. Jetzt das zweite Bild wählen.")).toBeVisible();
+  await page.getByLabel("Vorlage wählen").setInputFiles(reference);
+  await expect(page.getByText("Automatisch an den Blattecken ausgerichtet")).toBeVisible({
+    timeout: 30_000,
+  });
+  await expect(page.getByRole("tab", { name: /Ecken/ }).locator(".ns-dot")).toBeVisible();
+  await page.getByRole("tab", { name: /Ecken/ }).click();
+  await expect(page.getByText("Ecken 1/2")).toBeVisible();
   await page.getByRole("button", { name: "Weiter" }).click();
-  await expect(page.getByText(/Blattecken erkannt/)).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText("Ecken 2/2")).toBeVisible();
+  const before = await canvasSum(page);
   await page.getByRole("button", { name: "Fertig" }).click();
-  await expect(page.getByText("ÜBERLAGERUNG")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Blattecken ändern" })).toBeVisible();
   await expect.poll(() => canvasSum(page), { timeout: 10_000 }).not.toBe(before);
 });
 
-test("aligns automatically with the feature homography", async ({ page }) => {
+test("aligns on request with the feature homography", async ({ page }) => {
   await loadPair(page);
-  await page.waitForTimeout(300);
-  const before = await canvasSum(page);
-  await page.getByRole("button", { name: "Ausrichten" }).click();
-  await page.getByRole("button", { name: "Automatisch ausrichten" }).click();
-  await expect(page.getByText("Abgeglichen. Prüfe die Kanten bei 50 %.")).toBeVisible({
+  await expect(page.getByText("Automatisch an den Blattecken ausgerichtet")).toBeVisible({
     timeout: 30_000,
   });
-  // The result is a perspective warp, shown as paper corners.
-  await expect(page.getByText(/Die Blattecken bestimmen/)).toBeVisible();
-  await expect.poll(() => canvasSum(page), { timeout: 10_000 }).not.toBe(before);
+  await page.getByRole("tab", { name: /Ausrichten/ }).click();
+  await page.getByRole("button", { name: "Automatisch" }).click();
+  await expect(page.getByText("Ausgerichtet. Prüfe die Kanten bei 50 %.")).toBeVisible({
+    timeout: 30_000,
+  });
 });

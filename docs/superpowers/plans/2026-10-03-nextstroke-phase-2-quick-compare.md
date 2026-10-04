@@ -67,16 +67,17 @@
 - [x] Add PNG/JPEG comparison export and native share when supported.
 - [ ] Verify installed/offline behavior and service-worker update recovery.
 
-## Status (2026-10-03)
+## Status (2026-10-04)
 
-Done and tested (unit tests plus Playwright in CI): legacy checklist (`docs/research/legacy-behavior.md`), bounded worker decode, HEIC native decode with an explained fallback message, single-page PDF via the pdf.js legacy build, renderer with opacity and tap/hold reveal, pinch/pan, alignment with button alternatives, cancellable correlation auto-align, four-point perspective with draggable corners and button nudges, PNG/JPEG export with share fallback, offline route, split view with a draggable divider and a slider (D-053), full-screen editor with paper corners on both images, a corner magnifier, and a compact bottom panel (D-054), opencv.js in a worker for paper-corner suggestions and ORB + RANSAC auto-align with the correlation search as fallback, precached for offline use (D-055).
+Done and tested (unit tests plus Playwright in CI): legacy checklist (`docs/research/legacy-behavior.md`), bounded worker decode, HEIC native decode with an explained fallback message, single-page PDF via the pdf.js legacy build, renderer with opacity and tap/hold reveal, pinch/pan, alignment with button alternatives, cancellable correlation auto-align, four-point perspective with draggable corners and button nudges, PNG/JPEG export with share fallback, offline route, split view with a draggable divider and a slider (D-053), full-screen editor with paper corners on both images, a corner magnifier, and a compact bottom panel (D-054), opencv.js in a worker for paper-corner suggestions and ORB + RANSAC auto-align with the correlation search as fallback, precached for offline use (D-055). UI rebuilt from the researched brief and the approved prototype: start screen without navigation, editor with three modes, undo/redo, zoom capsule, hint strips, automatic alignment on opening (D-056).
 
 Open:
 - opencv.js (D-055) on the iPhone: load time, memory, and detection and alignment on real photos; ECC refinement; a trimmed build if the 13 MB precache or memory hurts.
 - Settings survive the editor and the image screen, but not leaving the compare route: the state lives in the page and is lost on navigation. Keep it in a module-level store or accept it; decide with the iPhone review.
 - HEIC decoding where the browser cannot: `heic-to` fallback not added; Safari decodes HEIC natively, so this is measured on the iPhone first.
 - Perspective warp runs on the main thread (about 3 MP of bilinear sampling); move it to the worker if the iPhone shows a stall.
-- Owner review of the new editor on the iPhone (first test 2026-10-03 rated the old page unusable).
+- Owner review of the D-056 editor on the iPhone, then the beginner usability test from `docs/research/2026-10-04-ui-ux-brief.md` (three rounds of five, measured: task success, time, errors, gestures found unaided, SEQ per task, SUS).
+- D-056 open items: bundled demo pair ("Beispiel ansehen"), Wake Lock and Dynamic Type checks on the iPhone, a light theme.
 - Exit gate items below need real iPhones.
 
 ## Exit gate

@@ -1,31 +1,20 @@
-import { type MessageKey, t } from "@nextstroke/ui";
+import { t } from "@nextstroke/ui";
 import { browserDeps } from "../compare/browser.ts";
 import { QuickCompare } from "../compare/QuickCompare.tsx";
 import type { Route } from "../routing/routes.ts";
 
-export const TITLES: Record<Route, MessageKey> = {
-  home: "nav.home",
-  compare: "nav.compare",
-  projects: "nav.projects",
-  guided: "nav.guided",
-};
-
-const INTROS: Record<Route, MessageKey> = {
-  home: "page.home.intro",
-  compare: "page.compare.intro",
-  projects: "page.projects.intro",
-  guided: "page.guided.intro",
-};
-
+/**
+ * v0.1 has no global navigation (D-056): Start is Quick Compare. Projects and guided coaching
+ * keep their routes for later phases but are not linked from the app yet.
+ */
 export function Page({ route }: { route: Route }) {
+  if (route === "home" || route === "compare") return <QuickCompare deps={browserDeps} />;
   return (
-    <>
-      <h1>{t(TITLES[route])}</h1>
-      <p>{t(INTROS[route])}</p>
-      {route === "compare" && <QuickCompare deps={browserDeps} />}
-      {(route === "projects" || route === "guided") && (
-        <p className="ns-muted">{t("page.notReady")}</p>
-      )}
-    </>
+    <div className="ns-later">
+      <h1>{t(route === "projects" ? "nav.projects" : "nav.guided")}</h1>
+      <p>{t(route === "projects" ? "page.projects.intro" : "page.guided.intro")}</p>
+      <p className="ns-muted">{t("page.notReady")}</p>
+      <a href="#/">{t("page.toCompare")}</a>
+    </div>
   );
 }

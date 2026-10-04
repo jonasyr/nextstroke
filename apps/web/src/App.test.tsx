@@ -13,33 +13,42 @@ function setOnline(value: boolean) {
   window.dispatchEvent(new Event(value ? "online" : "offline"));
 }
 
-describe("App shell", () => {
-  it("names the product and offers the four screens as navigation", () => {
+describe("App shell (D-056)", () => {
+  it("opens on the comparison start screen without a navigation bar", () => {
     render(<App />);
-    expect(screen.getByRole("heading", { level: 1, name: "Start" })).toBeTruthy();
-    const nav = screen.getByRole("navigation", { name: "Hauptnavigation" });
-    const links = Array.from(nav.querySelectorAll("a")).map((a) => a.textContent);
-    expect(links).toEqual(["Start", "Schnellvergleich", "Projekte", "Geführtes Projekt"]);
+    expect(screen.getByText("NextStroke")).toBeTruthy();
+    expect(
+      screen.getByRole("heading", {
+        level: 1,
+        name: "Vergleiche deine Zeichnung mit der Vorlage.",
+      }),
+    ).toBeTruthy();
+    expect(screen.queryByRole("navigation")).toBeNull();
   });
 
-  it("follows the hash and marks the current page", async () => {
+  it("keeps later sections reachable by address, with a way back", async () => {
     render(<App />);
     await act(async () => {
-      window.location.hash = "#/compare";
+      window.location.hash = "#/projects";
       window.dispatchEvent(new HashChangeEvent("hashchange"));
     });
-    expect(screen.getByRole("heading", { level: 1, name: "Schnellvergleich" })).toBeTruthy();
-    expect(
-      screen.getByRole("link", { name: "Schnellvergleich" }).getAttribute("aria-current"),
-    ).toBe("page");
+    expect(screen.getByRole("heading", { level: 1, name: "Projekte" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Zum Vergleich" }).getAttribute("href")).toBe("#/");
+    await act(async () => {
+      window.location.hash = "#/guided";
+      window.dispatchEvent(new HashChangeEvent("hashchange"));
+    });
+    expect(screen.getByRole("heading", { level: 1, name: "Geführtes Projekt" })).toBeTruthy();
   });
 
-  it("says that Quick Compare works offline while AI features need a network", async () => {
+  it("says that comparing works offline while AI features need a network", async () => {
     render(<App />);
     await act(async () => setOnline(false));
-    expect(screen.getByRole("status").textContent).toContain("Offline");
+    expect(screen.getAllByRole("status").some((s) => s.textContent?.includes("Offline"))).toBe(
+      true,
+    );
     await act(async () => setOnline(true));
-    expect(screen.queryByRole("status")).toBeNull();
+    expect(screen.queryByText(/Offline/)).toBeNull();
   });
 });
 

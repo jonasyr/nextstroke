@@ -26,21 +26,26 @@ test("compares two photos, aligns, and exports a bounded comparison", async ({ p
     type: "image/png",
     seed: 1,
   });
-  await page.getByLabel(/^Original wählen/).setInputFiles(original);
+  await page.getByLabel("Zeichnung wählen").setInputFiles(original);
   await expect(page.getByText("Bild geladen. Jetzt das zweite Bild wählen.")).toBeVisible();
-  await page.getByLabel(/^Referenz wählen/).setInputFiles(reference);
-  await expect(page.getByText("ÜBERLAGERUNG")).toBeVisible();
+  await page.getByLabel("Vorlage wählen").setInputFiles(reference);
+  await expect(page.getByRole("dialog", { name: "Vergleich" })).toBeVisible();
   await expect.poll(() => canvasHasInk(page)).toBe(true);
 
-  await page.getByRole("button", { name: "Ausrichten" }).click();
-  await page.getByRole("button", { name: "Automatisch ausrichten" }).click();
-  await expect(page.getByText(/Abgeglichen|Kein sicherer Abgleich/)).toBeVisible({
-    timeout: 20_000,
+  await page.getByRole("tab", { name: /Ausrichten/ }).click();
+  await page.getByRole("button", { name: "Automatisch" }).click();
+  await expect(page.getByText(/Ausgerichtet|Keine sichere Ausrichtung/)).toBeVisible({
+    timeout: 30_000,
   });
+  await page.getByRole("button", { name: "Fertig" }).click();
 
-  await page.getByRole("button", { name: "Speichern" }).click();
+  await page.getByRole("button", { name: "Exportieren" }).click();
   const download = page.waitForEvent("download");
-  await page.getByRole("button", { name: "Vergleich als JPEG" }).click();
+  // Headless Chromium has no share sheet, so "Teilen" falls back to a download.
+  await page
+    .getByRole("dialog", { name: "Exportieren" })
+    .getByRole("button", { name: "Teilen" })
+    .click();
   const file = await download;
   expect(file.suggestedFilename()).toBe("Vergleich.jpg");
   const path = await file.path();
@@ -57,7 +62,7 @@ test("compares two photos, aligns, and exports a bounded comparison", async ({ p
 
 test("loads a chosen page of a multi-page PDF", async ({ page }) => {
   await page.goto("#/compare");
-  await page.getByLabel(/^Original wählen/).setInputFiles(twoPagePdf());
+  await page.getByLabel("Vorlage wählen").setInputFiles(twoPagePdf());
   const dialog = page.getByRole("dialog", { name: "Welche Seite?" });
   await expect(dialog).toBeVisible();
   await dialog.getByRole("spinbutton").fill("2");
@@ -78,13 +83,14 @@ test("works offline after the first visit", async ({ page, context }) => {
     type: "image/png",
     seed: 2,
   });
-  await page.getByLabel(/^Original wählen/).setInputFiles(original);
+  await page.getByLabel("Zeichnung wählen").setInputFiles(original);
   await expect(page.getByText("Bild geladen. Jetzt das zweite Bild wählen.")).toBeVisible();
-  await page.getByLabel(/^Referenz wählen/).setInputFiles({ ...original, name: "b.png" });
-  await expect(page.getByText("ÜBERLAGERUNG")).toBeVisible();
+  await page.getByLabel("Vorlage wählen").setInputFiles({ ...original, name: "b.png" });
+  await expect(page.getByRole("dialog", { name: "Vergleich" })).toBeVisible();
   await expect(page.getByRole("status").filter({ hasText: "Offline" })).toBeVisible();
   // opencv.js comes from the precache too: paper detection answers (D-055).
-  await page.getByRole("button", { name: "Blattecken setzen" }).click();
+  await page.getByRole("tab", { name: /Ecken/ }).click();
+  await page.getByRole("button", { name: "Automatisch" }).click();
   await expect(page.getByText(/Blatt nicht erkannt|Blattecken erkannt/)).toBeVisible({
     timeout: 30_000,
   });
@@ -104,10 +110,10 @@ test("places paper corners on both images and warps the reference", async ({ pag
     type: "image/png",
     seed: 4,
   });
-  await page.getByLabel(/^Original wählen/).setInputFiles(original);
+  await page.getByLabel("Zeichnung wählen").setInputFiles(original);
   await expect(page.getByText("Bild geladen. Jetzt das zweite Bild wählen.")).toBeVisible();
-  await page.getByLabel(/^Referenz wählen/).setInputFiles(reference);
-  await expect(page.getByText("ÜBERLAGERUNG")).toBeVisible();
+  await page.getByLabel("Vorlage wählen").setInputFiles(reference);
+  await expect(page.getByRole("dialog", { name: "Vergleich" })).toBeVisible();
 
   const snapshot = () =>
     page.evaluate(() => {
@@ -118,10 +124,16 @@ test("places paper corners on both images and warps the reference", async ({ pag
       for (let i = 0; i < data.length; i += 16) sum += data[i] as number;
       return sum;
     });
+  // Whatever the automatic alignment on opening did, start the manual corners from scratch.
+  await expect(
+    page.getByText(/Ist das Foto schräg|Automatisch an den Blattecken|Ausgerichtet/),
+  ).toBeVisible({ timeout: 30_000 });
+  await page.getByRole("button", { name: "Mehr" }).click();
+  await page.getByRole("menuitem", { name: "Alles zurücksetzen" }).click();
   await page.waitForTimeout(300);
   const plain = await snapshot();
 
-  const box = (await page.locator(".ns-workspace").boundingBox()) as {
+  const box = (await page.locator(".ns-stage").boundingBox()) as {
     x: number;
     y: number;
     width: number;
@@ -140,20 +152,19 @@ test("places paper corners on both images and warps the reference", async ({ pag
     await page.mouse.up();
   }
 
-  await page.getByRole("button", { name: "Blattecken setzen" }).click();
-  await expect(page.getByText("Blattecken 1/2: Referenz")).toBeVisible();
+  await page.getByRole("tab", { name: /Ecken/ }).click();
+  await expect(page.getByText("Ecken 1/2")).toBeVisible();
   await drag([at(0, 0)[0] + 2, at(0, 0)[1] + 2], at(0.1, 0.1));
   await page.getByRole("button", { name: "Weiter" }).click();
-  await expect(page.getByText("Blattecken 2/2: Original")).toBeVisible();
+  await expect(page.getByText("Ecken 2/2")).toBeVisible();
   // A keystone the affine layer cannot express: pull the top-right corner inwards.
   await drag([at(1, 0)[0] - 2, at(1, 0)[1] + 2], at(0.8, 0.15));
   await page.getByRole("button", { name: "Fertig" }).click();
-  await expect(page.getByText("ÜBERLAGERUNG")).toBeVisible();
+  await expect(page.getByRole("tab", { name: /Ecken/ }).locator(".ns-dot")).toBeVisible();
   await expect.poll(snapshot, { timeout: 5_000 }).not.toBe(plain);
-  await expect(page.getByRole("button", { name: "Blattecken ändern" })).toBeVisible();
 });
 
-test("splits original and reference and drags the divider", async ({ page }) => {
+test("splits drawing and Vorlage and drags the divider", async ({ page }) => {
   await page.goto("#/compare");
   const original = await syntheticImage(page, {
     width: 1200,
@@ -167,16 +178,15 @@ test("splits original and reference and drags the divider", async ({ page }) => 
     type: "image/png",
     seed: 6,
   });
-  await page.getByLabel(/^Original wählen/).setInputFiles(original);
+  await page.getByLabel("Zeichnung wählen").setInputFiles(original);
   await expect(page.getByText("Bild geladen. Jetzt das zweite Bild wählen.")).toBeVisible();
-  await page.getByLabel(/^Referenz wählen/).setInputFiles(reference);
-  await expect(page.getByText("ÜBERLAGERUNG")).toBeVisible();
-  await page.getByRole("button", { name: "Geteilt" }).click();
-  await expect(page.getByText("LINKS ORIGINAL · RECHTS REFERENZ")).toBeVisible();
-  const slider = page.getByLabel(/Teilung/);
+  await page.getByLabel("Vorlage wählen").setInputFiles(reference);
+  await expect(page.getByRole("dialog", { name: "Vergleich" })).toBeVisible();
+  await page.getByRole("button", { name: "Teilen" }).click();
+  const slider = page.getByRole("slider", { name: "Trennlinie" });
   await expect(slider).toHaveValue("50");
 
-  const box = (await page.locator(".ns-workspace").boundingBox()) as {
+  const box = (await page.locator(".ns-stage").boundingBox()) as {
     x: number;
     y: number;
     width: number;
@@ -191,5 +201,4 @@ test("splits original and reference and drags the divider", async ({ page }) => 
   const value = Number(await slider.inputValue());
   expect(value).toBeLessThan(45);
   expect(value).toBeGreaterThan(0);
-  await expect(page.getByText("LINKS ORIGINAL · RECHTS REFERENZ")).toBeVisible();
 });

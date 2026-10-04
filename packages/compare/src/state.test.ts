@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
-  badge,
-  CORNER_STEP,
   CORNER_VIEW,
   type CompareState,
+  canRedo,
+  canUndo,
   compare,
   effectiveOpacity,
   IMAGE_CORNERS,
@@ -14,54 +14,61 @@ import {
 const run = (...actions: Parameters<typeof compare>[1][]): CompareState =>
   actions.reduce(compare, initialState());
 
-describe("comparison state (legacy C1–C6, V3–V5)", () => {
-  it("starts at 65 % reference opacity in overlay mode", () => {
+describe("comparison state (D-056; legacy C1, C4, C5, V1, V4, V5)", () => {
+  it("starts at 50 % Vorlage opacity in overlay mode", () => {
     const s = initialState();
-    expect(s.opacity).toBeCloseTo(0.65);
-    expect(badge(s)).toBe("compare.badge.overlay");
+    expect(s.opacity).toBe(0.5);
+    expect(effectiveOpacity(s)).toBe(0.5);
   });
 
-  it("clamps opacity and names the end points", () => {
+  it("clamps opacity", () => {
     expect(run({ type: "opacity", percent: 140 }).opacity).toBe(1);
-    expect(badge(run({ type: "opacity", percent: 100 }))).toBe("compare.badge.reference");
-    expect(badge(run({ type: "opacity", percent: -5 }))).toBe("compare.badge.original");
-    expect(run({ type: "half" }).opacity).toBe(0.5);
-    expect(run({ type: "reference" }).opacity).toBe(1);
+    expect(run({ type: "opacity", percent: -5 }).opacity).toBe(0);
   });
 
-  it("reveals the original by tap until the next opacity change", () => {
-    const shown = run({ type: "show-original" });
+  it("shows only the drawing by tap until the next opacity change, and while held", () => {
+    const shown = run({ type: "toggle-reveal" });
     expect(effectiveOpacity(shown)).toBe(0);
-    expect(badge(shown)).toBe("compare.badge.reveal");
-    expect(effectiveOpacity(compare(shown, { type: "toggle-reveal" }))).toBeCloseTo(0.65);
+    expect(effectiveOpacity(compare(shown, { type: "toggle-reveal" }))).toBe(0.5);
     expect(compare(shown, { type: "opacity", percent: 30 }).tapReveal).toBe(false);
-  });
-
-  it("reveals the original only while held", () => {
     const held = run({ type: "hold", active: true });
     expect(effectiveOpacity(held)).toBe(0);
-    expect(effectiveOpacity(compare(held, { type: "hold", active: false }))).toBeCloseTo(0.65);
+    expect(effectiveOpacity(compare(held, { type: "hold", active: false }))).toBe(0.5);
   });
 
-  it("opens alignment at 50 % without tap reveal and closes back to comparison", () => {
-    const s = run({ type: "show-original" }, { type: "alignment", open: true });
+  it("opens alignment visibly overlaid, and cancel restores the layer from before", () => {
+    const s = run(
+      { type: "opacity", percent: 100 },
+      { type: "split", on: true },
+      { type: "toggle-reveal" },
+      { type: "alignment", open: true },
+    );
     expect(s.aligning).toBe(true);
     expect(s.opacity).toBe(0.5);
+    expect(s.split).toBeNull();
     expect(s.tapReveal).toBe(false);
-    expect(badge(s)).toBe("compare.badge.align");
-    expect(compare(s, { type: "alignment", open: false }).aligning).toBe(false);
+    expect(run({ type: "opacity", percent: 30 }, { type: "alignment", open: true }).opacity).toBe(
+      0.3,
+    );
+    const moved = compare(s, { type: "layer-nudge", dx: 0.01, dy: -0.02 });
+    expect(moved.layer.x).toBeCloseTo(0.01);
+    expect(moved.layer.y).toBeCloseTo(-0.02);
+    const cancelled = compare(moved, { type: "alignment-cancel" });
+    expect(cancelled.aligning).toBe(false);
+    expect(cancelled.layer).toEqual(initialState().layer);
+    const kept = compare(moved, { type: "alignment", open: false });
+    expect(kept.layer.x).toBeCloseTo(0.01);
   });
 
-  it("nudges and sets layer parameters within their ranges", () => {
-    let s = run({ type: "select-param", param: "rotation" }, { type: "nudge", direction: 1 });
-    expect(s.layer.rotationDeg).toBeCloseTo(PARAMS.rotation.step);
-    s = compare(s, { type: "set-param", value: 999 });
+  it("scales and rotates the layer in steps within their ranges", () => {
+    let s = run({ type: "layer-scale", delta: 0.02 }, { type: "layer-rotate", delta: -1 });
+    expect(s.layer.scale).toBeCloseTo(1.02);
+    expect(s.layer.rotationDeg).toBeCloseTo(-1);
+    s = compare(s, { type: "layer-scale", delta: 9 });
+    expect(s.layer.scale).toBe(PARAMS.scale.max);
+    s = compare(s, { type: "layer-rotate", delta: 99 });
     expect(s.layer.rotationDeg).toBe(PARAMS.rotation.max);
-    s = compare(s, { type: "select-param", param: "scale" });
-    s = compare(s, { type: "set-param", value: 0.1 });
-    expect(s.layer.scale).toBe(PARAMS.scale.min);
-    s = compare(s, { type: "reset-layer" });
-    expect(s.layer).toEqual(initialState().layer);
+    expect(compare(s, { type: "reset-layer" }).layer).toEqual(initialState().layer);
   });
 
   it("zooms between 0.8× and 8× around the centre and fits back", () => {
@@ -75,21 +82,67 @@ describe("comparison state (legacy C1–C6, V3–V5)", () => {
     expect(compare(s, { type: "fit" }).view).toEqual({ zoom: 1, x: 0, y: 0 });
   });
 
-  it("resets view, layer and reveal when an image is replaced", () => {
+  it("resets view, layer, reveal and history when an image is replaced", () => {
     const s = run(
       { type: "zoom", factor: 2 },
+      { type: "checkpoint" },
       { type: "set-layer", layer: { x: 0.1, y: 0, scale: 1.2, rotationDeg: 3 } },
-      { type: "show-original" },
+      { type: "toggle-reveal" },
       { type: "image-replaced" },
     );
     expect(s.view).toEqual({ zoom: 1, x: 0, y: 0 });
     expect(s.layer).toEqual(initialState().layer);
     expect(s.tapReveal).toBe(false);
-    expect(s.opacity).toBeCloseTo(0.65);
+    expect(canUndo(s)).toBe(false);
   });
 
-  it("toggles whether gestures move the layer while aligning", () => {
-    expect(run({ type: "align-gestures", enabled: false }).alignGestures).toBe(false);
+  it("resets everything the user adjusted", () => {
+    const s = run(
+      { type: "opacity", percent: 80 },
+      { type: "set-layer", layer: { x: 0.1, y: 0, scale: 1.2, rotationDeg: 3 } },
+      { type: "corners-set", corners: IMAGE_CORNERS },
+      { type: "reset-all" },
+    );
+    expect([s.opacity, s.layer, s.corners, s.split]).toEqual([
+      0.5,
+      initialState().layer,
+      null,
+      null,
+    ]);
+  });
+});
+
+describe("undo and redo", () => {
+  it("steps back and forward through checkpoints of what the user adjusted", () => {
+    let s = run({ type: "checkpoint" }, { type: "opacity", percent: 80 });
+    s = compare(compare(s, { type: "checkpoint" }), { type: "layer-rotate", delta: 2 });
+    expect(canUndo(s)).toBe(true);
+    expect(canRedo(s)).toBe(false);
+    s = compare(s, { type: "undo" });
+    expect(s.layer.rotationDeg).toBe(0);
+    expect(s.opacity).toBe(0.8);
+    s = compare(s, { type: "undo" });
+    expect(s.opacity).toBe(0.5);
+    expect(canUndo(s)).toBe(false);
+    expect(compare(s, { type: "undo" })).toBe(s);
+    s = compare(compare(s, { type: "redo" }), { type: "redo" });
+    expect([s.opacity, s.layer.rotationDeg]).toEqual([0.8, 2]);
+    expect(compare(s, { type: "redo" })).toBe(s);
+  });
+
+  it("skips checkpoints that changed nothing and clears redo after a new change", () => {
+    let s = run({ type: "checkpoint" }, { type: "checkpoint" });
+    expect(canUndo(s)).toBe(false);
+    s = compare(compare(s, { type: "checkpoint" }), { type: "opacity", percent: 20 });
+    s = compare(s, { type: "undo" });
+    expect(canRedo(s)).toBe(true);
+    s = compare(compare(s, { type: "checkpoint" }), { type: "opacity", percent: 70 });
+    expect(canRedo(s)).toBe(false);
+  });
+
+  it("does not record view changes", () => {
+    const s = run({ type: "checkpoint" }, { type: "zoom", factor: 2 });
+    expect(canUndo(s)).toBe(false);
   });
 });
 
@@ -112,19 +165,17 @@ describe("paper corners in the state (two steps: reference, then original)", () 
     expect(s.view).toEqual(CORNER_VIEW);
     expect(compare(s, { type: "fit" }).view).toEqual(CORNER_VIEW);
     expect(s.split).toBeNull();
-    expect(badge(s)).toBe("compare.badge.cornersReference");
   });
 
   it("edits the quad of the current step", () => {
     let s = run({ type: "corners-begin" }, { type: "select-corner", index: 2 });
-    s = compare(s, { type: "corner-nudge", dx: -1, dy: 0 });
-    expect(s.refCorners?.[2]?.x).toBeCloseTo(1 - CORNER_STEP);
+    s = compare(s, { type: "corner-nudge", dx: -0.002, dy: 0 });
+    expect(s.refCorners?.[2]?.x).toBeCloseTo(0.998);
     s = compare(s, { type: "corner-set", index: 0, point: { x: 0.05, y: 0.04 } });
     expect(s.refCorners?.[0]).toEqual({ x: 0.05, y: 0.04 });
     s = compare(s, { type: "corners-next", corners: guess });
     expect(s.cornerStep).toBe("original");
     expect(s.corners).toEqual(guess);
-    expect(badge(s)).toBe("compare.badge.cornersOriginal");
     s = compare(s, { type: "corner-set", index: 1, point: { x: 0.8, y: 0.2 } });
     expect(s.corners?.[1]).toEqual({ x: 0.8, y: 0.2 });
     expect(s.refCorners?.[1]).toEqual({ x: 1, y: 0 });
@@ -165,11 +216,43 @@ describe("paper corners in the state (two steps: reference, then original)", () 
     expect(compare(s, { type: "corners-next", corners: guess })).toBe(s);
   });
 
+  it("snaps a step to the whole image and resets it to where the step began", () => {
+    let s = run(
+      { type: "corners-begin" },
+      { type: "corners-suggest", step: "reference", corners: guess },
+      { type: "corner-set", index: 0, point: { x: 0.3, y: 0.3 } },
+      { type: "corners-whole" },
+    );
+    expect(s.refCorners).toEqual(IMAGE_CORNERS);
+    s = compare(s, { type: "corners-reset" });
+    expect(s.refCorners).toEqual(guess);
+    s = compare(s, { type: "corners-next", corners: guess });
+    s = compare(s, { type: "corner-set", index: 2, point: { x: 0.5, y: 0.5 } });
+    expect(compare(s, { type: "corners-reset" }).corners).toEqual(guess);
+    expect(compare(initialState(), { type: "corners-whole" })).toEqual(initialState());
+  });
+
+  it("re-detects on request even after the user moved the corners", () => {
+    const s = run(
+      { type: "corners-begin" },
+      { type: "corner-set", index: 0, point: { x: 0.3, y: 0.3 } },
+      { type: "corners-suggest", step: "reference", corners: guess, force: true },
+    );
+    expect(s.refCorners).toEqual(guess);
+  });
+
+  it("applies detected paper corners on both images at once", () => {
+    const s = run({ type: "corners-auto", refCorners: guess, corners: IMAGE_CORNERS });
+    expect(s.refCorners).toEqual(guess);
+    expect(s.corners).toEqual(IMAGE_CORNERS);
+    expect(s.cornerStep).toBeNull();
+  });
+
   it("clears corners on request, on reset and on a new image", () => {
     const s = run({ type: "corners-begin" }, { type: "corners-next", corners: guess });
     for (const action of [
       { type: "corners-clear" },
-      { type: "reset-layer" },
+      { type: "reset-all" },
       { type: "image-replaced" },
     ] as const) {
       const cleared = compare(s, action);
@@ -198,10 +281,10 @@ describe("paper corners in the state (two steps: reference, then original)", () 
   it("never replaces corners the user moved or placed earlier", () => {
     const moved = run(
       { type: "corners-begin" },
-      { type: "corner-nudge", dx: 1, dy: 0 },
+      { type: "corner-nudge", dx: 0.002, dy: 0 },
       { type: "corners-suggest", step: "reference", corners: detected },
     );
-    expect(moved.refCorners?.[0]?.x).toBeCloseTo(CORNER_STEP);
+    expect(moved.refCorners?.[0]?.x).toBeCloseTo(0.002);
     const set = run(
       { type: "corners-begin" },
       { type: "corners-next", corners: guess },
@@ -246,7 +329,6 @@ describe("split view", () => {
     const split = run({ type: "split", on: true });
     expect(split.split).toBe(0.5);
     expect(effectiveOpacity(split)).toBe(1);
-    expect(badge(split)).toBe("compare.badge.split");
     expect(effectiveOpacity(compare(split, { type: "hold", active: true }))).toBe(0);
     expect(run({ type: "split", on: true }, { type: "split", on: false }).split).toBeNull();
   });
@@ -258,7 +340,8 @@ describe("split view", () => {
   });
 
   it("ends when an opacity is chosen or alignment opens", () => {
-    expect(run({ type: "split", on: true }, { type: "half" }).split).toBeNull();
+    expect(run({ type: "split", on: true }, { type: "split", on: true }).split).toBe(0.5);
+    expect(run({ type: "split", on: true }, { type: "opacity", percent: 40 }).split).toBeNull();
     expect(run({ type: "split", on: true }, { type: "alignment", open: true }).split).toBeNull();
     expect(run({ type: "alignment", open: true }, { type: "split", on: true }).aligning).toBe(
       false,
