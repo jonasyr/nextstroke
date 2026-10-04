@@ -106,6 +106,7 @@ function fakeVision(over: Partial<VisionDeps> = {}): VisionDeps {
     detectPaper: vi.fn(async () => null),
     align: vi.fn(async () => null),
     refine: vi.fn(async () => null),
+    corners: vi.fn(async () => null),
     ...over,
   };
 }
@@ -590,6 +591,41 @@ describe("editor: opencv.js vision (D-055, D-056)", () => {
     fireEvent.click(button("Automatisch"));
     expect(await screen.findByText("Blattecken erkannt")).toBeTruthy();
     expect(screen.getByText("Ecken prüfen")).toBeTruthy();
+  });
+
+  it("flags only the rings it could not confirm, and snaps a dropped ring (D-061)", async () => {
+    const guess = paper(0.2, 0.85);
+    const [c1, c2, , c4] = guess.corners;
+    const corners = vi
+      .fn()
+      .mockResolvedValueOnce([c1, c2, null, c4]) // the check of the guess: ring 3 unclear
+      .mockResolvedValueOnce([{ x: 0.78, y: 0.79 }]); // ring 3 dropped near a paper corner
+    const detectPaper = vi.fn(async () => guess);
+    await loadBoth(makeDeps({ vision: fakeVision({ detectPaper, corners }) }));
+    await screen.findByText(/Nicht automatisch ausgerichtet/);
+    fireEvent.click(screen.getByRole("tab", { name: /Ausrichten/ }));
+    fireEvent.click(button("Ecken setzen"));
+    expect(await screen.findByText("Ecke 3 prüfen")).toBeTruthy();
+    expect(corners).toHaveBeenCalledWith(expect.anything(), guess.corners, [0, 1, 2, 3]);
+    // Ring 3 sits at (302, 151); moving it makes it the user's, so the flag goes.
+    drag(4, [302, 151], [300, 150]);
+    expect(screen.queryByText("Ecke 3 prüfen")).toBeNull();
+    expect(await screen.findByText("An der Blattecke eingerastet")).toBeTruthy();
+    expect(corners).toHaveBeenLastCalledWith(expect.anything(), expect.any(Array), [2]);
+  });
+
+  it("names several rings to check", async () => {
+    const guess = paper(0.2, 0.85);
+    const corners = vi.fn(async () => [null, guess.corners[1], null, guess.corners[3]]);
+    await loadBoth(
+      makeDeps({ vision: fakeVision({ detectPaper: vi.fn(async () => guess), corners }) }),
+    );
+    await screen.findByText(/Nicht automatisch ausgerichtet/);
+    fireEvent.click(screen.getByRole("tab", { name: /Ausrichten/ }));
+    fireEvent.click(button("Ecken setzen"));
+    expect(await screen.findByText("Ecken 1 und 3 prüfen")).toBeTruthy();
+    fireEvent.click(button("Ecke 1 oben links wählen"));
+    expect(screen.getByText("Ecke 3 prüfen")).toBeTruthy();
   });
 
   it("pre-places detected corners in the corner steps and re-detects on request", async () => {

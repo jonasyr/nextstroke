@@ -564,3 +564,114 @@ export function chooseLineQuad(
     confidence: Math.min(best.mean * (best.border ? LINES.borderPenalty : 1), LINES.maxConfidence),
   };
 }
+
+/**
+ * One paper corner near a ring (D-061): the snap after a ring is dropped, and the check of each
+ * corner of an automatic guess. The neighbouring rings give the rough direction of the two
+ * paper edges through the corner. For each edge, lines in that direction (± a few degrees) are
+ * tried at every offset across it; a line's strength is the mean brightness step across it over
+ * a long stretch, so a faint but straight paper edge (white sheet on a white board) stands out
+ * from canvas texture, which a short edge detector picks up instead. The two strongest lines
+ * cross at the corner. A line must clearly beat the typical step of its own search (contrast)
+ * and nearer lines are preferred, since a sheet on a board shows nested edges and the user's
+ * drop says which one is meant.
+ */
+export const SNAP = {
+  /** Search distance around the ring, as a fraction of the longer image side. */
+  radius: 0.05,
+  /** Each edge is measured over this many radii from the corner. */
+  length: 1.5,
+  /** Tilts tried around the neighbours' direction, degrees. */
+  tilts: [-4, -3, -2, -1, 0, 1, 2, 3, 4],
+  /** Brightness is compared this many pixels to either side of a line. */
+  across: 1.5,
+  samples: 48,
+  /** The best line's step must reach this multiple of the median step of its search. */
+  minContrast: 2,
+  /** Weight of the distance to the ring: a line at the search's edge counts this much less. */
+  distancePenalty: 0.3,
+} as const;
+
+/** Grey level at a pixel (any real position); NaN outside the image. */
+export type Intensity = (x: number, y: number) => number;
+
+interface EdgeLine {
+  at: Point;
+  dir: Point;
+}
+
+function median(values: number[]): number {
+  const sorted = [...values].sort((a, b) => a - b);
+  return sorted[Math.floor(sorted.length / 2)] ?? 0;
+}
+
+/** The strongest straight edge leaving `ring` towards `to`, or null when none stands out. */
+function edgeTowards(
+  ring: Point,
+  to: Point,
+  intensity: Intensity,
+  radius: number,
+): EdgeLine | null {
+  const base = Math.atan2(to.y - ring.y, to.x - ring.x);
+  const length = SNAP.length * radius;
+  const reach = Math.round(radius);
+  let best: { line: EdgeLine; score: number; contrast: number } | null = null;
+  for (const tilt of SNAP.tilts) {
+    const angle = base + tilt * DEG;
+    const dir = { x: Math.cos(angle), y: Math.sin(angle) };
+    const normal = { x: -dir.y, y: dir.x };
+    const steps: number[] = [];
+    for (let d = -reach; d <= reach; d++) {
+      let sum = 0;
+      let count = 0;
+      for (let k = 0; k < SNAP.samples; k++) {
+        const t = length * ((k + 0.5) / SNAP.samples);
+        const x = ring.x + d * normal.x + t * dir.x;
+        const y = ring.y + d * normal.y + t * dir.y;
+        const a = intensity(x + SNAP.across * normal.x, y + SNAP.across * normal.y);
+        const b = intensity(x - SNAP.across * normal.x, y - SNAP.across * normal.y);
+        if (Number.isNaN(a) || Number.isNaN(b)) continue;
+        sum += Math.abs(a - b);
+        count++;
+      }
+      steps.push(count >= SNAP.samples / 2 ? sum / count : 0);
+    }
+    const typical = median(steps) || 1e-6;
+    steps.forEach((step, i) => {
+      const score = step * (1 - (SNAP.distancePenalty * Math.abs(i - reach)) / reach);
+      if (best && score <= best.score) return;
+      // Sub-pixel: the vertex of the parabola through the peak and its two neighbours.
+      const before = steps[i - 1] ?? step;
+      const after = steps[i + 1] ?? step;
+      const curve = before - 2 * step + after;
+      const d = i - reach + (curve < 0 ? (0.5 * (before - after)) / curve : 0);
+      best = {
+        line: { at: { x: ring.x + d * normal.x, y: ring.y + d * normal.y }, dir },
+        score,
+        contrast: step / typical,
+      };
+    });
+  }
+  const found = best as { line: EdgeLine; contrast: number } | null;
+  return found && found.contrast >= SNAP.minContrast ? found.line : null;
+}
+
+/**
+ * The paper corner near `ring`, given the two neighbouring rings of its quad (pixels), or null
+ * when either edge is unclear or the crossing lies beyond the search distance.
+ */
+export function cornerNear(
+  ring: Point,
+  neighbours: readonly [Point, Point],
+  intensity: Intensity,
+  radius: number,
+): Point | null {
+  const a = edgeTowards(ring, neighbours[0], intensity, radius);
+  const b = edgeTowards(ring, neighbours[1], intensity, radius);
+  if (!a || !b) return null;
+  const det = a.dir.x * b.dir.y - a.dir.y * b.dir.x;
+  if (Math.abs(det) < Math.sin(30 * DEG)) return null;
+  const t = ((b.at.x - a.at.x) * b.dir.y - (b.at.y - a.at.y) * b.dir.x) / det;
+  const at = { x: a.at.x + t * a.dir.x, y: a.at.y + t * a.dir.y };
+  return Math.hypot(at.x - ring.x, at.y - ring.y) <= radius ? at : null;
+}

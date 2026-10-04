@@ -8,6 +8,7 @@ import {
   blocksOnPaper,
   chooseLineQuad,
   choosePaper,
+  cornerNear,
   fitSimilarity,
   type HoughLine,
   MATCH,
@@ -495,5 +496,48 @@ describe("fitSimilarity (D-060)", () => {
       { x: 5, y: 5 },
     ];
     expect(fitSimilarity(same, same, 1)).toEqual({ h: null, inliers: 0 });
+  });
+});
+
+describe("cornerNear (D-061)", () => {
+  // A 200 × 200 photo: a sheet (grey 200) on a board (grey 190), its top-left corner at
+  // (60, 70), tilted by 2°, under canvas-like texture of ±8.
+  const tilt = (2 * Math.PI) / 180;
+  const texture = (x: number, y: number) => 8 * Math.sin(x * 2.1) * Math.cos(y * 1.7);
+  const onSheet = (x: number, y: number) => {
+    const u = (x - 60) * Math.cos(tilt) + (y - 70) * Math.sin(tilt);
+    const v = -(x - 60) * Math.sin(tilt) + (y - 70) * Math.cos(tilt);
+    return u >= 0 && v >= 0;
+  };
+  const photo = (x: number, y: number) =>
+    x < 0 || y < 0 || x >= 200 || y >= 200
+      ? Number.NaN
+      : (onSheet(x, y) ? 200 : 190) + texture(Math.round(x), Math.round(y));
+  // The ring was dropped 10 px off; its neighbours sit roughly along the sheet's edges.
+  const ring = { x: 52, y: 78 };
+  const neighbours = [
+    { x: 190, y: 72 },
+    { x: 58, y: 190 },
+  ] as const;
+
+  it("finds a faint, tilted corner under texture", () => {
+    const at = cornerNear(ring, neighbours, photo, 20);
+    expect(at?.x).toBeCloseTo(60, 0);
+    expect(at?.y).toBeCloseTo(70, 0);
+  });
+
+  it("finds nothing on texture alone, or beyond the search distance", () => {
+    const blank = (x: number, y: number) => 190 + texture(Math.round(x), Math.round(y));
+    expect(cornerNear(ring, neighbours, blank, 20)).toBeNull();
+    expect(cornerNear({ x: 20, y: 120 }, neighbours, photo, 20)).toBeNull();
+  });
+
+  it("prefers the nearer of nested edges", () => {
+    // The board's own corner at (30, 40), a much stronger step to the darker table.
+    const nested = (x: number, y: number) =>
+      x < 30 || y < 40 ? 120 + texture(Math.round(x), Math.round(y)) : photo(x, y);
+    const at = cornerNear(ring, neighbours, nested, 20);
+    expect(at?.x).toBeCloseTo(60, 0);
+    expect(at?.y).toBeCloseTo(70, 0);
   });
 });

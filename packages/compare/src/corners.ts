@@ -3,6 +3,7 @@ import {
   carryQuad,
   type Homography,
   homographyFromPoints,
+  isConvex,
   type Point,
   type Quad,
 } from "./homography.ts";
@@ -151,4 +152,22 @@ export function refineCorners(
     return Math.abs(p.x - c.x) <= maxShift && Math.abs(p.y - c.y) <= maxShift;
   });
   return small ? quadThroughCorners(corners, residual) : null;
+}
+
+/**
+ * Per-corner check of an automatic guess (D-061): each ring with a clear paper corner nearby
+ * (`found`) moves onto it and counts as sure; the others stay and are flagged for checking.
+ * A sure guess needs no check; without vision, or if the moved quad folds, all four are flagged.
+ */
+export function confirmQuad(
+  quad: Quad,
+  found: readonly (Point | null)[] | null,
+  sure: boolean,
+): { quad: Quad; unsure: number[] } {
+  if (sure) return { quad, unsure: [] };
+  const all = { quad, unsure: [0, 1, 2, 3] };
+  if (!found) return all;
+  const moved = quad.map((p, i) => found[i] ?? p) as unknown as Quad;
+  if (!isConvex(moved)) return all;
+  return { quad: moved, unsure: [0, 1, 2, 3].filter((i) => !found[i]) };
 }

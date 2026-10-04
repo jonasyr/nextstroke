@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  confirmQuad,
   cornersFromLayer,
   hitCorner,
   nudgeCorner,
@@ -172,5 +173,24 @@ describe("perspective corners", () => {
       { x: 0, y: 1 },
     ] as const;
     expect(refineCorners(placed, folded, 2)).toBeNull();
+  });
+
+  it("moves the rings of a guess onto found corners and flags the rest (D-061)", () => {
+    const guess = [
+      { x: 0.1, y: 0.1 },
+      { x: 0.9, y: 0.1 },
+      { x: 0.9, y: 0.9 },
+      { x: 0.1, y: 0.9 },
+    ] as const;
+    expect(confirmQuad(guess, null, true)).toEqual({ quad: guess, unsure: [] });
+    expect(confirmQuad(guess, null, false)).toEqual({ quad: guess, unsure: [0, 1, 2, 3] });
+    const found = [{ x: 0.12, y: 0.11 }, null, { x: 0.88, y: 0.9 }, { x: 0.1, y: 0.92 }];
+    const { quad, unsure } = confirmQuad(guess, found, false);
+    expect(unsure).toEqual([1]);
+    expect(quad[0]).toEqual({ x: 0.12, y: 0.11 });
+    expect(quad[1]).toEqual(guess[1]);
+    // A found corner that would fold the quad is not used.
+    const folding = [{ x: 0.95, y: 0.95 }, null, null, null];
+    expect(confirmQuad(guess, folding, false).unsure).toEqual([0, 1, 2, 3]);
   });
 });

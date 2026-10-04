@@ -1,4 +1,4 @@
-import type { AlignVerdict, PaperResult, Quad } from "@nextstroke/compare";
+import type { AlignVerdict, PaperResult, Point, Quad } from "@nextstroke/compare";
 
 /**
  * Main-thread side of the opencv.js vision worker (D-055). opencv.js (about 13 MB) loads only
@@ -10,6 +10,7 @@ export type VisionRequest =
   | { id: number; type: "load" }
   | { id: number; type: "paper"; image: ImageBitmap }
   | { id: number; type: "align"; original: ImageBitmap; reference: ImageBitmap }
+  | { id: number; type: "corners"; image: ImageBitmap; quad: Quad; indices: number[] }
   | {
       id: number;
       type: "refine";
@@ -23,6 +24,7 @@ export type VisionResponse =
   | { id: number; type: "load"; ms: number }
   | { id: number; type: "paper"; paper: PaperResult | null }
   | { id: number; type: "align"; verdict: AlignVerdict }
+  | { id: number; type: "corners"; found: (Point | null)[] }
   | { id: number; type: "error"; error: string };
 
 export interface VisionDeps {
@@ -37,6 +39,11 @@ export interface VisionDeps {
    * (D-060): where the prewarped image's corners land on the drawing; null when unavailable.
    */
   refine(original: ImageBitmap, prewarped: ImageBitmap, paper: Quad): Promise<AlignVerdict | null>;
+  /**
+   * The paper corner near each ring `indices` of `quad` (normalized), or null where none is
+   * clear (D-061); null overall when vision is unavailable.
+   */
+  corners(image: ImageBitmap, quad: Quad, indices: number[]): Promise<(Point | null)[] | null>;
 }
 
 type Pending = (response: VisionResponse | null) => void;
@@ -121,6 +128,13 @@ export function createVisionClient(
         [original, reference],
       );
       return response?.type === "align" ? response.verdict : null;
+    },
+    async corners(image, quad, indices) {
+      const response = await ask(
+        (id, [copy]) => ({ id, type: "corners", image: copy as ImageBitmap, quad, indices }),
+        [image],
+      );
+      return response?.type === "corners" ? response.found : null;
     },
     async refine(original, prewarped, paper) {
       const response = await ask(

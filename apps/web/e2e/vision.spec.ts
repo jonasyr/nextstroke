@@ -35,7 +35,7 @@ test("the opencv.js worker finds the photographed sheet and the feature homograp
   await page.goto("#/compare");
   const { reference, photo } = await paperPhoto(page);
   const result = await page.evaluate(
-    async ({ ref, pho }) => {
+    async ({ ref, pho, sheet }) => {
       // The built worker, found through the service worker's precache list.
       const sw = await (await fetch("sw.js")).text();
       const name = /"(assets\/vision\.worker-[^"]+\.js)"/.exec(sw)?.[1] as string;
@@ -60,10 +60,17 @@ test("the opencv.js worker finds the photographed sheet and the feature homograp
       t = performance.now();
       const align = await ask({ id: 4, type: "align", original: o, reference: r2 }, [o, r2]);
       const alignMs = performance.now() - t;
+      // Rings dropped 2 % off the sheet's corners snap onto them (D-061).
+      const off = sheet.map((c, i) => ({ x: c.x + (i % 2 ? -0.02 : 0.02), y: c.y + 0.02 }));
+      const s = await bitmap(pho);
+      const snap = await ask(
+        { id: 5, type: "corners", image: s, quad: off, indices: [0, 1, 2, 3] },
+        [s],
+      );
       worker.terminate();
-      return { load, loadWallMs, paper, paperMs, flat, align, alignMs };
+      return { load, loadWallMs, paper, paperMs, flat, align, alignMs, snap };
     },
-    { ref: [...reference.buffer], pho: [...photo.buffer] },
+    { ref: [...reference.buffer], pho: [...photo.buffer], sheet: PHOTO_PAPER },
   );
   expect(result.load.type).toBe("load");
   const paper = result.paper.paper as { corners: Pt[]; confidence: number };
@@ -87,6 +94,9 @@ test("the opencv.js worker finds the photographed sheet and the feature homograp
   expect(result.flat.paper).toBeNull();
   expect(align.accepted).toBe(true);
   expect(alignError).toBeLessThan(0.02);
+  const snapped = result.snap.found as (Pt | null)[];
+  expect(snapped.every(Boolean)).toBe(true);
+  expect(maxError(snapped as Pt[], PHOTO_PAPER)).toBeLessThan(0.006);
 });
 
 test("aligns a new pair by its content on opening, and carries the Vorlage's corners over", async ({

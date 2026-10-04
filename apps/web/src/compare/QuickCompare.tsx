@@ -8,6 +8,7 @@ import {
   canRedo,
   canUndo,
   compare,
+  confirmQuad,
   cornersFromLayer,
   cornersOnScreen,
   type GestureEvent,
@@ -138,9 +139,10 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
   const [chrome, setChrome] = useState(true);
   const [fine, setFine] = useState(true);
   const [loupe, setLoupe] = useState(false);
-  const [unsure, setUnsure] = useState<Record<CornerStep, boolean>>({
-    reference: false,
-    original: false,
+  /** Rings of an automatic guess still to be checked, per corner step (D-061). */
+  const [unsure, setUnsure] = useState<Record<CornerStep, number[]>>({
+    reference: [],
+    original: [],
   });
   const [pdfAsk, setPdfAsk] = useState<{
     count: number;
@@ -212,6 +214,7 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
           handles: cornersOnScreen(quad, state.view, base, size),
           active: state.activeCorner,
           loupe: loupe || typeof dragging?.target === "number",
+          unsure: state.cornerStep ? unsure[state.cornerStep] : [],
         },
       });
       return;
@@ -292,17 +295,55 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
     };
   }, [open, original, reference, visionLoaded]);
 
-  function applyPaper(photo: PaperResult, template: PaperResult | null) {
+  /** Per-corner check of a paper guess: found corners snap, the rest are flagged (D-061). */
+  async function confirmGuess(image: Loaded, guess: PaperResult) {
+    const sure = guess.confidence >= SURE;
+    const found =
+      sure || !deps.vision
+        ? null
+        : await deps.vision.corners(image.bitmap, guess.corners, [0, 1, 2, 3]);
+    return confirmQuad(guess.corners, found, sure);
+  }
+
+  /** Applies paper corners on both images; false when the user took over meanwhile. */
+  async function applyPaper(
+    photo: PaperResult,
+    template: PaperResult | null,
+    stale: () => boolean = () => false,
+  ): Promise<boolean> {
+    if (!original || !reference) return false;
+    const drawing = await confirmGuess(original, photo);
+    const vorlage = template
+      ? await confirmGuess(reference, template)
+      : { quad: IMAGE_CORNERS, unsure: [] };
+    if (stale()) return false;
     dispatch({ type: "checkpoint" });
-    dispatch({
-      type: "corners-auto",
-      refCorners: template?.corners ?? IMAGE_CORNERS,
-      corners: photo.corners,
-    });
-    setUnsure({
-      reference: template ? template.confidence < SURE : false,
-      original: photo.confidence < SURE,
-    });
+    dispatch({ type: "corners-auto", refCorners: vorlage.quad, corners: drawing.quad });
+    setUnsure({ reference: vorlage.unsure, original: drawing.unsure });
+    return true;
+  }
+
+  /** A ring was touched: it is the user's now, no longer flagged. */
+  function touchCorner(index: number) {
+    const step = stateRef.current.cornerStep;
+    if (step) setUnsure((u) => ({ ...u, [step]: u[step].filter((i) => i !== index) }));
+  }
+
+  /** After a ring is dropped: onto the paper corner nearby, if one is clear (D-061). */
+  async function snapRing(index: number) {
+    const s = stateRef.current;
+    const step = s.cornerStep;
+    const quad = stepQuad(s);
+    const ring = quad?.[index];
+    const image = step === "reference" ? reference : original;
+    if (!step || !ring || !image) return;
+    const vision = await visionLoaded();
+    const [found] = (vision && quad && (await vision.corners(image.bitmap, quad, [index]))) || [];
+    const now = stateRef.current;
+    if (!found || now.cornerStep !== step || stepQuad(now)?.[index] !== ring) return;
+    dispatch({ type: "checkpoint" });
+    dispatch({ type: "corner-set", index, point: found });
+    setStatus(t("status.snapped"));
   }
 
   /**
@@ -329,8 +370,7 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
     const template = await vision.detectPaper(reference.bitmap);
     if (stale()) return "stale";
     if (photo.confidence < SURE) return { photo, template };
-    applyPaper(photo, template);
-    return "paper";
+    return (await applyPaper(photo, template, stale)) ? "paper" : "stale";
   }
 
   /**
@@ -388,15 +428,19 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
       if (carried) {
         if (force) dispatch({ type: "checkpoint" });
         dispatch({ type: "corners-suggest", step, corners: carried, force });
-        setUnsure((u) => ({ ...u, original: false }));
+        setUnsure((u) => ({ ...u, original: [] }));
         return setStatus(t("status.cornersByContent"));
       }
     }
     const paper = vision && (await vision.detectPaper(image.bitmap));
     if (!paper) return setStatus(force ? t("status.paperMissing") : "");
+    const { quad, unsure: flagged } = await confirmGuess(image, paper);
+    // The user moved on, or took the rings over, while the corners were being checked.
+    const now = stateRef.current;
+    if (now.cornerStep !== step || (!force && now.cornerEdited)) return;
     if (force) dispatch({ type: "checkpoint" });
-    dispatch({ type: "corners-suggest", step, corners: paper.corners, force });
-    setUnsure((u) => ({ ...u, [step]: paper.confidence < SURE }));
+    dispatch({ type: "corners-suggest", step, corners: quad, force });
+    setUnsure((u) => ({ ...u, [step]: flagged }));
     setStatus(t("status.paperFound"));
   }
 
@@ -495,6 +539,7 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
       const corner = hitCorner(quad, p, s.view, base, size, RING_RADIUS);
       const at = corner === null ? null : cornersOnScreen(quad, s.view, base, size)[corner];
       if (corner !== null && at) {
+        touchCorner(corner);
         apply({ type: "select-corner", index: corner }, true);
         setDragging({ pointer: event.pointerId, target: corner, dx: at.x - p.x, dy: at.y - p.y });
         return;
@@ -541,6 +586,7 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
   const endPointer = (type: "up" | "cancel") => (event: PointerEvent<HTMLDivElement>) => {
     if (dragging?.pointer === event.pointerId) {
       setDragging(null);
+      if (typeof dragging.target === "number" && type === "up") void snapRing(dragging.target);
       return;
     }
     clearTimeout(holdTimer.current);
@@ -636,7 +682,7 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
         });
         setStatus(t("status.aligned"));
       } else if (outcome) {
-        applyPaper(outcome.photo, outcome.template);
+        await applyPaper(outcome.photo, outcome.template);
         setStatus(t("status.paperGuess"));
       } else {
         setStatus(t("status.noMatch"));
@@ -798,9 +844,12 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
           size={stepImage}
           fine={fine}
           onFine={setFine}
-          lowConfidence={unsure[state.cornerStep]}
+          unsure={unsure[state.cornerStep]}
           onAuto={() => state.cornerStep && void detectStep(state.cornerStep, true)}
-          onTouchCorner={showLoupe}
+          onTouchCorner={(index) => {
+            showLoupe();
+            touchCorner(index);
+          }}
         />
       ) : mode === "align" ? (
         <AlignPanel
