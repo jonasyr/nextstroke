@@ -105,6 +105,7 @@ function fakeVision(over: Partial<VisionDeps> = {}): VisionDeps {
     load: vi.fn(async () => ({ ok: true, ms: 5 })),
     detectPaper: vi.fn(async () => null),
     align: vi.fn(async () => null),
+    refine: vi.fn(async () => null),
     ...over,
   };
 }
@@ -462,7 +463,9 @@ describe("editor: aligning", () => {
     await loadBoth(makeDeps({ gray: vi.fn((_img, w: number, h: number) => pattern(w, h)) }));
     fireEvent.click(screen.getByRole("tab", { name: /Ausrichten/ }));
     fireEvent.click(button("Automatisch ausrichten"));
-    expect(await screen.findByText("Ausgerichtet. Prüfe die Kanten bei 50 %.")).toBeTruthy();
+    expect(
+      await screen.findByText("Am Bildinhalt ausgerichtet. Prüfe die Kanten bei 50 %."),
+    ).toBeTruthy();
   });
 });
 
@@ -546,7 +549,9 @@ describe("editor: opencv.js vision (D-055, D-056)", () => {
       })),
     });
     await loadBoth(makeDeps({ vision }));
-    expect(await screen.findByText("Ausgerichtet. Prüfe die Kanten bei 50 %.")).toBeTruthy();
+    expect(
+      await screen.findByText("Am Bildinhalt ausgerichtet. Prüfe die Kanten bei 50 %."),
+    ).toBeTruthy();
     expect(vision.detectPaper).not.toHaveBeenCalled();
   });
 
@@ -580,7 +585,7 @@ describe("editor: opencv.js vision (D-055, D-056)", () => {
     fireEvent.click(screen.getByRole("tab", { name: /Ausrichten/ }));
     fireEvent.click(button("Ecken setzen"));
     fireEvent.click(button("Weiter"));
-    expect(await screen.findByText("Ecken über die Zeichnung gefunden")).toBeTruthy();
+    expect(await screen.findByText("Ecken aus dem Bildinhalt übernommen")).toBeTruthy();
     expect(screen.queryByText("Ecken prüfen")).toBeNull();
     fireEvent.click(button("Automatisch"));
     expect(await screen.findByText("Blattecken erkannt")).toBeTruthy();
@@ -631,10 +636,39 @@ describe("editor: opencv.js vision (D-055, D-056)", () => {
     await loadBoth(deps);
     fireEvent.click(screen.getByRole("tab", { name: /Ausrichten/ }));
     fireEvent.click(button("Automatisch ausrichten"));
-    expect(await screen.findByText("Ausgerichtet. Prüfe die Kanten bei 50 %.")).toBeTruthy();
+    expect(
+      await screen.findByText("Am Bildinhalt ausgerichtet. Prüfe die Kanten bei 50 %."),
+    ).toBeTruthy();
     expect(deps.gray).not.toHaveBeenCalled();
+    fireEvent.click(button("Abbrechen"));
+    fireEvent.click(screen.getByRole("tab", { name: /Ausrichten/ }));
     fireEvent.click(button("Automatisch ausrichten"));
     await screen.findByText("Keine sichere Ausrichtung – manuell weiter ausrichten.");
     expect(deps.gray).toHaveBeenCalled();
+  });
+
+  it("keeps placed corners and corrects the rest by content (D-060)", async () => {
+    // The Vorlage warped by the corners still sits 2 % left of the drawing.
+    const shifted = [
+      { x: 0.02, y: 0 },
+      { x: 1.02, y: 0 },
+      { x: 1.02, y: 1 },
+      { x: 0.02, y: 1 },
+    ];
+    const refine = vi
+      .fn()
+      .mockResolvedValueOnce({ accepted: true, corners: shifted, confidence: 0.7 })
+      .mockResolvedValueOnce({ accepted: true, corners: paper(0.3).corners, confidence: 0.7 });
+    await loadBoth(makeDeps({ vision: fakeVision({ refine }) }));
+    fireEvent.click(screen.getByRole("tab", { name: /Ausrichten/ }));
+    fireEvent.click(button("Ecken setzen"));
+    fireEvent.click(button("Weiter"));
+    fireEvent.click(button("Fertig"));
+    expect(await screen.findByText(/Am Bildinhalt nachjustiert/)).toBeTruthy();
+    expect((button("Rückgängig") as HTMLButtonElement).disabled).toBe(false);
+    // A big jump is not a correction: the corners stay.
+    fireEvent.click(button("Automatisch ausrichten"));
+    expect(await screen.findByText(/kein sicherer Feinabgleich/)).toBeTruthy();
+    expect(refine).toHaveBeenCalledTimes(2);
   });
 });

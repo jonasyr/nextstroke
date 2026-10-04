@@ -111,3 +111,12 @@ export function invertHomography(h: Homography): Homography | null {
   const scale = inv[8] as number;
   return Math.abs(scale) > 1e-12 ? inv.map((v) => v / scale) : inv;
 }
+
+/**
+ * Where `quad` lands under the transform that maps `from` onto `to`; null when `from` and `to`
+ * do not form a transform (folded or degenerate).
+ */
+export function carryQuad<Q extends readonly Point[]>(from: Q, to: Q, quad: Q): Q | null {
+  const h = homographyFromPoints(from as unknown as Quad, to as unknown as Quad);
+  return h ? (quad.map((p) => applyHomography(h, p)) as unknown as Q) : null;
+}

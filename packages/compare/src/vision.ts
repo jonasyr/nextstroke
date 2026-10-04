@@ -42,6 +42,151 @@ export const MATCH = {
   maxCoordinate: 2,
 } as const;
 
+/**
+ * Refinement on top of placed corners (D-060): block matching instead of features. The Vorlage,
+ * already warped by the corners, is cut into a grid of blocks; each is searched within
+ * `searchRadius` around its own place in the drawing by normalized cross-correlation, which
+ * ignores brightness and contrast (a watercolour Vorlage against a fineliner drawing). The
+ * block shifts give a robust similarity (`fitSimilarity`); flat blocks are skipped.
+ */
+export const BLOCKS = {
+  maxEdge: 512,
+  columns: 8,
+  rows: 10,
+  /** Block side as a fraction of the shorter image side. */
+  size: 0.1,
+  /** Search distance as a fraction of the longer image side. */
+  searchRadius: 0.08,
+  /** Grey-level standard deviation below which a block is blank paper. */
+  minSpread: 8,
+  /** Normalized cross-correlation a block needs to count as found. */
+  minScore: 0.5,
+  /** Distance in working pixels within which a block agrees with the fitted correction. */
+  fitPx: 3,
+  minInliers: 8,
+  minInlierRatio: 0.5,
+} as const;
+
+/**
+ * Top-left corners of the blocks (pixels): an even grid kept `margin` away from every edge so
+ * each search window stays inside the image. Empty when the image is too small.
+ */
+export function blockGrid(
+  width: number,
+  height: number,
+  block: number,
+  margin: number,
+  columns: number = BLOCKS.columns,
+  rows: number = BLOCKS.rows,
+): Point[] {
+  const spanX = width - 2 * margin - block;
+  const spanY = height - 2 * margin - block;
+  if (spanX < 0 || spanY < 0) return [];
+  const at = (span: number, i: number, n: number) =>
+    margin + Math.round(n > 1 ? (span * i) / (n - 1) : span / 2);
+  const grid: Point[] = [];
+  for (let row = 0; row < rows; row++)
+    for (let col = 0; col < columns; col++)
+      grid.push({ x: at(spanX, col, columns), y: at(spanY, row, rows) });
+  return grid;
+}
+
+/** Least-squares similarity (scale, rotation, shift) of `src` onto `dst`, as a homography. */
+function similarityOf(src: readonly Point[], dst: readonly Point[]): Homography | null {
+  const n = src.length;
+  const mean = (ps: readonly Point[]) => ({
+    x: ps.reduce((t, p) => t + p.x, 0) / n,
+    y: ps.reduce((t, p) => t + p.y, 0) / n,
+  });
+  const cs = mean(src);
+  const cd = mean(dst);
+  let norm = 0;
+  let dot = 0;
+  let cross = 0;
+  src.forEach((p, i) => {
+    const q = dst[i] as Point;
+    const sx = p.x - cs.x;
+    const sy = p.y - cs.y;
+    const dx = q.x - cd.x;
+    const dy = q.y - cd.y;
+    norm += sx * sx + sy * sy;
+    dot += sx * dx + sy * dy;
+    cross += sx * dy - sy * dx;
+  });
+  if (norm === 0) return null;
+  const a = dot / norm;
+  const b = cross / norm;
+  return [a, -b, cd.x - a * cs.x + b * cs.y, b, a, cd.y - b * cs.x - a * cs.y, 0, 0, 1];
+}
+
+/**
+ * Robust similarity of block shifts (D-060): every pair of points proposes one, the proposal
+ * with the most points within `threshold` pixels wins and is refitted on them. Placed corners
+ * already removed the perspective; a column of matches along a tower cannot pin a full
+ * homography, but scale, rotation and shift it can.
+ */
+export function fitSimilarity(
+  src: readonly Point[],
+  dst: readonly Point[],
+  threshold: number,
+): { h: Homography | null; inliers: number } {
+  const fits = (h: Homography) =>
+    src.flatMap((p, i) => {
+      const q = applyHomography(h, p);
+      const d = dst[i] as Point;
+      return Math.hypot(q.x - d.x, q.y - d.y) <= threshold ? [i] : [];
+    });
+  let best: number[] = [];
+  for (let i = 0; i < src.length; i++)
+    for (let j = i + 1; j < src.length; j++) {
+      const h = similarityOf(
+        [src[i] as Point, src[j] as Point],
+        [dst[i] as Point, dst[j] as Point],
+      );
+      const kept = h ? fits(h) : [];
+      if (kept.length > best.length) best = kept;
+    }
+  if (best.length < 2) return { h: null, inliers: 0 };
+  const h = similarityOf(
+    best.map((i) => src[i] as Point),
+    best.map((i) => dst[i] as Point),
+  );
+  return h ? { h, inliers: fits(h).length } : { h: null, inliers: 0 };
+}
+
+/** True when `p` lies inside the convex quad `q` (either winding). */
+export function insideQuad(p: Point, q: readonly Point[]): boolean {
+  let sign = 0;
+  for (let i = 0; i < q.length; i++) {
+    const a = q[i] as Point;
+    const b = q[(i + 1) % q.length] as Point;
+    const cross = (b.x - a.x) * (p.y - a.y) - (b.y - a.y) * (p.x - a.x);
+    if (cross === 0) continue;
+    if (sign === 0) sign = Math.sign(cross);
+    else if (Math.sign(cross) !== sign) return false;
+  }
+  return true;
+}
+
+/**
+ * Blocks lying wholly on the paper (`quad`, pixels): outside it, tiles, cloth or a hand
+ * repeat themselves and match anywhere, outvoting the drawing (D-060).
+ */
+export function blocksOnPaper(
+  blocks: readonly Point[],
+  block: number,
+  quad: readonly Point[],
+): Point[] {
+  return blocks.filter((b) =>
+    [
+      b,
+      { x: b.x + block, y: b.y },
+      { x: b.x + block, y: b.y + block },
+      { x: b.x, y: b.y + block },
+    ].every((p) => insideQuad(p, quad)),
+  );
+}
+
 /** Size bounded by `maxEdge`, never enlarged. */
 export function workingSize(width: number, height: number, maxEdge = VISION_MAX_EDGE) {
   const scale = Math.min(1, maxEdge / Math.max(width, height));
@@ -209,13 +354,16 @@ export type AlignVerdict =
  * express it as where the reference's image corners land on the original (normalized), which
  * the existing four-corner warp renders.
  */
-export function acceptHomography(e: HomographyEvidence): AlignVerdict {
+export function acceptHomography(
+  e: HomographyEvidence,
+  limits: { minInliers: number; minInlierRatio: number } = MATCH,
+): AlignVerdict {
   const { h } = e;
   if (h?.length !== 9 || !h.every(Number.isFinite)) {
     return { accepted: false, reason: "no-homography" };
   }
-  if (e.inliers < MATCH.minInliers) return { accepted: false, reason: "few-inliers" };
-  if (e.matches <= 0 || e.inliers / e.matches < MATCH.minInlierRatio) {
+  if (e.inliers < limits.minInliers) return { accepted: false, reason: "few-inliers" };
+  if (e.matches <= 0 || e.inliers / e.matches < limits.minInlierRatio) {
     return { accepted: false, reason: "low-inlier-ratio" };
   }
   const [, , , , , , g, i, j] = h as [

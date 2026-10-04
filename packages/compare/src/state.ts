@@ -1,3 +1,5 @@
+import { carryQuad } from "./homography.ts";
+
 /**
  * Quick Compare state (legacy behavior in docs/research/legacy-behavior.md; editor D-056).
  * Layer position is a fraction of the original's width; view offsets are CSS pixels.
@@ -55,6 +57,11 @@ export interface CompareState {
   cornersBefore: { corners: Corners | null; refCorners: Corners | null } | null;
   /** The quad the current corner step started from, restored by "Zurücksetzen". */
   stepStart: Corners | null;
+  /**
+   * The Vorlage quad that `corners` belong to during the corner steps. When step 1 changes the
+   * Vorlage's corners, step 2 carries the drawing's corners along (D-060).
+   */
+  pairedRef: Corners | null;
   activeCorner: number;
   /**
    * True once the quad of the current corner step holds the user's own placement (moved, or
@@ -108,6 +115,7 @@ export function initialState(): CompareState {
     cornerStep: null,
     cornersBefore: null,
     stepStart: null,
+    pairedRef: null,
     activeCorner: 0,
     cornerEdited: false,
     split: null,
@@ -140,6 +148,8 @@ export type CompareAction =
   | { type: "corners-cancel" }
   | { type: "corners-suggest"; step: CornerStep; corners: Corners; force?: boolean }
   | { type: "corners-set"; corners: Corners }
+  /** A content correction of the drawing's corners; the Vorlage's corners stay (D-060). */
+  | { type: "corners-refine"; corners: Corners }
   | { type: "corners-auto"; refCorners: Corners; corners: Corners }
   | { type: "corners-whole" }
   | { type: "corners-reset" }
@@ -155,7 +165,12 @@ export type CompareAction =
   | { type: "redo" };
 
 /** Leaves the corner steps without touching the corners themselves. */
-const NO_CORNERS_FLOW = { cornerStep: null, cornersBefore: null, stepStart: null };
+const NO_CORNERS_FLOW = {
+  cornerStep: null,
+  cornersBefore: null,
+  stepStart: null,
+  pairedRef: null,
+};
 
 const NO_CORNERS = {
   corners: null,
@@ -163,7 +178,17 @@ const NO_CORNERS = {
   cornerStep: null,
   cornersBefore: null,
   stepStart: null,
+  pairedRef: null,
 };
+
+const sameQuad = (a: Corners, b: Corners) => a.every((p, i) => p.x === b[i]?.x && p.y === b[i]?.y);
+
+/** The drawing's corners, moved along with the Vorlage's corners changed in step 1. */
+function carried(state: CompareState): Corners | null {
+  const { corners, refCorners, pairedRef } = state;
+  if (!corners || !refCorners || !pairedRef || sameQuad(refCorners, pairedRef)) return corners;
+  return carryQuad(pairedRef, corners, refCorners) ?? corners;
+}
 
 const stepKey = (state: CompareState) =>
   state.cornerStep === "reference" ? ("refCorners" as const) : ("corners" as const);
@@ -304,6 +329,7 @@ export function compare(state: CompareState, action: CompareAction): CompareStat
         cornersBefore: { corners: state.corners, refCorners: state.refCorners },
         refCorners,
         stepStart: refCorners,
+        pairedRef: refCorners,
         cornerStep: "reference",
         activeCorner: 0,
         cornerEdited: state.refCorners !== null,
@@ -315,10 +341,11 @@ export function compare(state: CompareState, action: CompareAction): CompareStat
     }
     case "corners-next": {
       if (state.cornerStep !== "reference") return state;
-      const corners = state.corners ?? action.corners;
+      const corners = state.corners ? carried(state) : action.corners;
       return {
         ...state,
         corners,
+        pairedRef: state.refCorners,
         stepStart: corners,
         cornerStep: "original",
         activeCorner: 0,
@@ -363,6 +390,8 @@ export function compare(state: CompareState, action: CompareAction): CompareStat
       };
     case "corners-set":
       return { ...state, ...NO_CORNERS, corners: action.corners, layer: IDENTITY };
+    case "corners-refine":
+      return { ...state, corners: action.corners, layer: IDENTITY };
     case "corners-auto":
       return {
         ...state,

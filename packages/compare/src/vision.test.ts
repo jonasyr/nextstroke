@@ -3,8 +3,12 @@ import { applyHomography, type Homography, type Point, type Quad } from "./homog
 import { IMAGE_CORNERS } from "./state.ts";
 import {
   acceptHomography,
+  BLOCKS,
+  blockGrid,
+  blocksOnPaper,
   chooseLineQuad,
   choosePaper,
+  fitSimilarity,
   type HoughLine,
   MATCH,
   orderCorners,
@@ -230,6 +234,16 @@ describe("acceptHomography", () => {
     expect(result.confidence).toBeCloseTo(80 / 120, 6);
   });
 
+  it("takes the block matcher's own inlier limits (D-060)", () => {
+    const h = [2, 0, 0, 0, 2, 0, 0, 0, 1];
+    expect(acceptHomography(evidence(h, 10, 20)).accepted).toBe(false);
+    expect(acceptHomography(evidence(h, 10, 20), BLOCKS).accepted).toBe(true);
+    expect(acceptHomography(evidence(h, 7, 12), BLOCKS)).toEqual({
+      accepted: false,
+      reason: "few-inliers",
+    });
+  });
+
   it("keeps a perspective result that the four-corner warp reproduces", () => {
     const h = [1.6, 0.1, 120, 0.05, 1.7, 60, 0.0002, 0.0001, 1];
     const result = acceptHomography(evidence(h));
@@ -407,5 +421,79 @@ describe("chooseLineQuad (a sheet whose outline has gaps)", () => {
       { rho: 100, theta: Math.PI / 4 },
     ];
     expect(chooseLineQuad(lines, W, H, seen)).toBeNull();
+  });
+});
+
+describe("blockGrid (D-060)", () => {
+  it("spreads blocks evenly with every search window inside the image", () => {
+    const grid = blockGrid(200, 100, 20, 10, 3, 2);
+    expect(grid).toEqual([
+      { x: 10, y: 10 },
+      { x: 90, y: 10 },
+      { x: 170, y: 10 },
+      { x: 10, y: 70 },
+      { x: 90, y: 70 },
+      { x: 170, y: 70 },
+    ]);
+    const centred = blockGrid(100, 100, 20, 10, 1, 1);
+    expect(centred).toEqual([{ x: 40, y: 40 }]);
+    expect(blockGrid(30, 100, 20, 10)).toEqual([]);
+  });
+});
+
+describe("blocksOnPaper (D-060)", () => {
+  it("keeps only blocks wholly inside the paper, for either corner winding", () => {
+    const paper = [
+      { x: 10, y: 10 },
+      { x: 90, y: 20 },
+      { x: 90, y: 90 },
+      { x: 10, y: 90 },
+    ];
+    const blocks = [
+      { x: 20, y: 30 }, // inside
+      { x: 75, y: 10 }, // top edge slopes down: its top right corner is off the paper
+      { x: 0, y: 50 }, // left of the paper
+    ];
+    expect(blocksOnPaper(blocks, 10, paper)).toEqual([{ x: 20, y: 30 }]);
+    expect(blocksOnPaper(blocks, 10, [...paper].reverse())).toEqual([{ x: 20, y: 30 }]);
+  });
+});
+
+describe("fitSimilarity (D-060)", () => {
+  it("recovers scale, rotation and shift from a column of points despite outliers", () => {
+    // A tower: points stacked in one narrow column, the drawing 2 % larger, 1° turned, moved.
+    const src = [0, 1, 2, 3, 4, 5, 6, 7].map((k) => ({ x: 200 + (k % 2) * 30, y: 100 + 40 * k }));
+    const angle = Math.PI / 180;
+    const s = 1.02;
+    const truth = [
+      s * Math.cos(angle),
+      -s * Math.sin(angle),
+      6,
+      s * Math.sin(angle),
+      s * Math.cos(angle),
+      -4,
+      0,
+      0,
+      1,
+    ];
+    const dst = src.map((p) => applyHomography(truth, p));
+    // Two blocks matched repeating texture far off.
+    dst[1] = { x: (dst[1]?.x ?? 0) + 35, y: dst[1]?.y ?? 0 };
+    dst[6] = { x: dst[6]?.x ?? 0, y: (dst[6]?.y ?? 0) - 28 };
+    const { h, inliers } = fitSimilarity(src, dst, 1.5);
+    expect(inliers).toBe(6);
+    const far = applyHomography(h ?? [], { x: 500, y: 500 });
+    const want = applyHomography(truth, { x: 500, y: 500 });
+    expect(far.x).toBeCloseTo(want.x, 6);
+    expect(far.y).toBeCloseTo(want.y, 6);
+  });
+
+  it("finds nothing in fewer than two agreeing points", () => {
+    expect(fitSimilarity([{ x: 1, y: 1 }], [{ x: 2, y: 2 }], 1)).toEqual({ h: null, inliers: 0 });
+    const same = [
+      { x: 5, y: 5 },
+      { x: 5, y: 5 },
+    ];
+    expect(fitSimilarity(same, same, 1)).toEqual({ h: null, inliers: 0 });
   });
 });

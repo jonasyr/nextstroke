@@ -4,7 +4,9 @@ import {
   hitCorner,
   nudgeCorner,
   quadThroughCorners,
+  REFINE,
   referenceHomography,
+  refineCorners,
   screenToOriginal,
 } from "./corners.ts";
 import { applyHomography } from "./homography.ts";
@@ -126,5 +128,49 @@ describe("perspective corners", () => {
     expect(carried[2]?.y).toBeCloseTo(0.9);
     const folded = [landed[0], landed[2], landed[1], landed[3]] as const;
     expect(quadThroughCorners(paper, folded)).toBeNull();
+  });
+
+  it("refines placed corners by a small content correction on the warped Vorlage (D-060)", () => {
+    const placed = [
+      { x: 0.2, y: 0.1 },
+      { x: 0.8, y: 0.1 },
+      { x: 0.8, y: 0.9 },
+      { x: 0.2, y: 0.9 },
+    ] as const;
+    // The warped Vorlage still sits 2 % too far left: the content match shifts it right.
+    const residual = [
+      { x: 0.02, y: 0 },
+      { x: 1.02, y: 0 },
+      { x: 1.02, y: 1 },
+      { x: 0.02, y: 1 },
+    ] as const;
+    const refined = refineCorners(placed, residual) ?? [];
+    expect(refined[0]?.x).toBeCloseTo(0.22);
+    expect(refined[2]?.x).toBeCloseTo(0.82);
+    expect(refined[2]?.y).toBeCloseTo(0.9);
+  });
+
+  it("keeps placed corners when the content correction is not small", () => {
+    const placed = [
+      { x: 0.2, y: 0.1 },
+      { x: 0.8, y: 0.1 },
+      { x: 0.8, y: 0.9 },
+      { x: 0.2, y: 0.9 },
+    ] as const;
+    const far = REFINE.maxShift + 0.01;
+    const jump = [
+      { x: far, y: 0 },
+      { x: 1, y: 0 },
+      { x: 1, y: 1 },
+      { x: 0, y: 1 },
+    ] as const;
+    expect(refineCorners(placed, jump)).toBeNull();
+    const folded = [
+      { x: 0, y: 0 },
+      { x: 1, y: 1 },
+      { x: 1, y: 0 },
+      { x: 0, y: 1 },
+    ] as const;
+    expect(refineCorners(placed, folded, 2)).toBeNull();
   });
 });

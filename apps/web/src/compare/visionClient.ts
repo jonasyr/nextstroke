@@ -1,4 +1,4 @@
-import type { AlignVerdict, PaperResult } from "@nextstroke/compare";
+import type { AlignVerdict, PaperResult, Quad } from "@nextstroke/compare";
 
 /**
  * Main-thread side of the opencv.js vision worker (D-055). opencv.js (about 13 MB) loads only
@@ -9,7 +9,15 @@ import type { AlignVerdict, PaperResult } from "@nextstroke/compare";
 export type VisionRequest =
   | { id: number; type: "load" }
   | { id: number; type: "paper"; image: ImageBitmap }
-  | { id: number; type: "align"; original: ImageBitmap; reference: ImageBitmap };
+  | { id: number; type: "align"; original: ImageBitmap; reference: ImageBitmap }
+  | {
+      id: number;
+      type: "refine";
+      original: ImageBitmap;
+      prewarped: ImageBitmap;
+      /** The drawing's paper corners (normalized): only blocks on the paper are compared. */
+      paper: Quad;
+    };
 
 export type VisionResponse =
   | { id: number; type: "load"; ms: number }
@@ -24,6 +32,11 @@ export interface VisionDeps {
   detectPaper(image: ImageBitmap): Promise<PaperResult | null>;
   /** Feature homography of the reference onto the original; null when unavailable. */
   align(original: ImageBitmap, reference: ImageBitmap): Promise<AlignVerdict | null>;
+  /**
+   * Small correction of a Vorlage already warped into the drawing's grid by placed corners
+   * (D-060): where the prewarped image's corners land on the drawing; null when unavailable.
+   */
+  refine(original: ImageBitmap, prewarped: ImageBitmap, paper: Quad): Promise<AlignVerdict | null>;
 }
 
 type Pending = (response: VisionResponse | null) => void;
@@ -106,6 +119,19 @@ export function createVisionClient(
           reference: r as ImageBitmap,
         }),
         [original, reference],
+      );
+      return response?.type === "align" ? response.verdict : null;
+    },
+    async refine(original, prewarped, paper) {
+      const response = await ask(
+        (id, [o, p]) => ({
+          id,
+          type: "refine",
+          original: o as ImageBitmap,
+          prewarped: p as ImageBitmap,
+          paper,
+        }),
+        [original, prewarped],
       );
       return response?.type === "align" ? response.verdict : null;
     },
