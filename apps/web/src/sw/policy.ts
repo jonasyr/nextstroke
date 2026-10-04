@@ -44,7 +44,7 @@ self.addEventListener("fetch", (event) => {
   if (!navigation && !isPrecached(request.url, scope, PRECACHE)) return;
   event.respondWith(
     caches.open(CACHE).then((cache) =>
-      cache.match(navigation ? "index.html" : request, { ignoreSearch: true, ignoreVary: true }).then((hit) => hit || fetch(request)),
+      cache.match(navigation ? "./" : request, { ignoreSearch: true, ignoreVary: true }).then((hit) => hit || fetch(request)),
     ),
   );
 });
