@@ -42,7 +42,7 @@ import { type PointerEvent, useCallback, useEffect, useReducer, useRef, useState
 import type { Decoded } from "./decode.ts";
 import { type HintStore, hintStore } from "./hints.ts";
 import { ICON, IconButton } from "./IconButton.tsx";
-import { AlignPanel, ComparePanel, CornersPanel, type Mode } from "./panels.tsx";
+import { AlignPanel, ComparePanel, CornersPanel, type Mode, ModeBar } from "./panels.tsx";
 import { PdfPasswordError, type renderPdfPage } from "./pdf.ts";
 import {
   drawArtwork,
@@ -135,8 +135,6 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
   const [sheet, setSheet] = useState<Sheet>(null);
   const [chrome, setChrome] = useState(true);
   const [fine, setFine] = useState(true);
-  /** While aligning: gestures move the view instead of the Vorlage, for fine work up close. */
-  const [moveView, setMoveView] = useState(false);
   const [loupe, setLoupe] = useState(false);
   const [unsure, setUnsure] = useState<Record<CornerStep, boolean>>({
     reference: false,
@@ -155,6 +153,8 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
   const workspaceRef = useRef<HTMLDivElement | null>(null);
   const [workspaceEl, setWorkspaceEl] = useState<HTMLDivElement | null>(null);
   const gestureRef = useRef(idleGesture());
+  /** The current gesture already saved an undo checkpoint for moving the Vorlage. */
+  const layerRecorded = useRef(false);
   const holdTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const loupeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const abortRef = useRef<AbortController | null>(null);
@@ -422,14 +422,18 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
       scale: Math.min(width / base.width, height / base.height),
       view: s.view,
       layer: s.layer,
-      moveLayer: s.aligning && !s.cornerStep && !moveView,
+      moveLayer: s.aligning && !s.cornerStep,
       originalWidth: base.width,
     });
     gestureRef.current = step.state;
     for (const out of step.outputs) {
       if (out.type === "view") dispatch({ type: "set-view", view: out.view });
-      else if (out.type === "layer") dispatch({ type: "set-layer", layer: out.layer });
-      else if (s.cornerStep) continue;
+      else if (out.type === "layer") {
+        // Record lazily: a two-finger zoom of the view leaves nothing to undo (D-059).
+        if (!layerRecorded.current) apply({ type: "checkpoint" });
+        layerRecorded.current = true;
+        dispatch({ type: "set-layer", layer: out.layer });
+      } else if (s.cornerStep) continue;
       else if (out.type === "tap") dispatch({ type: "toggle-reveal" });
       else dispatch({ type: "hold", active: out.active });
     }
@@ -465,7 +469,7 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
       setDragging({ pointer: event.pointerId, target: "split", dx: 0, dy: 0 });
       return;
     }
-    if (s.aligning && !moveView) apply({ type: "checkpoint" });
+    if (gestureRef.current.pointers.size === 0) layerRecorded.current = false;
     feed({ type: "down", id: event.pointerId, x: event.clientX, y: event.clientY, t: deps.now() });
     clearTimeout(holdTimer.current);
     // A small margin: a timer may fire a fraction early by the gesture clock, and the hold would
@@ -526,11 +530,6 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
   }, [open, sheet]);
 
   useEffect(() => () => clearTimeout(loupeTimer.current), []);
-
-  // Leaving Ausrichten hands gestures back to the Vorlage for next time.
-  useEffect(() => {
-    if (!state.aligning) setMoveView(false);
-  }, [state.aligning]);
 
   function showLoupe() {
     setLoupe(true);
@@ -666,6 +665,80 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
     state.view.zoom !== home.zoom || state.view.x !== home.x || state.view.y !== home.y;
   const hintKey = `hint.${mode}` as MessageKey;
 
+  const history = (
+    <>
+      <IconButton
+        label={t("editor.undo")}
+        disabled={!canUndo(state)}
+        onClick={() => dispatch({ type: "undo" })}
+      >
+        <Undo2 {...ICON} />
+      </IconButton>
+      <IconButton
+        label={t("editor.redo")}
+        disabled={!canRedo(state)}
+        onClick={() => dispatch({ type: "redo" })}
+      >
+        <Redo2 {...ICON} />
+      </IconButton>
+    </>
+  );
+
+  /** Compare: navigation and output. Align and corners: a modal edit with Cancel and Done (D-059). */
+  function topBar() {
+    if (mode === "align") {
+      return (
+        <ModeBar
+          leading={{
+            label: t("common.cancel"),
+            onClick: () => apply({ type: "alignment-cancel" }),
+          }}
+          trailing={{
+            label: t("common.done"),
+            onClick: () => apply({ type: "alignment", open: false }),
+          }}
+        >
+          {history}
+        </ModeBar>
+      );
+    }
+    if (mode === "corners") {
+      const first = state.cornerStep === "reference";
+      return (
+        <ModeBar
+          leading={
+            first
+              ? { label: t("common.cancel"), onClick: () => apply({ type: "corners-cancel" }) }
+              : { label: t("corners.back"), onClick: () => apply({ type: "corners-back" }) }
+          }
+          trailing={
+            first
+              ? { label: t("corners.next"), onClick: nextCornerStep }
+              : { label: t("common.done"), onClick: () => apply({ type: "corners-done" }, true) }
+          }
+        >
+          {history}
+        </ModeBar>
+      );
+    }
+    return (
+      <div className="ns-topbar">
+        <IconButton label={t("editor.back")} onClick={() => setEditor(false)}>
+          <ChevronLeft {...ICON} />
+        </IconButton>
+        <div className="ns-group">{history}</div>
+        <div className="ns-group">
+          <IconButton label={t("editor.export")} onClick={() => setSheet("export")}>
+            <Share {...ICON} />
+          </IconButton>
+          <IconButton label={t("editor.more")} onClick={() => setSheet("more")}>
+            <Ellipsis {...ICON} />
+          </IconButton>
+        </div>
+      </div>
+    );
+  }
+
   let panel = null;
   if (original && reference) {
     const both = { original: original.bitmap, reference: reference.bitmap };
@@ -679,7 +752,6 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
           fine={fine}
           onFine={setFine}
           lowConfidence={unsure[state.cornerStep]}
-          onNext={nextCornerStep}
           onAuto={() => state.cornerStep && void detectStep(state.cornerStep, true)}
           onTouchCorner={showLoupe}
         />
@@ -716,37 +788,7 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
       )}
       {open && (
         <div className="ns-editor" role="dialog" aria-modal="true" aria-label={t("editor.label")}>
-          {chrome && (
-            <div className="ns-topbar">
-              <IconButton label={t("editor.back")} onClick={() => setEditor(false)}>
-                <ChevronLeft {...ICON} />
-              </IconButton>
-              <div className="ns-group">
-                <IconButton
-                  label={t("editor.undo")}
-                  disabled={!canUndo(state)}
-                  onClick={() => dispatch({ type: "undo" })}
-                >
-                  <Undo2 {...ICON} />
-                </IconButton>
-                <IconButton
-                  label={t("editor.redo")}
-                  disabled={!canRedo(state)}
-                  onClick={() => dispatch({ type: "redo" })}
-                >
-                  <Redo2 {...ICON} />
-                </IconButton>
-              </div>
-              <div className="ns-group">
-                <IconButton label={t("editor.export")} onClick={() => setSheet("export")}>
-                  <Share {...ICON} />
-                </IconButton>
-                <IconButton label={t("editor.more")} onClick={() => setSheet("more")}>
-                  <Ellipsis {...ICON} />
-                </IconButton>
-              </div>
-            </div>
-          )}
+          {chrome && topBar()}
           <div
             ref={(el) => {
               workspaceRef.current = el;
@@ -795,19 +837,6 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
                   <Plus {...ICON} />
                 </IconButton>
               </div>
-            )}
-            {mode === "align" && (
-              <button
-                type="button"
-                className="ns-viewtoggle"
-                aria-pressed={moveView}
-                aria-label={t("align.viewToggle")}
-                onPointerDown={(e) => e.stopPropagation()}
-                onClick={() => setMoveView((on) => !on)}
-              >
-                <Hand {...ICON} />
-                <span aria-hidden="true">{t("align.view")}</span>
-              </button>
             )}
             {!chrome && (
               <IconButton

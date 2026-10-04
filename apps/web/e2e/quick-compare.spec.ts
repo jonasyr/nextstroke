@@ -162,7 +162,7 @@ test("places paper corners on both images and warps the reference", async ({ pag
   // A keystone the affine layer cannot express: pull the top-right corner inwards.
   await drag([at(1, 0)[0] - 2, at(1, 0)[1] + 2], at(0.8, 0.15));
   await page.getByRole("button", { name: "Fertig" }).click();
-  await expect(page.getByRole("heading", { name: "Vorlage ausrichten" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Feinjustieren" })).toBeVisible();
   await page.getByRole("button", { name: "Fertig" }).click();
   await expect(page.getByRole("tab", { name: /Ausrichten/ }).locator(".ns-dot")).toBeVisible();
   await expect.poll(snapshot, { timeout: 5_000 }).not.toBe(plain);

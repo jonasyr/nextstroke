@@ -1,4 +1,4 @@
-import { clamp, type Layer, PARAMS, type View, ZOOM } from "./state.ts";
+import { clamp, type Layer, type View, ZOOM } from "./state.ts";
 
 /**
  * Pointer gesture machine (legacy C4, C5, C7, V1, V2). Pure: the caller feeds pointer events
@@ -21,8 +21,6 @@ interface Press extends Point {
 interface Start {
   mid: Point;
   dist: number;
-  /** Angle between the two fingers, radians. */
-  angle: number;
   view: View;
   layer: Layer;
 }
@@ -40,7 +38,7 @@ export interface GestureContext {
   scale: number;
   view: View;
   layer: Layer;
-  /** True while aligning: gestures move, scale and twist the Vorlage layer. */
+  /** True while aligning: one finger moves the Vorlage layer. */
   moveLayer: boolean;
   originalWidth: number;
 }
@@ -69,7 +67,6 @@ function begin(pointers: ReadonlyMap<number, Point>, ctx: GestureContext): Start
   return {
     mid: b ? { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 } : a,
     dist: b ? Math.hypot(b.x - a.x, b.y - a.y) : 0,
-    angle: b ? Math.atan2(b.y - a.y, b.x - a.x) : 0,
     view: ctx.view,
     layer: ctx.layer,
   };
@@ -85,22 +82,14 @@ function moved(start: Start, pointers: ReadonlyMap<number, Point>, ctx: GestureC
   const dx = mid.x - start.mid.x;
   const dy = mid.y - start.mid.y;
   const ratio = b && start.dist > 0 ? Math.hypot(b.x - a.x, b.y - a.y) / start.dist : 1;
-  if (ctx.moveLayer) {
+  // Aligning: one finger moves the Vorlage; two fingers move the view, so a detail can be
+  // brought close while the arrow pad and steppers fine-tune (D-059).
+  if (ctx.moveLayer && !b) {
     const perUnit = ctx.scale * start.view.zoom * ctx.originalWidth;
-    const { min, max } = PARAMS.scale;
     const layer: Layer = {
       ...start.layer,
       x: start.layer.x + dx / perUnit,
       y: start.layer.y + dy / perUnit,
-      scale: clamp(start.layer.scale * ratio, min, max),
-      rotationDeg: b
-        ? clamp(
-            start.layer.rotationDeg +
-              ((Math.atan2(b.y - a.y, b.x - a.x) - start.angle) * 180) / Math.PI,
-            PARAMS.rotation.min,
-            PARAMS.rotation.max,
-          )
-        : start.layer.rotationDeg,
     };
     return { type: "layer", layer } as const;
   }

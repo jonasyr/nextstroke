@@ -396,7 +396,7 @@ describe("editor: aligning", () => {
   it("moves, scales and rotates the Vorlage in fine and coarse steps", async () => {
     await loadBoth(makeDeps());
     fireEvent.click(screen.getByRole("tab", { name: /Ausrichten/ }));
-    expect(screen.getByRole("heading", { name: "Vorlage ausrichten" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Feinjustieren" })).toBeTruthy();
     for (const name of ["Nach oben", "Nach unten", "Nach links", "Nach rechts"])
       fireEvent.click(button(name));
     fireEvent.click(button("Vorlage vergrößern"));
@@ -427,23 +427,22 @@ describe("editor: aligning", () => {
     expect(screen.getByRole("tab", { name: /Ausrichten/ }).querySelector(".ns-dot")).toBeNull();
   });
 
-  it("pans and zooms the view instead of the Vorlage while fine-aligning", async () => {
+  it("zooms the view with two fingers while aligning, leaving nothing to undo (D-059)", async () => {
     await loadBoth(makeDeps());
     fireEvent.click(screen.getByRole("tab", { name: /Ausrichten/ }));
-    const toggle = button("Ansicht verschieben");
-    expect(toggle.getAttribute("aria-pressed")).toBe("false");
-    fireEvent.click(toggle);
-    expect(toggle.getAttribute("aria-pressed")).toBe("true");
-    drag(1, [100, 100], [160, 120]);
-    // The view moved, the Vorlage did not.
+    expect(screen.getByRole("button", { name: "Abbrechen" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Exportieren" })).toBeNull();
+    fireEvent.pointerDown(stage(), { pointerId: 1, clientX: 100, clientY: 100 });
+    fireEvent.pointerDown(stage(), { pointerId: 2, clientX: 200, clientY: 100 });
+    fireEvent.pointerMove(stage(), { pointerId: 2, clientX: 300, clientY: 100 });
+    fireEvent.pointerUp(stage(), { pointerId: 2 });
+    fireEvent.pointerUp(stage(), { pointerId: 1 });
     expect((button("Einpassen") as HTMLButtonElement).disabled).toBe(false);
     expect((button("Rückgängig") as HTMLButtonElement).disabled).toBe(true);
-    fireEvent.click(button("Nach rechts"));
+    drag(3, [100, 100], [160, 120]);
     expect((button("Rückgängig") as HTMLButtonElement).disabled).toBe(false);
-    fireEvent.click(toggle);
-    drag(2, [100, 100], [160, 120]);
     fireEvent.click(button("Fertig"));
-    expect(screen.queryByRole("button", { name: "Ansicht verschieben" })).toBeNull();
+    expect(button("Exportieren")).toBeTruthy();
   });
 
   it("keeps the alignment when auto-align finds no safe match", async () => {
@@ -500,7 +499,7 @@ describe("editor: paper corners on both images", () => {
     fireEvent.click(button("Weiter"));
     fireEvent.click(button("Fertig"));
     // Back in Ausrichten, where the corners came from; its "Fertig" returns to comparing.
-    expect(screen.getByRole("heading", { name: "Vorlage ausrichten" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Feinjustieren" })).toBeTruthy();
     expect(button("Ecken ändern")).toBeTruthy();
     expect(slider().value).toBe("50");
     fireEvent.click(button("Fertig"));
@@ -530,7 +529,7 @@ describe("editor: paper corners on both images", () => {
     fireEvent.click(button("Fertig"));
     fireEvent.click(button("Ecken ändern"));
     fireEvent.click(button("Abbrechen"));
-    expect(screen.getByRole("heading", { name: "Vorlage ausrichten" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Feinjustieren" })).toBeTruthy();
     expect(button("Ecken ändern")).toBeTruthy();
     fireEvent.click(button("Abbrechen"));
     expect(screen.getByRole("tab", { name: /Ausrichten/ }).querySelector(".ns-dot")).toBeNull();
