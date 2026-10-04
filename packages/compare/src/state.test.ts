@@ -220,6 +220,30 @@ describe("paper corners in the state (two steps: reference, then original)", () 
     expect(compare(again, { type: "corners-back" }).cornerStep).toBe("reference");
   });
 
+  it("carries earlier drawing corners along when the Vorlage's corners change (D-060)", () => {
+    // A content alignment put the whole Vorlage onto x, y 0.1–0.9 of the drawing.
+    const paper = [
+      { x: 0.25, y: 0.25 },
+      { x: 0.75, y: 0.25 },
+      { x: 0.75, y: 0.75 },
+      { x: 0.25, y: 0.75 },
+    ] as const;
+    let s = run(
+      { type: "corners-set", corners: guess },
+      { type: "corners-begin" },
+      { type: "corners-suggest", step: "reference", corners: paper },
+      { type: "corners-next", corners: IMAGE_CORNERS },
+    );
+    expect(s.corners?.[0]?.x).toBeCloseTo(0.3);
+    expect(s.corners?.[2]?.y).toBeCloseTo(0.7);
+    s = compare(s, { type: "corners-back" });
+    s = compare(s, { type: "corner-set", index: 0, point: { x: 0, y: 0 } });
+    s = compare(s, { type: "corners-next", corners: IMAGE_CORNERS });
+    expect(s.corners?.[0]?.x).toBeCloseTo(0.1);
+    expect(s.corners?.[0]?.y).toBeCloseTo(0.1);
+    expect(s.corners?.[2]?.x).toBeCloseTo(0.7);
+  });
+
   it("cancels back to the corners from before", () => {
     const s = run(
       { type: "corners-begin" },
@@ -344,6 +368,20 @@ describe("paper corners in the state (two steps: reference, then original)", () 
     expect(s.corners).toEqual(detected);
     expect(s.refCorners).toBeNull();
     expect(s.cornerStep).toBeNull();
+  });
+
+  it("refines the drawing's corners and keeps the Vorlage's (D-060)", () => {
+    const placed = run(
+      { type: "corners-begin" },
+      { type: "corner-set", index: 0, point: { x: 0.1, y: 0.1 } },
+      { type: "corners-next", corners: guess },
+      { type: "corners-done" },
+      { type: "layer-nudge", dx: 0.01, dy: 0 },
+    );
+    const s = compare(placed, { type: "corners-refine", corners: detected });
+    expect(s.corners).toEqual(detected);
+    expect(s.refCorners).toEqual(placed.refCorners);
+    expect(s.layer).toEqual(initialState().layer);
   });
 });
 

@@ -21,8 +21,10 @@ import {
   invertHomography,
   quadThroughCorners,
   referenceHomography,
+  refineCorners,
   screenToOriginal,
   splitFromScreen,
+  workingSize,
 } from "@nextstroke/compare";
 import { classifyFile, exportSize, type Rgba, warpPerspective } from "@nextstroke/imaging";
 import { type MessageKey, t } from "@nextstroke/ui";
@@ -329,6 +331,45 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
     if (photo.confidence < SURE) return { photo, template };
     applyPaper(photo, template);
     return "paper";
+  }
+
+  /**
+   * Keep the placed corners and correct the rest by content (D-060): warp the Vorlage by the
+   * corners, match it against the drawing, and take the match only as a small correction.
+   */
+  async function refineByContent(vision: VisionDeps): Promise<"refined" | "kept" | "stale"> {
+    const s = stateRef.current;
+    if (!original || !reference || !s.corners) return "kept";
+    const grid = workingSize(original.width, original.height);
+    const h = referenceHomography(s.corners, grid, reference, s.refCorners ?? undefined);
+    const toSource = h && invertHomography(h);
+    if (!toSource) return "kept";
+    const pixels = warpPerspective(deps.rgba(reference.bitmap), toSource, grid.width, grid.height);
+    const prewarped = await deps.fromRgba(pixels);
+    const verdict = await vision.refine(original.bitmap, prewarped, s.corners);
+    prewarped.close();
+    if (stateRef.current.corners !== s.corners || stateRef.current.cornerStep) return "stale";
+    const refined = verdict?.accepted ? refineCorners(s.corners, verdict.corners) : null;
+    if (!refined) return "kept";
+    dispatch({ type: "checkpoint" });
+    dispatch({ type: "corners-refine", corners: refined });
+    return "refined";
+  }
+
+  /** After placing corners, or on "Automatisch" with corners: the content correction on top. */
+  async function runRefine() {
+    if (busy) return;
+    setAligningAuto(true);
+    try {
+      const vision = await visionLoaded();
+      const outcome = vision ? await refineByContent(vision) : "kept";
+      if (outcome !== "stale")
+        setStatus(t(outcome === "refined" ? "status.refined" : "status.refineKept"));
+    } catch {
+      setStatus(t("status.refineKept"));
+    } finally {
+      setAligningAuto(false);
+    }
   }
 
   /**
@@ -714,7 +755,13 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
           trailing={
             first
               ? { label: t("corners.next"), onClick: nextCornerStep }
-              : { label: t("common.done"), onClick: () => apply({ type: "corners-done" }, true) }
+              : {
+                  label: t("common.done"),
+                  onClick: () => {
+                    apply({ type: "corners-done" }, true);
+                    void runRefine();
+                  },
+                }
           }
         >
           {history}
@@ -763,7 +810,7 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
           fine={fine}
           onFine={setFine}
           busy={busy}
-          onAuto={() => void runAutoAlign()}
+          onAuto={() => void (state.corners ? runRefine() : runAutoAlign())}
           onCorners={beginCorners}
         />
       ) : (

@@ -1,5 +1,6 @@
 import {
   applyHomography,
+  carryQuad,
   type Homography,
   homographyFromPoints,
   type Point,
@@ -129,6 +130,25 @@ export function nudgeCorner(
  * image corners land (`landed`, e.g. an automatic alignment); null for a folded `landed`.
  */
 export function quadThroughCorners(quad: Quad, landed: Quad): Quad | null {
-  const h = homographyFromPoints(IMAGE_CORNERS, landed);
-  return h ? (quad.map((p) => applyHomography(h, p)) as unknown as Quad) : null;
+  return carryQuad(IMAGE_CORNERS, landed, quad);
+}
+
+/**
+ * Refinement on top of placed corners (D-060): the content alignment of the Vorlage, already
+ * warped by the corners, onto the drawing. Paper corners align the sheet, not the drawing on
+ * it, so a small correction remains; it is accepted only when every corner of the warped
+ * image moves by at most `maxShift` (a fraction of the image), else the corners stay.
+ */
+export const REFINE = { maxShift: 0.06 } as const;
+
+export function refineCorners(
+  corners: Quad,
+  residual: Quad,
+  maxShift: number = REFINE.maxShift,
+): Quad | null {
+  const small = residual.every((p, i) => {
+    const c = IMAGE_CORNERS[i] as Point;
+    return Math.abs(p.x - c.x) <= maxShift && Math.abs(p.y - c.y) <= maxShift;
+  });
+  return small ? quadThroughCorners(corners, residual) : null;
 }

@@ -1,11 +1,17 @@
 /// <reference lib="webworker" />
 import {
   acceptHomography,
+  BLOCKS,
+  blockGrid,
+  blocksOnPaper,
   chooseLineQuad,
   choosePaper,
+  fitSimilarity,
   type HoughLine,
   type Neighbour,
   type PaperCandidate,
+  type Point,
+  type Quad,
   ratioTest,
   workingSize,
 } from "@nextstroke/compare";
@@ -47,8 +53,11 @@ async function loadOpenCv(): Promise<number> {
 }
 
 /** Grayscale working copy (≤ 1024 px) of a transferred bitmap, which is closed afterwards. */
-function grayOf(image: ImageBitmap, track: Mat[]) {
-  const size = workingSize(image.width, image.height);
+function grayOf(
+  image: ImageBitmap,
+  track: Mat[],
+  size: { width: number; height: number } = workingSize(image.width, image.height),
+) {
   const canvas = new OffscreenCanvas(size.width, size.height);
   const ctx = canvas.getContext("2d", { willReadFrequently: true });
   if (!ctx) throw new Error("no 2d context in the vision worker");
@@ -196,6 +205,61 @@ function align(original: ImageBitmap, reference: ImageBitmap) {
   }
 }
 
+/**
+ * Block matching of the Vorlage, already warped by the placed corners, onto the drawing
+ * (D-060). Both are compared at the drawing's working size, so a block's own place is its
+ * expected place; the found shifts give a RANSAC homography.
+ */
+function refine(original: ImageBitmap, prewarped: ImageBitmap, paper: Quad) {
+  const track: Mat[] = [];
+  try {
+    const size = workingSize(original.width, original.height, BLOCKS.maxEdge);
+    const orig = grayOf(original, track, size).gray;
+    const ref = grayOf(prewarped, track, size).gray;
+    for (const m of [orig, ref]) cv.GaussianBlur(m, m, new cv.Size(3, 3), 0);
+    const block = Math.round(BLOCKS.size * Math.min(size.width, size.height));
+    const margin = Math.round(BLOCKS.searchRadius * Math.max(size.width, size.height));
+    const scores = new cv.Mat();
+    const mean = new cv.Mat();
+    const spread = new cv.Mat();
+    const noMask = new cv.Mat();
+    track.push(scores, mean, spread, noMask);
+    const src: Point[] = [];
+    const dst: Point[] = [];
+    const quad = paper.map((p) => ({ x: p.x * size.width, y: p.y * size.height }));
+    const blocks = blocksOnPaper(blockGrid(size.width, size.height, block, margin), block, quad);
+    for (const at of blocks) {
+      const template = ref.roi(new cv.Rect(at.x, at.y, block, block));
+      const window = orig.roi(
+        new cv.Rect(at.x - margin, at.y - margin, block + 2 * margin, block + 2 * margin),
+      );
+      try {
+        cv.meanStdDev(template, mean, spread);
+        if ((spread.data64F[0] ?? 0) < BLOCKS.minSpread) continue;
+        cv.matchTemplate(window, template, scores, cv.TM_CCOEFF_NORMED);
+        // opencv.js takes (src, mask) and returns the extremes; the typings show the C++ form.
+        const best = cv.minMaxLoc(scores, noMask);
+        if (best.maxVal < BLOCKS.minScore) continue;
+        src.push({ x: at.x + block / 2, y: at.y + block / 2 });
+        dst.push({
+          x: at.x - margin + best.maxLoc.x + block / 2,
+          y: at.y - margin + best.maxLoc.y + block / 2,
+        });
+      } finally {
+        template.delete();
+        window.delete();
+      }
+    }
+    const { h, inliers } = fitSimilarity(src, dst, BLOCKS.fitPx);
+    return acceptHomography(
+      { h, inliers, matches: src.length, reference: size, original: size },
+      BLOCKS,
+    );
+  } finally {
+    for (const m of track) m.delete();
+  }
+}
+
 let loaded: Promise<number> | null = null;
 
 scope.onmessage = async (event: MessageEvent<VisionRequest>) => {
@@ -207,6 +271,12 @@ scope.onmessage = async (event: MessageEvent<VisionRequest>) => {
     if (message.type === "load") reply({ id: message.id, type: "load", ms });
     else if (message.type === "paper") {
       reply({ id: message.id, type: "paper", paper: detectPaper(message.image) });
+    } else if (message.type === "refine") {
+      reply({
+        id: message.id,
+        type: "align",
+        verdict: refine(message.original, message.prewarped, message.paper),
+      });
     } else {
       reply({
         id: message.id,

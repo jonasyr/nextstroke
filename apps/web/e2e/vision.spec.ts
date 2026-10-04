@@ -93,7 +93,7 @@ test("aligns a new pair by its content on opening, and carries the Vorlage's cor
   page,
 }) => {
   await loadPair(page);
-  const aligned = page.getByText("Ausgerichtet. Prüfe die Kanten bei 50 %.");
+  const aligned = page.getByText("Am Bildinhalt ausgerichtet. Prüfe die Kanten bei 50 %.");
   await expect(aligned).toBeVisible({ timeout: 30_000 });
   await expect(page.getByRole("tab", { name: /Ausrichten/ }).locator(".ns-dot")).toBeVisible();
   await page.getByRole("tab", { name: /Ausrichten/ }).click();
@@ -102,7 +102,7 @@ test("aligns a new pair by its content on opening, and carries the Vorlage's cor
   await page.getByRole("button", { name: "Weiter" }).click();
   await expect(page.getByText("Ecken 2/2")).toBeVisible();
   await page.getByRole("button", { name: "Automatisch", exact: true }).click();
-  await expect(page.getByText("Ecken über die Zeichnung gefunden")).toBeVisible({
+  await expect(page.getByText("Ecken aus dem Bildinhalt übernommen")).toBeVisible({
     timeout: 30_000,
   });
   const before = await canvasSum(page);
@@ -110,12 +110,32 @@ test("aligns a new pair by its content on opening, and carries the Vorlage's cor
   await expect.poll(() => canvasSum(page), { timeout: 10_000 }).not.toBe(before);
 });
 
-test("aligns on request with the feature homography", async ({ page }) => {
+test("aligns by content on opening, then refines on request", async ({ page }) => {
   await loadPair(page);
-  const aligned = page.getByText("Ausgerichtet. Prüfe die Kanten bei 50 %.");
+  const aligned = page.getByText("Am Bildinhalt ausgerichtet. Prüfe die Kanten bei 50 %.");
   await expect(aligned).toBeVisible({ timeout: 30_000 });
   await expect(aligned).toBeHidden({ timeout: 10_000 });
   await page.getByRole("tab", { name: /Ausrichten/ }).click();
   await page.getByRole("button", { name: "Automatisch ausrichten" }).click();
+  // Corners from the opening alignment stay; "Automatisch" now only corrects the rest (D-060).
+  await expect(page.getByText(/Am Bildinhalt nachjustiert/)).toBeVisible({ timeout: 30_000 });
+});
+
+test("keeps hand-placed corners and corrects the rest by content (D-060)", async ({ page }) => {
+  await loadPair(page);
+  const aligned = page.getByText("Am Bildinhalt ausgerichtet. Prüfe die Kanten bei 50 %.");
   await expect(aligned).toBeVisible({ timeout: 30_000 });
+  await page.getByRole("tab", { name: /Ausrichten/ }).click();
+  await page.getByRole("button", { name: "Ecken ändern" }).click();
+  await page.getByRole("button", { name: "Weiter" }).click();
+  await expect(page.getByText("Ecken 2/2")).toBeVisible();
+  // Rings a little off, as placed by hand: 10 px steps on two corners.
+  await page.getByRole("button", { name: "Schrittweite fein, 1 Pixel" }).click();
+  await page.getByRole("button", { name: /^Ecke 1 / }).click();
+  await page.getByRole("button", { name: "Ecke nach rechts" }).click();
+  await page.getByRole("button", { name: /^Ecke 3 / }).click();
+  await page.getByRole("button", { name: "Ecke nach oben" }).click();
+  await page.getByRole("button", { name: "Fertig" }).click();
+  await expect(page.getByText(/Am Bildinhalt nachjustiert/)).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole("button", { name: "Rückgängig" })).toBeEnabled();
 });

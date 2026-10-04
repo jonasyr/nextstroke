@@ -83,6 +83,9 @@ describe("vision client", () => {
       confidence: 0.6,
     });
     expect(workers[0]?.sent[2]?.transfer).toHaveLength(2);
+    expect(await client.refine(bitmap(), bitmap(), quad)).toMatchObject({ accepted: true });
+    expect(workers[0]?.sent[3]?.message).toMatchObject({ type: "refine", paper: quad });
+    expect(workers[0]?.sent[3]?.transfer).toHaveLength(2);
   });
 
   it("reports unavailable when opencv.js fails to load, without retrying", async () => {

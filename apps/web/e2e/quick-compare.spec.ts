@@ -34,7 +34,11 @@ test("compares two photos, aligns, and exports a bounded comparison", async ({ p
 
   await page.getByRole("tab", { name: /Ausrichten/ }).click();
   await page.getByRole("button", { name: "Automatisch ausrichten" }).click();
-  await expect(page.getByText(/Ausgerichtet|Keine sichere Ausrichtung|vermuteten/)).toBeVisible({
+  await expect(
+    page.getByText(
+      /[Aa]usgerichtet|Keine sichere Ausrichtung|vermuteten|nachjustiert|Feinabgleich/,
+    ),
+  ).toBeVisible({
     timeout: 30_000,
   });
   await page.getByRole("button", { name: "Fertig" }).click();
@@ -127,7 +131,9 @@ test("places paper corners on both images and warps the reference", async ({ pag
     });
   // Whatever the automatic alignment on opening did, start the manual corners from scratch.
   await expect(
-    page.getByText(/Nicht automatisch ausgerichtet|Automatisch an den Blattecken|Ausgerichtet/),
+    page.getByText(
+      /Nicht automatisch ausgerichtet|Automatisch an den Blattecken|Am Bildinhalt ausgerichtet/,
+    ),
   ).toBeVisible({ timeout: 30_000 });
   await page.getByRole("button", { name: "Mehr" }).click();
   await page.getByRole("menuitem", { name: "Alles zurücksetzen" }).click();
