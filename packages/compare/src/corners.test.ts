@@ -3,6 +3,7 @@ import {
   cornersFromLayer,
   hitCorner,
   nudgeCorner,
+  quadThroughCorners,
   referenceHomography,
   screenToOriginal,
 } from "./corners.ts";
@@ -103,5 +104,27 @@ describe("perspective corners", () => {
     );
     expect(guess[0]?.x).toBeCloseTo(0.25);
     expect(guess[2]?.y).toBeCloseTo(0.75);
+  });
+
+  it("carries the Vorlage's corners into the drawing through an automatic alignment", () => {
+    // The whole reference lands on the left half of the original, upright.
+    const landed = [
+      { x: 0, y: 0 },
+      { x: 0.5, y: 0 },
+      { x: 0.5, y: 1 },
+      { x: 0, y: 1 },
+    ] as const;
+    const paper = [
+      { x: 0.2, y: 0.1 },
+      { x: 0.8, y: 0.1 },
+      { x: 0.8, y: 0.9 },
+      { x: 0.2, y: 0.9 },
+    ] as const;
+    const carried = quadThroughCorners(paper, landed) ?? [];
+    expect(carried[0]?.x).toBeCloseTo(0.1);
+    expect(carried[2]?.x).toBeCloseTo(0.4);
+    expect(carried[2]?.y).toBeCloseTo(0.9);
+    const folded = [landed[0], landed[2], landed[1], landed[3]] as const;
+    expect(quadThroughCorners(paper, folded)).toBeNull();
   });
 });

@@ -252,3 +252,167 @@ export function acceptHomography(e: HomographyEvidence): AlignVerdict {
   }
   return { accepted: true, corners, confidence: e.inliers / e.matches };
 }
+
+/**
+ * Second paper detector for outlines with gaps (D-057): a white board on a white table, or a
+ * sheet whose edge leaves the photo. Straight Hough lines, not closed contours: every pair of
+ * near-horizontal and near-vertical lines (plus the image border, for a side outside the
+ * photo) forms a quad. The score is mean side cover² · √(area share): the paper's edge beats a
+ * strong straight stroke inside the drawing, and good cover beats a bigger, poorly backed quad.
+ */
+export interface HoughLine {
+  /** x·cos θ + y·sin θ = ρ, as OpenCV's HoughLines reports it. */
+  rho: number;
+  theta: number;
+}
+
+export const LINES = {
+  /** Lines tilted more than this from horizontal or vertical are ignored, degrees. */
+  maxTilt: 35,
+  /** At most this many lines per direction, strongest first; near-duplicates merged. */
+  maxPerDirection: 8,
+  duplicateRho: 0.02,
+  duplicateTheta: 3,
+  minAreaFraction: 0.2,
+  maxAreaFraction: 0.98,
+  /** Corners may lie this far outside the image, as a fraction of its size. */
+  margin: 0.02,
+  samples: 40,
+  /** Each measured side needs this much edge cover; the sides on average this much. */
+  minSideSupport: 0.6,
+  minMeanSupport: 0.7,
+  /** Assumed cover of an image-border side, which cannot be measured. */
+  borderSupport: 0.5,
+  /** Confidence factor when a border stands in for a side. */
+  borderPenalty: 0.9,
+  /** A guess from straight lines is never certain, so the corner step says "Ecken prüfen". */
+  maxConfidence: 0.9,
+} as const;
+
+/** Whether the (dilated) edge map has an edge at a pixel. */
+export type EdgeAt = (x: number, y: number) => boolean;
+
+interface Line extends HoughLine {
+  border: boolean;
+}
+
+const DEG = Math.PI / 180;
+
+function intersect(a: Line, b: Line): Point | null {
+  const det = Math.cos(a.theta) * Math.sin(b.theta) - Math.sin(a.theta) * Math.cos(b.theta);
+  if (Math.abs(det) < 1e-6) return null;
+  return {
+    x: (a.rho * Math.sin(b.theta) - b.rho * Math.sin(a.theta)) / det,
+    y: (b.rho * Math.cos(a.theta) - a.rho * Math.cos(b.theta)) / det,
+  };
+}
+
+function strongest(lines: readonly HoughLine[], size: number): Line[] {
+  const kept: Line[] = [];
+  for (const l of lines) {
+    const duplicate = kept.some(
+      (k) =>
+        Math.abs(k.rho - l.rho) < LINES.duplicateRho * size &&
+        Math.abs(k.theta - l.theta) < LINES.duplicateTheta * DEG,
+    );
+    if (!duplicate) kept.push({ ...l, border: false });
+    if (kept.length === LINES.maxPerDirection) break;
+  }
+  return kept;
+}
+
+/** Share of a side's samples (its ends left out) that lie on an edge. */
+function support(a: Point, b: Point, edgeAt: EdgeAt, width: number, height: number): number {
+  let hits = 0;
+  let inside = 0;
+  for (let k = 0; k < LINES.samples; k++) {
+    const t = 0.05 + (0.9 * k) / (LINES.samples - 1);
+    const x = Math.round(a.x + t * (b.x - a.x));
+    const y = Math.round(a.y + t * (b.y - a.y));
+    if (x < 0 || y < 0 || x >= width || y >= height) continue;
+    inside++;
+    if (edgeAt(x, y)) hits++;
+  }
+  return inside ? hits / LINES.samples : 0;
+}
+
+export function chooseLineQuad(
+  lines: readonly HoughLine[],
+  width: number,
+  height: number,
+  edgeAt: EdgeAt,
+): PaperResult | null {
+  const tilt = LINES.maxTilt * DEG;
+  const folded = (theta: number) => ((theta % Math.PI) + Math.PI) % Math.PI;
+  const horizontal = strongest(
+    lines.filter((l) => Math.abs(folded(l.theta) - Math.PI / 2) <= tilt),
+    height,
+  );
+  const vertical = strongest(
+    lines.filter((l) => folded(l.theta) <= tilt || folded(l.theta) >= Math.PI - tilt),
+    width,
+  );
+  horizontal.push(
+    { rho: 0.5, theta: Math.PI / 2, border: true },
+    { rho: height - 1.5, theta: Math.PI / 2, border: true },
+  );
+  vertical.push({ rho: 0.5, theta: 0, border: true }, { rho: width - 1.5, theta: 0, border: true });
+  const yAt = (l: Line) => (l.rho - (width / 2) * Math.cos(l.theta)) / Math.sin(l.theta);
+  const xAt = (l: Line) => (l.rho - (height / 2) * Math.sin(l.theta)) / Math.cos(l.theta);
+  const mx = LINES.margin * width;
+  const my = LINES.margin * height;
+  let best: { quad: Quad; mean: number; score: number; border: boolean } | null = null;
+  for (let i = 0; i < horizontal.length; i++) {
+    for (let j = i + 1; j < horizontal.length; j++) {
+      const [top, bottom] = [horizontal[i], horizontal[j]].sort(
+        (a, b) => yAt(a as Line) - yAt(b as Line),
+      ) as [Line, Line];
+      for (let k = 0; k < vertical.length; k++) {
+        for (let l = k + 1; l < vertical.length; l++) {
+          const [left, right] = [vertical[k], vertical[l]].sort(
+            (a, b) => xAt(a as Line) - xAt(b as Line),
+          ) as [Line, Line];
+          const sides = [top, right, bottom, left];
+          const corners = [
+            intersect(top, left),
+            intersect(top, right),
+            intersect(bottom, right),
+            intersect(bottom, left),
+          ];
+          if (
+            corners.some(
+              (c) => !c || c.x < -mx || c.y < -my || c.x > width + mx || c.y > height + my,
+            )
+          )
+            continue;
+          const quad = corners as unknown as Quad;
+          if (!isConvex(quad)) continue;
+          const area = quadArea(quad);
+          const fraction = area / (width * height);
+          if (fraction < LINES.minAreaFraction || fraction > LINES.maxAreaFraction) continue;
+          if (sides.filter((s) => s.border).length > 1) continue;
+          const covers = sides.map((side, s) =>
+            side.border
+              ? LINES.borderSupport
+              : support(quad[s] as Point, quad[(s + 1) % 4] as Point, edgeAt, width, height),
+          );
+          if (covers.some((c, s) => !sides[s]?.border && c < LINES.minSideSupport)) continue;
+          const mean = covers.reduce((sum, c) => sum + c, 0) / 4;
+          if (mean < LINES.minMeanSupport) continue;
+          const score = mean * mean * Math.sqrt(fraction);
+          if (best && score <= best.score) continue;
+          best = { quad, mean, score, border: sides.some((s) => s.border) };
+        }
+      }
+    }
+  }
+  if (!best) return null;
+  const clampTo = (v: number, max: number) => Math.min(Math.max(v, 0), max);
+  return {
+    corners: best.quad.map((p) => ({
+      x: clampTo(p.x, width) / width,
+      y: clampTo(p.y, height) / height,
+    })) as unknown as Quad,
+    confidence: Math.min(best.mean * (best.border ? LINES.borderPenalty : 1), LINES.maxConfidence),
+  };
+}

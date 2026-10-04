@@ -1,4 +1,10 @@
-import { type Homography, homographyFromPoints, type Point, type Quad } from "./homography.ts";
+import {
+  applyHomography,
+  type Homography,
+  homographyFromPoints,
+  type Point,
+  type Quad,
+} from "./homography.ts";
 import { IMAGE_CORNERS, type Layer, type View } from "./state.ts";
 import { apply, layerMatrix, viewMatrix } from "./transform.ts";
 
@@ -116,4 +122,13 @@ export function nudgeCorner(
     x: +(c.x + dx * step).toFixed(6),
     y: +(c.y + dy * step).toFixed(6),
   });
+}
+
+/**
+ * Where the corners `quad` of the reference land on the original, given where the reference's
+ * image corners land (`landed`, e.g. an automatic alignment); null for a folded `landed`.
+ */
+export function quadThroughCorners(quad: Quad, landed: Quad): Quad | null {
+  const h = homographyFromPoints(IMAGE_CORNERS, landed);
+  return h ? (quad.map((p) => applyHomography(h, p)) as unknown as Quad) : null;
 }
