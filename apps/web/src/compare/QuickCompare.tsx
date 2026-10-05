@@ -5,6 +5,7 @@ import {
   type CompareAction,
   type CompareState,
   type CornerStep,
+  type Corners,
   canRedo,
   canUndo,
   compare,
@@ -20,10 +21,12 @@ import {
   idleGesture,
   initialState,
   invertHomography,
+  type Point,
   quadThroughCorners,
   referenceHomography,
   refineCorners,
   screenToOriginal,
+  snappedBefore,
   splitFromScreen,
   workingSize,
 } from "@nextstroke/compare";
@@ -159,6 +162,8 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
   const gestureRef = useRef(idleGesture());
   /** The current gesture already saved an undo checkpoint for moving the Vorlage. */
   const layerRecorded = useRef(false);
+  /** Where each ring snapped during the current corner steps, keyed "step:index" (D-061). */
+  const snaps = useRef(new Map<string, Point[]>());
   const holdTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const loupeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const abortRef = useRef<AbortController | null>(null);
@@ -329,7 +334,10 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
     if (step) setUnsure((u) => ({ ...u, [step]: u[step].filter((i) => i !== index) }));
   }
 
-  /** After a ring is dropped: onto the paper corner nearby, if one is clear (D-061). */
+  /**
+   * After a ring is dropped: onto the paper corner nearby, if one is clear (D-061), and not onto
+   * a spot this ring snapped to before and the user then dragged it away from.
+   */
   async function snapRing(index: number) {
     const s = stateRef.current;
     const step = s.cornerStep;
@@ -341,6 +349,10 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
     const [found] = (vision && quad && (await vision.corners(image.bitmap, quad, [index]))) || [];
     const now = stateRef.current;
     if (!found || now.cornerStep !== step || stepQuad(now)?.[index] !== ring) return;
+    const key = `${step}:${index}`;
+    const earlier = snaps.current.get(key) ?? [];
+    if (snappedBefore(found, earlier)) return;
+    snaps.current.set(key, [...earlier, found]);
     dispatch({ type: "checkpoint" });
     dispatch({ type: "corner-set", index, point: found });
     setStatus(t("status.snapped"));
@@ -377,24 +389,50 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
    * Keep the placed corners and correct the rest by content (D-060): warp the Vorlage by the
    * corners, match it against the drawing, and take the match only as a small correction.
    */
-  async function refineByContent(vision: VisionDeps): Promise<"refined" | "kept" | "stale"> {
+  async function refineByContent(
+    vision: VisionDeps,
+  ): Promise<"refined" | "aligned" | "kept" | "stale"> {
     const s = stateRef.current;
     if (!original || !reference || !s.corners) return "kept";
+    const refCorners = s.refCorners ?? IMAGE_CORNERS;
+    const moved = () =>
+      stateRef.current.corners !== s.corners || Boolean(stateRef.current.cornerStep);
+    let corners = await smallCorrection(vision, s.corners, refCorners);
+    let outcome: "refined" | "aligned" = "refined";
+    if (!corners) {
+      // The drawing sits on its sheet differently from the Vorlage on its own, beyond a small
+      // correction: the full content alignment carries the Vorlage's corners over, and the small
+      // correction then polishes it (owner report 2026-10-05).
+      const verdict = await vision.align(original.bitmap, reference.bitmap);
+      const carried = verdict?.accepted ? quadThroughCorners(refCorners, verdict.corners) : null;
+      if (!carried) return moved() ? "stale" : "kept";
+      corners = (await smallCorrection(vision, carried, refCorners)) ?? carried;
+      outcome = "aligned";
+    }
+    if (moved()) return "stale";
+    dispatch({ type: "checkpoint" });
+    dispatch({ type: "corners-refine", corners });
+    return outcome;
+  }
+
+  /** The small block-matching correction of `corners` (D-060), or null when there is none. */
+  async function smallCorrection(vision: VisionDeps, corners: Corners, refCorners: Corners) {
+    if (!original || !reference) return null;
     const grid = workingSize(original.width, original.height);
-    const h = referenceHomography(s.corners, grid, reference, s.refCorners ?? undefined);
+    const h = referenceHomography(corners, grid, reference, refCorners);
     const toSource = h && invertHomography(h);
-    if (!toSource) return "kept";
+    if (!toSource) return null;
     const pixels = warpPerspective(deps.rgba(reference.bitmap), toSource, grid.width, grid.height);
     const prewarped = await deps.fromRgba(pixels);
-    const verdict = await vision.refine(original.bitmap, prewarped, s.corners);
+    const verdict = await vision.refine(original.bitmap, prewarped, corners);
     prewarped.close();
-    if (stateRef.current.corners !== s.corners || stateRef.current.cornerStep) return "stale";
-    const refined = verdict?.accepted ? refineCorners(s.corners, verdict.corners) : null;
-    if (!refined) return "kept";
-    dispatch({ type: "checkpoint" });
-    dispatch({ type: "corners-refine", corners: refined });
-    return "refined";
+    return verdict?.accepted ? refineCorners(corners, verdict.corners) : null;
   }
+
+  // A new corner flow starts without remembered snaps.
+  useEffect(() => {
+    if (!state.cornerStep) snaps.current.clear();
+  }, [state.cornerStep]);
 
   /** After placing corners, or on "Automatisch" with corners: the content correction on top. */
   async function runRefine() {
@@ -403,8 +441,12 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
     try {
       const vision = await visionLoaded();
       const outcome = vision ? await refineByContent(vision) : "kept";
-      if (outcome !== "stale")
-        setStatus(t(outcome === "refined" ? "status.refined" : "status.refineKept"));
+      const key = {
+        refined: "status.refined",
+        aligned: "status.refinedFull",
+        kept: "status.refineKept",
+      } as const;
+      if (outcome !== "stale") setStatus(t(key[outcome]));
     } catch {
       setStatus(t("status.refineKept"));
     } finally {

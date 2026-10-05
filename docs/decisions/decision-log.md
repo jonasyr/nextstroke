@@ -601,3 +601,11 @@
 - **Evidence:** Owner's lighthouse pair, iPhone-size browser: a ring dropped about 10 px off the drawing's faint canvas corner and off the Vorlage's corner snapped onto them; the Vorlage's guess went from "Ecke 4 prüfen" to all four confirmed. Synthetic photo in the e2e worker test: four rings 2 % off snap within 0.6 %.
 - **Consequence:** A user who wants a ring exactly where no corner is can still place it with the arrow pad, or undo the snap. Ring positions of a sure detection are unchanged.
 
+## D-062 — Full content alignment behind the small correction; corrected snaps stay corrected
+
+- **Date:** 2026-10-05
+- **Refines:** D-060, D-061.
+- **Trigger:** Owner's first iPhone test of D-060/D-061 with the lighthouse pair: (1) after placing both quads on the sheets, "Fertig" reported "kein sicherer Feinabgleich", although the content alignment on opening had overlaid the pair well; (2) a ring that snapped to a wrong spot snapped back there every time the owner dragged it away, which makes correcting it frustrating.
+- **Selected:** (1) The small correction stays first. When it finds none, the full content alignment (as on opening) carries the Vorlage's corners into the drawing, the small correction polishes that, and the status says "Am Bildinhalt ausgerichtet – die Ecken der Vorlage bleiben". A hand drawing sits on its sheet differently from the Vorlage's motif on its own; that offset exceeds the 6 % cap of the small correction but not the content alignment. Only when both find nothing do the placed corners stay unchanged. (2) Every snap is remembered per ring for the current corner flow; a corner the ring already snapped to, and which the user then dragged away from, is never offered again. Starting a new corner flow forgets them.
+- **Consequence:** With a reliable content match, the drawing's rings follow the content, not the drawing's sheet; the Vorlage's rings stay as placed. One undo step returns to the placed corners.
+

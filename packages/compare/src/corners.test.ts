@@ -9,6 +9,7 @@ import {
   referenceHomography,
   refineCorners,
   screenToOriginal,
+  snappedBefore,
 } from "./corners.ts";
 import { applyHomography } from "./homography.ts";
 
@@ -192,5 +193,12 @@ describe("perspective corners", () => {
     // A found corner that would fold the quad is not used.
     const folding = [{ x: 0.95, y: 0.95 }, null, null, null];
     expect(confirmQuad(guess, folding, false).unsure).toEqual([0, 1, 2, 3]);
+  });
+
+  it("recognises a snap the user already moved away from", () => {
+    const earlier = [{ x: 0.2, y: 0.3 }];
+    expect(snappedBefore({ x: 0.205, y: 0.3 }, earlier)).toBe(true);
+    expect(snappedBefore({ x: 0.25, y: 0.3 }, earlier)).toBe(false);
+    expect(snappedBefore({ x: 0.2, y: 0.3 }, [])).toBe(false);
   });
 });
