@@ -171,3 +171,12 @@ export function confirmQuad(
   if (!isConvex(moved)) return all;
   return { quad: moved, unsure: [0, 1, 2, 3].filter((i) => !found[i]) };
 }
+
+/**
+ * Whether a found corner is one this ring already snapped to and the user then moved it away
+ * from (D-061): such a snap is wrong for this user and is not offered again, so correcting it
+ * by hand does not end on the same spot every time (owner report 2026-10-05).
+ */
+export function snappedBefore(found: Point, earlier: readonly Point[], tolerance = 0.01): boolean {
+  return earlier.some((p) => Math.hypot(p.x - found.x, p.y - found.y) <= tolerance);
+}

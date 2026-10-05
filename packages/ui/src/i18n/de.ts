@@ -147,6 +147,7 @@ export const de = {
   "status.cornersByContent": "Ecken aus dem Bildinhalt übernommen",
   "status.snapped": "An der Blattecke eingerastet",
   "status.refined": "Am Bildinhalt nachjustiert – deine Ecken bleiben die Grundlage",
+  "status.refinedFull": "Am Bildinhalt ausgerichtet – die Ecken der Vorlage bleiben",
   "status.refineKept": "Ecken übernommen – kein sicherer Feinabgleich am Bildinhalt",
   "status.paperGuess": "An vermuteten Blattecken ausgerichtet – bitte unter „Ecken ändern“ prüfen",
   "status.paperMissing": "Blatt nicht erkannt – bitte die Ringe selbst ziehen",

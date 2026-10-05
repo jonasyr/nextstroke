@@ -683,6 +683,26 @@ describe("editor: opencv.js vision (D-055, D-056)", () => {
     expect(deps.gray).toHaveBeenCalled();
   });
 
+  it("falls back to the full content alignment when the drawing sits differently", async () => {
+    const align = vi
+      .fn()
+      .mockResolvedValueOnce(null) // on opening
+      .mockResolvedValueOnce(null) // corner step 2
+      .mockResolvedValueOnce({ accepted: true, corners: paper(0.1).corners, confidence: 0.6 });
+    const refine = vi.fn(async () => ({
+      accepted: false as const,
+      reason: "few-inliers" as const,
+    }));
+    await loadBoth(makeDeps({ vision: fakeVision({ align, refine }) }));
+    fireEvent.click(screen.getByRole("tab", { name: /Ausrichten/ }));
+    fireEvent.click(button("Ecken setzen"));
+    fireEvent.click(button("Weiter"));
+    fireEvent.click(button("Fertig"));
+    expect(await screen.findByText(/die Ecken der Vorlage bleiben/)).toBeTruthy();
+    // The small correction was tried before and after the full alignment.
+    expect(refine).toHaveBeenCalledTimes(2);
+  });
+
   it("keeps placed corners and corrects the rest by content (D-060)", async () => {
     // The Vorlage warped by the corners still sits 2 % left of the drawing.
     const shifted = [
