@@ -229,3 +229,15 @@ test("opens the demo pair and aligns it by its content", async ({ page }) => {
     timeout: 60_000,
   });
 });
+
+test("says why when the app files do not arrive, instead of a blank page", async ({ browser }) => {
+  // A fresh context without the service worker, and every script blocked.
+  const context = await browser.newContext({ serviceWorkers: "block" });
+  const page = await context.newPage();
+  await page.route("**/assets/*.js", (route) => route.abort());
+  await page.goto("http://localhost:4319/");
+  await expect(
+    page.getByText(/NextStroke konnte nicht starten \(Datei fehlt: index-/),
+  ).toBeVisible();
+  await context.close();
+});
