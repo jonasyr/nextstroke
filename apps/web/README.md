@@ -22,7 +22,7 @@ Verified on 2026-10-03 in Chromium against `vite preview`: the app reloads offli
 
 ## Deploy to ChatGPT Sites (manual)
 
-1. `pnpm run build` from the repository root.
+1. From the repository root, with Node 22.12 or newer and pnpm 12.8.1 (Corepack, or `npx -y pnpm@12.8.1` in place of `pnpm`): `pnpm install --frozen-lockfile`, `pnpm run check`, `pnpm run build`.
 2. In ChatGPT Sites, create or update a private site in **static** mode with `apps/web/dist` as the directory. The app needs no D1 or R2 binding; if Sites asks for one, leave it empty and unused (see `docs/research/2026-10-03-sites-probe-iphone.md`).
 3. Open the site on the iPhone, add it to the Home Screen, reload once with the network on, then check that it opens in airplane mode.
 4. After each redeploy, open the installed app once online and confirm the update notice appears and **Neu laden** loads the new version.
