@@ -212,3 +212,13 @@ test("splits drawing and Vorlage and drags the divider", async ({ page }) => {
   expect(value).toBeLessThan(45);
   expect(value).toBeGreaterThan(0);
 });
+
+test("opens the demo pair and aligns it by its content", async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.goto("#/compare");
+  await page.getByRole("button", { name: "Beispiel ansehen" }).click();
+  await expect(page.getByRole("dialog", { name: "Vergleich" })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText(/Am Bildinhalt ausgerichtet|an den Blattecken/)).toBeVisible({
+    timeout: 60_000,
+  });
+});

@@ -95,6 +95,8 @@ export interface CompareDeps {
   /** Keep the screen on while drawing; false when the browser cannot. */
   keepAwake?(): Promise<boolean>;
   hints?: HintStore;
+  /** The bundled demo pair, drawn by code (D-056). */
+  demoPair?(): Promise<{ reference: File; original: File }>;
 }
 
 /** Touch radius of corner rings and the split divider, in CSS pixels (D-056: nearest within 60). */
@@ -493,6 +495,37 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
       }),
     [],
   );
+
+  /** "Beispiel ansehen": both demo images at once, then straight into the editor (D-056). */
+  async function loadDemo() {
+    if (!deps.demoPair || busy) return;
+    setImporting(true);
+    setStatus(t("status.loading"));
+    try {
+      const files = await deps.demoPair();
+      const [reference, original] = await Promise.all([
+        deps.decode(files.reference),
+        deps.decode(files.original),
+      ]);
+      abortRef.current?.abort();
+      pairRef.current += 1;
+      setImages((prev) => {
+        prev.original?.bitmap.close();
+        prev.reference?.bitmap.close();
+        return {
+          original: { ...original, name: files.original.name, blob: files.original },
+          reference: { ...reference, name: files.reference.name, blob: files.reference },
+        };
+      });
+      dispatch({ type: "image-replaced" });
+      setStatus("");
+      setEditor(true);
+    } catch {
+      setStatus(t("status.unsupported"));
+    } finally {
+      setImporting(false);
+    }
+  }
 
   async function load(slot: Slot, file: File | undefined) {
     if (!file) return;
@@ -922,6 +955,7 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
             setEditor(true);
           }}
           onMore={() => setSheet("info")}
+          {...(deps.demoPair ? { onDemo: () => void loadDemo() } : {})}
         />
       )}
       {open && (

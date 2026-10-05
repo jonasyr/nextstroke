@@ -42,6 +42,7 @@ export function StartScreen({
   onPick,
   onOpen,
   onMore,
+  onDemo,
 }: {
   images: Partial<Record<Slot, Picked>>;
   busy: boolean;
@@ -49,6 +50,8 @@ export function StartScreen({
   onPick: (slot: Slot, file: File | undefined) => void;
   onOpen: () => void;
   onMore: () => void;
+  /** Opens the bundled demo pair; the link shows only when one is available. */
+  onDemo?: () => void;
 }) {
   const ready = Boolean(images.original && images.reference);
   const change = (slot: Slot) => (event: ChangeEvent<HTMLInputElement>) => {
@@ -98,6 +101,16 @@ export function StartScreen({
       </p>
       <div className="ns-grow" />
       {!ready && <p className="ns-muted ns-center">{t("start.empty")}</p>}
+      {!ready && onDemo && (
+        <button
+          type="button"
+          className="ns-text ns-accent ns-demo"
+          onClick={onDemo}
+          disabled={busy}
+        >
+          {t("start.demo")}
+        </button>
+      )}
       <button type="button" className="ns-primary" disabled={!ready} onClick={onOpen}>
         {t("start.go")}
       </button>

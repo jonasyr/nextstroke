@@ -24,6 +24,7 @@ export const de = {
   "start.change": "Ändern",
   "start.empty": "Zwei Bilder wählen, dann vergleichen.",
   "start.go": "Vergleichen",
+  "start.demo": "Beispiel ansehen",
   "start.more": "Mehr",
   "info.title": "Über NextStroke",
   "info.body":
