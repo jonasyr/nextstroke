@@ -78,12 +78,25 @@ Open:
 - Perspective warp runs on the main thread (about 3 MP of bilinear sampling); move it to the worker if the iPhone shows a stall.
 - Owner review of the D-056 editor on the iPhone, then the beginner usability test from `docs/research/2026-10-04-ui-ux-brief.md` (three rounds of five, measured: task success, time, errors, gestures found unaided, SEQ per task, SUS).
 - D-056 open items: bundled demo pair ("Beispiel ansehen"), Wake Lock and Dynamic Type checks on the iPhone, a light theme.
-- Exit gate items below need real iPhones.
+- Exit gate: browser part in CI (Chromium and WebKit); iPhone part is the checklist (D-063).
 
 ## Exit gate
 
-- Core flow works offline on current and oldest supported real iPhone.
-- Carried over from Phase 0 (D-043): background/resume during processing, a 48 MP photo, a HEIC photo, and the `persist()` result are tested on a real iPhone.
+Split by D-063. Browser checks run in Chromium and WebKit on every push (`apps/web/e2e/exit-gate.spec.ts`, `quick-compare.spec.ts`, `vision.spec.ts`):
+
 - Ten repeated sessions show no crash/reload under defined test images.
+- A 48 MP photo loads within the image budget.
+- Hiding the page during automatic alignment neither reloads nor breaks it.
 - Manual alignment always recovers from failed automatic alignment.
 - Original reveal works by tap and press/hold without hiding controls unexpectedly.
+- The core flow works offline after the first visit.
+
+On a real iPhone (`docs/handoffs/2026-10-05-iphone-checklist.md`):
+
+- Core flow works offline from the Home Screen, on the current and, if available, the oldest supported iPhone.
+- A camera photo (HEIC; 48 MP on a Pro) loads without a reload.
+- Switching apps during processing and returning keeps the session.
+- Five own pairs in a row show no crash or reload (iOS memory limits).
+- Touch: ring snapping, two-finger zoom, tap/hold reveal.
+
+Moved to Phase 3 (D-063): the `persist()` result, with the first local storage.
