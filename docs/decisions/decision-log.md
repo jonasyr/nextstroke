@@ -619,3 +619,12 @@
 - **Reason:** WebKit in CI catches engine differences on every push; the iPhone time goes to what only it can reveal.
 - **Consequence:** Phase 2 exits when CI is green in both engines and the iPhone checklist passes; AGENTS rule 9 stands for those items.
 
+## D-064 — Phase 3 starts alongside the Phase 2 iPhone checks; first material dataset
+
+- **Date:** 2026-10-05
+- **Refines:** Phase sequence (master plan), D-063, `docs/product/material-knowledge-base.md`.
+- **Trigger:** Owner, after the demo pair and ring snapping worked on the iPhone: carry on. The rest of the Phase 2 iPhone checklist is still open.
+- **Selected:** Phase 3 Task 1 (material dataset and rules) starts now, because it does not depend on the iPhone; Phase 2 closes when its checklist passes, and no Phase 3 UI ships before that. The first dataset holds 17 black fineliners plus the generic profile, 96 claims from 26 manufacturer pages (evidence B, confidence medium), collected on 2026-10-05; every claim's supporting text was checked against the fetched page. Normalization: "water-based pigment ink" is recorded as pigment; size lists from several pages of one product add up; lightfastness is stored in the maker's own words (`lightfast` is a string), because makers use no shared scale ("non-fading", "Lightfast rating: 8" without a named scale); qualified statements (Copic "won't smudge with Copic ink", Tombow "do not bleed through most papers") are left out rather than generalized; a missing claim means the maker's page does not say it, never "no". A named pen needs at least one claim, not an ink type: STABILO's page names none. rOtring Tikky Graphic is not included because rotring.com blocks automated access. Papers are seven generic categories whose ink behaviour is a NextStroke assumption. Rules: lightening black ink is never feasible; spacing derives from the finest sourced or owned tip; unknown pen or paper raises risk and spacing; feathering paper and unsourced smear resistance add cautions; every reason cites claims or is marked general.
+- **Alternatives:** Waiting for the full Phase 2 exit (the dataset work has no iPhone dependency); retailer pages as sources (excluded by the evidence model); boolean lightfastness (would turn different maker claims into one unsupported "yes").
+- **Consequence:** `packages/materials` ships `DATASET`, `validateDataset` (a test on every build), `factsFor` and `feasibility`. Open: the dataset's own license (facts and paraphrases, separate from the AGPL code), and refreshing claims when maker pages change.
+

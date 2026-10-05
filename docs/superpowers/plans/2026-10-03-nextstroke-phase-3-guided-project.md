@@ -29,10 +29,10 @@
 
 ## Task 1: Curated material dataset and rule engine
 
-- [ ] Add 10–20 sourced black fineliner profiles plus generic profile.
-- [ ] Add paper categories and condition-scoped claims.
-- [ ] Validate sources, confidence, retrieval date, and licensing note at build time.
-- [ ] Implement deterministic feasibility filters for techniques and instructions.
+- [x] Add 10–20 sourced black fineliner profiles plus generic profile (17 pens, 96 claims, D-064).
+- [x] Add paper categories and condition-scoped claims (seven generic categories; claims carry optional conditions).
+- [x] Validate sources, confidence, retrieval date, and licensing note at build time (`validateDataset`, run as a test).
+- [x] Implement deterministic feasibility filters for techniques and instructions (`feasibility`; instructions follow in Task 3).
 
 ## Task 2: Optional calibration card
 

@@ -74,7 +74,7 @@ describe("material dataset validation (material-knowledge-base.md)", () => {
         confidence: "high",
       },
       { ...base, id: "c7", predicate: "acidFree", value: true, verifiedAt: "2027-01-01" },
-      { ...base, id: "c8", predicate: "lightfast", value: true, confidence: "high" },
+      { ...base, id: "c8", predicate: "lightfast", value: "lightfast", confidence: "high" },
     );
     (d.sources[0] as MaterialDataset["sources"][number]).retrievedAt = "2027-01-01";
     const errors = validateDataset(d, today).join("\n");
@@ -91,7 +91,7 @@ describe("material dataset validation (material-knowledge-base.md)", () => {
     d.sources.push({ ...(d.sources[0] as MaterialDataset["sources"][number]) });
     d.papers.push({ id: "bad", name: "", surface: "smooth", feathers: "no", generic: true });
     const errors = validateDataset(d, today).join("\n");
-    expect(errors).toMatch(/pen-a: no sourced ink type/);
+    expect(errors).toMatch(/pen-a: no sourced claim/);
     expect(errors).toMatch(/fineliner generic: duplicate id/);
     expect(errors).toMatch(/source src-a: duplicate id/);
     expect(errors).toMatch(/exactly one generic fineliner/);
@@ -114,8 +114,8 @@ describe("facts per pen", () => {
     d.claims.push(
       { ...base, id: "wr-1", predicate: "waterResistantWhenDry", value: true },
       { ...base, id: "wr-2", predicate: "waterResistantWhenDry", value: true, sourceId: "src-b" },
-      { ...base, id: "lf-1", predicate: "lightfast", value: true },
-      { ...base, id: "lf-2", predicate: "lightfast", value: false, sourceId: "src-b" },
+      { ...base, id: "lf-1", predicate: "lightfast", value: "lightfast" },
+      { ...base, id: "lf-2", predicate: "lightfast", value: "fades", sourceId: "src-b" },
     );
     const facts = factsFor(d, "pen-a");
     expect(facts.inkType?.value).toBe("pigment");
@@ -123,5 +123,21 @@ describe("facts per pen", () => {
     expect(facts.waterResistantWhenDry?.claims).toHaveLength(2);
     expect(facts.lightfast).toMatchObject({ value: null, conflict: true });
     expect(factsFor(d, "generic")).toEqual({});
+  });
+});
+
+describe("size lists", () => {
+  it("add up across sources instead of conflicting", () => {
+    const d = dataset();
+    const base = d.claims[0] as MaterialDataset["claims"][number];
+    d.claims.push(
+      { ...base, id: "s1", predicate: "tipSizesMm", value: "0.1,0.5" },
+      { ...base, id: "s2", predicate: "tipSizesMm", value: "0.3,0.1", sourceId: "src-b" },
+      { ...base, id: "l1", predicate: "tipSizeLabels", value: "XS; S" },
+      { ...base, id: "l2", predicate: "tipSizeLabels", value: "S; F", sourceId: "src-b" },
+    );
+    const facts = factsFor(d, "pen-a");
+    expect(facts.tipSizesMm).toMatchObject({ value: "0.1,0.3,0.5", conflict: false });
+    expect(facts.tipSizeLabels?.value).toBe("XS; S; F");
   });
 });

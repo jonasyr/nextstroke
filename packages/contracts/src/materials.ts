@@ -69,7 +69,8 @@ export type MaterialClaim = z.infer<typeof MaterialClaimSchema>;
 export const FINELINER_PREDICATES = {
   inkType: z.enum(["pigment", "dye", "water-based"]),
   waterResistantWhenDry: z.boolean(),
-  lightfast: z.boolean(),
+  /** The maker's own words ("lightfast", "fade resistant", "Lightfast rating: 8"): no shared scale. */
+  lightfast: NonEmpty,
   archival: z.boolean(),
   acidFree: z.boolean(),
   smearResistant: z.boolean(),

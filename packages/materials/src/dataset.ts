@@ -94,8 +94,8 @@ export function validateDataset(data: MaterialDataset, today: string): string[] 
     seen.add(key);
   }
   for (const p of data.fineliners) {
-    if (!p.generic && !data.claims.some((c) => c.subjectId === p.id && c.predicate === "inkType")) {
-      errors.push(`fineliner ${p.id}: no sourced ink type`);
+    if (!p.generic && !data.claims.some((c) => c.subjectId === p.id)) {
+      errors.push(`fineliner ${p.id}: no sourced claim`);
     }
   }
   return errors;
@@ -109,7 +109,19 @@ export interface Fact {
   claims: MaterialClaim[];
 }
 
-/** The sourced facts about a pen, one per predicate; the generic pen has none. */
+/** Size lists add up: a maker may list each size on its own page. */
+function union(predicate: string, a: string, b: string): string {
+  if (predicate === "tipSizesMm") {
+    const sizes = new Set([...a.split(","), ...b.split(",")].map(Number));
+    return [...sizes].sort((x, y) => x - y).join(",");
+  }
+  return [...new Set([...a.split("; "), ...b.split("; ")])].join("; ");
+}
+
+/**
+ * The sourced facts about a pen, one per predicate; the generic pen has none. Sizes from
+ * several sources add up; any other disagreement is a conflict and keeps both claims visible.
+ */
 export function factsFor(
   data: MaterialDataset,
   finelinerId: string,
@@ -122,7 +134,10 @@ export function factsFor(
     if (!fact) facts[key] = { value: c.value, conflict: false, claims: [c] };
     else {
       fact.claims.push(c);
-      if (fact.value !== c.value) {
+      const additive = key === "tipSizesMm" || key === "tipSizeLabels";
+      if (additive && typeof fact.value === "string" && typeof c.value === "string") {
+        fact.value = union(key, fact.value, c.value);
+      } else if (fact.value !== c.value) {
         fact.conflict = true;
         fact.value = null;
       }
