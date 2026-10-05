@@ -29,30 +29,3 @@ jobs:
         env:
           PW_WEBKIT: "1"
         run: pnpm run e2e
-
-  # The deployable build (D-064): after a green main, the exact toolchain builds apps/web/dist
-  # and commits it with checksums to the `site` branch, so a deploy copies files and never builds.
-  site:
-    needs: check
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    permissions:
-      contents: write
-    concurrency:
-      group: site
-      cancel-in-progress: false
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "24"
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm run pnpm-version
-      - run: pnpm run build
-      - name: Commit the build to the site branch
-        env:
-          SOURCE: ${{ github.sha }}
-        run: ./scripts/publish_site.sh
