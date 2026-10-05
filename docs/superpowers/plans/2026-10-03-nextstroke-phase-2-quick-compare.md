@@ -73,11 +73,11 @@ Done and tested (unit tests plus Playwright in CI): legacy checklist (`docs/rese
 
 Open:
 - opencv.js (D-055) on the iPhone: load time, memory, and detection and alignment on real photos; ECC refinement; a trimmed build if the 13 MB precache or memory hurts.
-- Settings survive the editor and the image screen, but not leaving the compare route: the state lives in the page and is lost on navigation. Keep it in a module-level store or accept it; decide with the iPhone review.
+- Settings: kept within the app (D-063); surviving a reload needs on-device image storage, Phase 3 local projects.
 - HEIC decoding where the browser cannot: `heic-to` fallback not added; Safari decodes HEIC natively, so this is measured on the iPhone first.
 - Perspective warp runs on the main thread (about 3 MP of bilinear sampling); move it to the worker if the iPhone shows a stall.
 - Owner review of the D-056 editor on the iPhone, then the beginner usability test from `docs/research/2026-10-04-ui-ux-brief.md` (three rounds of five, measured: task success, time, errors, gestures found unaided, SEQ per task, SUS).
-- D-056 open items: bundled demo pair ("Beispiel ansehen"), Wake Lock and Dynamic Type checks on the iPhone, a light theme.
+- D-056 open items: Wake Lock and Dynamic Type checks on the iPhone, a light theme. The demo pair "Beispiel ansehen" is done: a fineliner lighthouse drawn by code and a wobbly hand version photographed on a table, no artwork shipped.
 - Exit gate: browser part in CI (Chromium and WebKit); iPhone part is the checklist (D-063).
 
 ## Exit gate
