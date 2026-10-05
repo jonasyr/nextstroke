@@ -74,12 +74,15 @@ test("loads a chosen page of a multi-page PDF", async ({ page }) => {
   await expect(page.getByText(/zwei-seiten\.pdf · 2\/2/)).toBeVisible({ timeout: 20_000 });
 });
 
-test("works offline after the first visit", async ({ page, context }) => {
+test("works offline after the first visit", async ({ page, context, browserName }) => {
   await page.goto("./");
   await page.evaluate(() => navigator.serviceWorker.ready);
   await page.reload();
-  await context.setOffline(true);
-  // A fresh navigation, not reload(): Playwright's WebKit fails reload() while offline.
+  // Playwright's WebKit offline switch also blocks what the service worker would serve, so
+  // there every request that reaches the network fails instead: only the precache answers.
+  const webkit = browserName === "webkit";
+  if (webkit) await context.route("**/*", (route) => route.abort("internetdisconnected"));
+  else await context.setOffline(true);
   await page.goto("about:blank");
   await page.goto("./#/compare");
   const original = await syntheticImage(page, {
@@ -92,7 +95,8 @@ test("works offline after the first visit", async ({ page, context }) => {
   await expect(page.getByText("Bild geladen. Jetzt das zweite Bild wählen.")).toBeVisible();
   await page.getByLabel("Vorlage wählen").setInputFiles({ ...original, name: "b.png" });
   await expect(page.getByRole("dialog", { name: "Vergleich" })).toBeVisible();
-  await expect(page.getByRole("status").filter({ hasText: "Offline" })).toBeVisible();
+  // The banner follows navigator.onLine, which only the offline switch changes.
+  if (!webkit) await expect(page.getByRole("status").filter({ hasText: "Offline" })).toBeVisible();
   // opencv.js comes from the precache too: paper detection answers (D-055).
   await page.getByRole("tab", { name: /Ausrichten/ }).click();
   await page.getByRole("button", { name: "Ecken setzen" }).click();
