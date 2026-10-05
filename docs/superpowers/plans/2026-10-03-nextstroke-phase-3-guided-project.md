@@ -50,10 +50,10 @@
 
 ## Task 4: Local project repository and export
 
-- [ ] Store immutable originals/checkpoints and versioned derived state.
-- [ ] Use storage estimate/persistence APIs when supported and explain best-effort storage.
-- [ ] Reopen safely after backgrounding and migrations.
-- [ ] Export/import a versioned project package with integrity hashes, zipped with fflate (D-036).
+- [x] Store immutable originals/checkpoints and versioned derived state (`packages/projects`, D-066).
+- [x] Use storage estimate/persistence APIs when supported and explain best-effort storage (`storageStatus`, `describeStorage`; asked on the first save in Task 5).
+- [x] Reopen safely after backgrounding and migrations (`IdbStore`, unit-tested with fake-indexeddb; real-browser check with Task 5).
+- [x] Export/import a versioned project package with integrity hashes, zipped with fflate (D-036).
 
 ## Task 5: Complete non-preview guided flow
 

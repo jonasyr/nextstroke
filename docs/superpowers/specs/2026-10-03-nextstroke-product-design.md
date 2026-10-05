@@ -287,6 +287,7 @@ After Phase 0, the retained product may use a TypeScript workspace with:
 - `packages/imaging`: decoding, masks, alignment, compositing, export;
 - `packages/materials`: sourced dataset, evidence model, rule engine;
 - `packages/coaching`: suggestion and instruction contracts;
+- `packages/projects`: local projects, immutable assets, revisions, export/import packages (D-066);
 - `packages/ui`: accessible visual components.
 
 Phase 0 is allowed to use disposable scripts and a thin server endpoint. It must not prematurely freeze production interfaces.
