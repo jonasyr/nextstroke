@@ -9,7 +9,11 @@ export const ExportManifestSchema = z
     formatVersion: z.literal(1),
     appVersion: NonEmpty,
     exportedAt: IsoDateTime,
-    assets: z.array(z.object({ id: idOf("ast"), sha256: Sha256, path: NonEmpty }).strict()),
+    /** The project record, hashed like the assets so a changed package is refused on import. */
+    project: z.object({ id: idOf("prj"), sha256: Sha256, path: NonEmpty }).strict(),
+    assets: z.array(
+      z.object({ id: idOf("ast"), sha256: Sha256, path: NonEmpty, record: NonEmpty }).strict(),
+    ),
   })
   .strict();
 
