@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ImmutableAssetSchema } from "./asset.ts";
-import { SuggestionSetSchema } from "./coaching.ts";
+import { CoachRequestSchema, SuggestionSetSchema } from "./coaching.ts";
 import { newId } from "./ids.ts";
 import { ExportManifestSchema } from "./manifest.ts";
 import { MaskRevisionSchema } from "./masks.ts";
@@ -165,5 +165,20 @@ describe("export manifest", () => {
     };
     expect(ExportManifestSchema.parse(manifest).assets).toHaveLength(1);
     expect(() => ExportManifestSchema.parse({ ...manifest, formatVersion: 9 })).toThrow();
+  });
+});
+
+describe("coach requests (Phase 3 Task 3)", () => {
+  it("takes intent, skill, pen and paper, and optional tips, area and protected details", () => {
+    const request = {
+      intent: "depth",
+      skill: "beginner",
+      finelinerId: "generic",
+      paperId: "unknown",
+    };
+    expect(CoachRequestSchema.parse(request).intent).toBe("depth");
+    expect(CoachRequestSchema.safeParse({ ...request, intent: "lighten" }).success).toBe(false);
+    expect(CoachRequestSchema.safeParse({ ...request, ownedTipsMm: [0] }).success).toBe(false);
+    expect(CoachRequestSchema.safeParse({ ...request, extra: 1 }).success).toBe(false);
   });
 });

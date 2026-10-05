@@ -43,10 +43,10 @@
 
 ## Task 3: Structured coaching
 
-- [ ] Define input schema for intent, target area, protected details, skill level, tool, and paper.
-- [ ] Return exactly three bounded ideas with risk level, required technique, and Careful/Balanced/Bold classification (D-014).
-- [ ] Generate ordered physical instructions from rule-approved facts only.
-- [ ] Show source/evidence summaries in accessible language.
+- [x] Define input schema for intent, target area, protected details, skill level, tool, and paper (`CoachRequestSchema`).
+- [x] Return exactly three bounded ideas with risk level, required technique, and Careful/Balanced/Bold classification (D-014; deterministic, D-065).
+- [x] Generate ordered physical instructions from rule-approved facts only.
+- [ ] Show source/evidence summaries in accessible language (`evidenceFor` gives the text; the view comes with the guided flow, Task 5).
 
 ## Task 4: Local project repository and export
 

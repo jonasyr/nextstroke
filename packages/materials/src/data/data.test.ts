@@ -29,8 +29,9 @@ describe("the shipped material dataset", () => {
     const paper = DATASET.papers.find((p) => p.id === "bristol-smooth");
     if (!paper) throw new Error("missing paper");
     const pen = factsFor(DATASET, "sakura-pigma-micron");
-    const hatching = feasibility("hatching", { pen, paper });
-    expect(hatching.minSpacingMm).toBe(0.3);
+    // The user draws with the 0.35 mm Micron, a size Sakura lists.
+    const hatching = feasibility("hatching", { pen, paper, ownedTipsMm: [0.35] });
+    expect(hatching.minSpacingMm).toBe(0.7);
     expect(hatching.reasons[0]?.claims).toEqual(["sakura-pigma-micron-tipSizesMm-7"]);
   });
 });
