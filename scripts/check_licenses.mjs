@@ -13,9 +13,15 @@ const allowed = new Set([
   "LGPL-3.0", // heic-to only, unmodified and lazy-loaded (spec §13.2)
 ]);
 
-const raw = execFileSync("pnpm", ["licenses", "list", "--prod", "--json", "--recursive"], {
-  encoding: "utf8",
-});
+// The pnpm that runs this script, not whichever pnpm comes first on PATH: a global pnpm of
+// another major cannot read this store (ERR_PNPM_MISSING_PACKAGE_INDEX_FILE).
+const args = ["licenses", "list", "--prod", "--json", "--recursive"];
+const self = process.env.npm_execpath;
+const raw = !self
+  ? execFileSync("pnpm", args, { encoding: "utf8" })
+  : /\.[cm]?js$/.test(self)
+    ? execFileSync(process.execPath, [self, ...args], { encoding: "utf8" })
+    : execFileSync(self, args, { encoding: "utf8" });
 const byLicense = JSON.parse(raw);
 const bad = Object.entries(byLicense).filter(([license]) => {
   const parts = license.replace(/[()]/g, "").split(/\s+OR\s+/);

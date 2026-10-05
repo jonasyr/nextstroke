@@ -12,9 +12,10 @@
     "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.node.json && tsc -p tsconfig.e2e.json",
     "deps": "depcruise apps packages --config .dependency-cruiser.cjs",
     "licenses": "node scripts/check_licenses.mjs",
+    "pnpm-version": "node scripts/check_pnpm.mjs",
     "test": "vitest run --coverage",
     "build": "pnpm --filter @nextstroke/web build",
-    "check": "pnpm run lint && pnpm run typecheck && pnpm run deps && pnpm run licenses && pnpm run test && pnpm run build",
+    "check": "pnpm run pnpm-version && pnpm run lint && pnpm run typecheck && pnpm run deps && pnpm run licenses && pnpm run test && pnpm run build",
     "e2e": "pnpm --filter @nextstroke/web e2e"
   },
   "devDependencies": {
