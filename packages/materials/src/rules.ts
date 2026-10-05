@@ -21,6 +21,8 @@ export type Technique = (typeof TECHNIQUES)[number];
 export type Risk = "low" | "medium" | "high";
 
 export interface Reason {
+  /** "spacing" restates the spacing; "caution" is something to watch out for. */
+  kind: "spacing" | "caution";
   /** German, for the user. */
   text: string;
   /** Claim ids behind it; empty for a general rule. */
@@ -47,18 +49,33 @@ export interface Situation {
 const RISK: Risk[] = ["low", "medium", "high"];
 const raise = (risk: Risk, by = 1): Risk => RISK[Math.min(2, RISK.indexOf(risk) + by)] as Risk;
 
-const general = (text: string): Reason => ({ text, claims: [] });
-const sourced = (text: string, fact: Fact | undefined): Reason => ({
+const general = (text: string, kind: Reason["kind"] = "caution"): Reason => ({
+  kind,
+  text,
+  claims: [],
+});
+const sourced = (
+  text: string,
+  fact: Fact | undefined,
+  kind: Reason["kind"] = "caution",
+): Reason => ({
+  kind,
   text,
   claims: fact?.claims.map((c) => c.id) ?? [],
 });
 
-/** The finest tip the user can draw with: owned sizes first, else the pen's finest, else unknown. */
-function finestTipMm(s: Situation): number | null {
-  if (s.ownedTipsMm?.length) return Math.min(...s.ownedTipsMm);
-  const sizes = s.pen.tipSizesMm;
-  if (!sizes || sizes.conflict || typeof sizes.value !== "string") return null;
-  return Math.min(...sizes.value.split(",").map(Number));
+/** The tip assumed when the user has not said which one they draw with: a common 0.3 mm. */
+export const ASSUMED_TIP_MM = 0.3;
+/** Closer than this, hand-drawn lines or dots run together, whatever the tip. */
+export const MIN_HAND_SPACING_MM = 0.5;
+
+const tenth = (value: number) => Math.round(value * 10) / 10;
+
+/** Whether every owned size is one the pen's maker lists, so the catalogue can be cited. */
+function fromCatalogue(owned: number[], sizes: Fact | undefined): boolean {
+  if (!sizes || sizes.conflict || typeof sizes.value !== "string") return false;
+  const listed = sizes.value.split(",").map(Number);
+  return owned.every((mm) => listed.includes(mm));
 }
 
 export function feasibility(technique: Technique, s: Situation): Feasibility {
@@ -77,24 +94,32 @@ export function feasibility(technique: Technique, s: Situation): Feasibility {
       ],
     };
   }
-  const finest = finestTipMm(s);
-  const known = finest !== null;
-  // A line is about as wide as the tip; a gap of at least two line widths keeps lines apart.
-  const tip = finest ?? 0.5;
+  // The spacing follows the tip the user draws with, not the finest the maker sells.
+  const owned = s.ownedTipsMm?.length ? Math.min(...s.ownedTipsMm) : null;
+  const tip = owned ?? ASSUMED_TIP_MM;
   let minSpacingMm: number | undefined;
   if (technique === "hatching" || technique === "crossHatching" || technique === "stippling") {
-    minSpacingMm = Math.round(tip * 2 * 100) / 100;
-    reasons.push(
-      known
-        ? sourced(
-            `Mit ${tip} mm Spitze Abstand mindestens ${minSpacingMm} mm halten.`,
-            s.pen.tipSizesMm,
-          )
-        : general(
-            `Strichstärke unbekannt: lieber ${minSpacingMm} mm Abstand oder mehr, erst auf einem Rest testen.`,
-          ),
-    );
-    if (!known) risk = raise(risk);
+    // A line is about as wide as the tip; a gap of two line widths keeps lines apart.
+    minSpacingMm = tenth(Math.max(tip * 2, MIN_HAND_SPACING_MM));
+    const at = String(tip).replace(".", ",");
+    const gap = String(minSpacingMm).replace(".", ",");
+    if (owned === null) {
+      reasons.push(
+        general(
+          `Für eine übliche ${at}-mm-Spitze: mindestens ${gap} mm Abstand. Mit dickerer Spitze mehr.`,
+          "spacing",
+        ),
+      );
+    } else {
+      const text = `Mit ${at} mm Spitze: mindestens ${gap} mm Abstand.`;
+      reasons.push(
+        fromCatalogue(s.ownedTipsMm ?? [], s.pen.tipSizesMm)
+          ? sourced(text, s.pen.tipSizesMm, "spacing")
+          : general(text, "spacing"),
+      );
+    }
+    // An unknown pen may draw wider than its nominal size: keep more room.
+    if (Object.keys(s.pen).length === 0) risk = raise(risk);
   }
   if (s.paper.feathers === "likely" || s.paper.feathers === "unknown") {
     if (technique === "crossHatching" || technique === "stippling") risk = raise(risk);
@@ -105,7 +130,7 @@ export function feasibility(technique: Technique, s: Situation): Feasibility {
           : "Papier unbekannt: erst auf einem Rand oder Rest testen, ob die Tinte verläuft.",
       ),
     );
-    if (minSpacingMm !== undefined) minSpacingMm = Math.round(minSpacingMm * 1.5 * 100) / 100;
+    if (minSpacingMm !== undefined) minSpacingMm = tenth(minSpacingMm * 1.5);
   }
   if (technique === "crossHatching") {
     const smear = s.pen.smearResistant;

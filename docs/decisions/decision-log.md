@@ -628,3 +628,13 @@
 - **Alternatives:** Waiting for the full Phase 2 exit (the dataset work has no iPhone dependency); retailer pages as sources (excluded by the evidence model); boolean lightfastness (would turn different maker claims into one unsupported "yes").
 - **Consequence:** `packages/materials` ships `DATASET`, `validateDataset` (a test on every build), `factsFor` and `feasibility`. Open: the dataset's own license (facts and paraphrases, separate from the AGPL code), and refreshing claims when maker pages change.
 
+## D-065 — The coach starts deterministic: templates filtered by the material rules
+
+- **Date:** 2026-10-05
+- **Refines:** Phase 3 Task 3, D-014, spec §9 ("rules filter before an LLM explains").
+- **Trigger:** Phase 3 Task 3 (structured coaching) after the material dataset (D-064).
+- **Selected:** `packages/coaching` turns a request (intent: depth, contrast, texture, outline, background or detail; skill; pen; paper; optional owned tips, marked area and protected details) into exactly three ideas, Careful, Balanced and Bold, without a model. Each intent has a template per level (technique, title, why, a practice step and ordered physical steps); the feasibility rules decide whether it may be offered, and a risky technique is never the Careful idea; a fallback that works with any black fineliner on any paper keeps the count at three. Every idea starts with practice on a scrap of the same paper, then the rules' cautions, then "do not touch the protected details" when marked, the steps, and a check with Quick Compare. Spacing comes from the tip the user draws with (a common 0.3 mm when not said), never closer than 0.5 mm, in tenths of a millimetre, and 25 % wider for beginners; the maker's size list is cited only when the user's tip is on it. `evidenceFor` turns cited claims into plain German with publisher, link and retrieval date.
+- **Alternatives:** An LLM writing ideas from the photo (needs network, a secret boundary and image upload consent; may invent facts); ideas from the finest catalogue tip (gave 0.13 mm spacing, which no hand draws).
+- **Reason:** Offline, free, and unable to invent a material property; the beginner study measures whether the instructions are understood before any model is added.
+- **Consequence:** Ideas do not yet look at the drawing itself; the user chooses intent and area. A model that reads the image and tailors the wording may follow later behind explicit upload consent, and only within ideas these rules allow.
+

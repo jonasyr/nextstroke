@@ -52,18 +52,26 @@ describe("technique feasibility (Phase 3 Task 1)", () => {
     expect(f.reasons[0]?.claims).toEqual([]);
   });
 
-  it("derives spacing from the finest tip and cites the claim", () => {
+  it("derives spacing from the tip the user draws with, not the finest sold", () => {
+    // Not said which: a common 0.3 mm tip, two line widths apart.
     const f = feasibility("hatching", micron);
-    expect(f).toMatchObject({ feasible: true, risk: "low", minSpacingMm: 0.4 });
-    expect(f.reasons[0]?.claims).toEqual(["tips"]);
-    // Owned sizes win over the pen's catalogue.
-    expect(feasibility("hatching", { ...micron, ownedTipsMm: [0.5, 0.8] }).minSpacingMm).toBe(1);
+    expect(f).toMatchObject({ feasible: true, risk: "low", minSpacingMm: 0.6 });
+    expect(f.reasons[0]).toMatchObject({ kind: "spacing", claims: [] });
+    expect(f.reasons[0]?.text).toMatch(/übliche 0,3-mm-Spitze: mindestens 0,6 mm/);
+    // A size from the maker's list is cited; never closer than a hand can keep lines apart.
+    const listed = feasibility("hatching", { ...micron, ownedTipsMm: [0.2] });
+    expect(listed.minSpacingMm).toBe(0.5);
+    expect(listed.reasons[0]?.claims).toEqual(["tips"]);
+    // A size the maker does not list is the user's word only.
+    const owned = feasibility("hatching", { ...micron, ownedTipsMm: [0.5, 0.8] });
+    expect(owned.minSpacingMm).toBe(1);
+    expect(owned.reasons[0]).toMatchObject({ kind: "spacing", claims: [] });
   });
 
   it("is more careful with an unknown pen and paper", () => {
     const f = feasibility("stippling", { pen: {}, paper: unknownPaper });
     expect(f.risk).toBe("high");
-    expect(f.minSpacingMm).toBe(1.5);
+    expect(f.minSpacingMm).toBe(0.9);
     expect(f.reasons.every((r) => r.claims.length === 0)).toBe(true);
   });
 
@@ -88,7 +96,10 @@ describe("technique feasibility (Phase 3 Task 1)", () => {
       pen: { tipSizesMm: { value: null, conflict: true, claims: [] } },
       paper: bristol,
     };
-    expect(feasibility("hatching", conflicted).minSpacingMm).toBe(1);
+    expect(feasibility("hatching", conflicted).minSpacingMm).toBe(0.6);
+    expect(
+      feasibility("hatching", { ...conflicted, ownedTipsMm: [0.3] }).reasons[0]?.claims,
+    ).toEqual([]);
     const all = feasibleTechniques(micron);
     expect(all.map((f) => f.technique)).toContain("negativeSpace");
     expect(all.filter((f) => !f.feasible).map((f) => f.technique)).toEqual(["lighten"]);
