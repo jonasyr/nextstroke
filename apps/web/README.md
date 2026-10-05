@@ -22,8 +22,10 @@ Verified on 2026-10-03 in Chromium against `vite preview`: the app reloads offli
 
 ## Deploy to ChatGPT Sites (manual)
 
-1. `pnpm run build` from the repository root.
-2. In ChatGPT Sites, create or update a private site in **static** mode with `apps/web/dist` as the directory. The app needs no D1 or R2 binding; if Sites asks for one, leave it empty and unused (see `docs/research/2026-10-03-sites-probe-iphone.md`).
+A deploy never builds (D-064). After every green CI run on `main`, CI builds with the pinned toolchain (Node 24, pnpm 12.8.1) and commits the result to the `site` branch: `dist/` (the app), `SHA256SUMS`, and `BUILD.md` (source commit, time, Node and pnpm versions).
+
+1. Fetch the `site` branch. Check that `BUILD.md` names the intended source commit, and run `cd dist && sha256sum -c ../SHA256SUMS`.
+2. In ChatGPT Sites, create or update a private site in **static** mode with that `dist/` as the directory. The app needs no D1 or R2 binding; if Sites asks for one, leave it empty and unused (see `docs/research/2026-10-03-sites-probe-iphone.md`).
 3. Open the site on the iPhone, add it to the Home Screen, reload once with the network on, then check that it opens in airplane mode.
 4. After each redeploy, open the installed app once online and confirm the update notice appears and **Neu laden** loads the new version.
 
