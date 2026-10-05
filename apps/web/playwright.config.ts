@@ -8,12 +8,20 @@ export default defineConfig({
   testDir: "e2e",
   timeout: 60_000,
   fullyParallel: false,
-  use: {
-    baseURL: "http://localhost:4319/",
-    ...devices["iPhone 13 Mini"],
-    browserName: "chromium",
-    launchOptions: executablePath ? { executablePath } : {},
-  },
+  use: { baseURL: "http://localhost:4319/" },
+  // WebKit is Safari's engine, not iPhone Safari (AGENTS rule 9); CI runs it (PW_WEBKIT=1) so
+  // only what needs a real iPhone is left for one (D-063).
+  projects: [
+    {
+      name: "chromium",
+      use: {
+        ...devices["iPhone 13 Mini"],
+        browserName: "chromium",
+        launchOptions: executablePath ? { executablePath } : {},
+      },
+    },
+    ...(process.env.PW_WEBKIT ? [{ name: "webkit", use: { ...devices["iPhone 13 Mini"] } }] : []),
+  ],
   webServer: {
     command: "pnpm exec vite preview --port 4319 --strictPort",
     url: "http://localhost:4319/",

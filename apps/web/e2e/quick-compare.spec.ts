@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { syntheticImage, twoPagePdf } from "./fixtures.ts";
+import { serveDist } from "./server.ts";
 
 async function canvasHasInk(page: import("@playwright/test").Page): Promise<boolean> {
   return page.evaluate(() => {
@@ -74,13 +75,19 @@ test("loads a chosen page of a multi-page PDF", async ({ page }) => {
   await expect(page.getByText(/zwei-seiten\.pdf · 2\/2/)).toBeVisible({ timeout: 20_000 });
 });
 
-test("works offline after the first visit", async ({ page, context }) => {
-  await page.goto("./");
+test("works offline after the first visit", async ({ page, context, browserName }) => {
+  // Its own server, switched off after the first visit: nothing but the precache can answer.
+  const server = await serveDist(4421);
+  await page.goto(server.url);
   await page.evaluate(() => navigator.serviceWorker.ready);
   await page.reload();
-  await context.setOffline(true);
-  await page.goto("#/compare");
-  await page.reload();
+  await server.close();
+  // Chromium's offline switch also drives navigator.onLine and so the banner; WebKit's would
+  // block the service worker's answers too.
+  const chromium = browserName === "chromium";
+  if (chromium) await context.setOffline(true);
+  await page.goto("about:blank");
+  await page.goto(`${server.url}#/compare`);
   const original = await syntheticImage(page, {
     width: 1200,
     height: 800,
@@ -91,7 +98,7 @@ test("works offline after the first visit", async ({ page, context }) => {
   await expect(page.getByText("Bild geladen. Jetzt das zweite Bild wählen.")).toBeVisible();
   await page.getByLabel("Vorlage wählen").setInputFiles({ ...original, name: "b.png" });
   await expect(page.getByRole("dialog", { name: "Vergleich" })).toBeVisible();
-  await expect(page.getByRole("status").filter({ hasText: "Offline" })).toBeVisible();
+  if (chromium) await expect(page.getByRole("status").filter({ hasText: "Offline" })).toBeVisible();
   // opencv.js comes from the precache too: paper detection answers (D-055).
   await page.getByRole("tab", { name: /Ausrichten/ }).click();
   await page.getByRole("button", { name: "Ecken setzen" }).click();
