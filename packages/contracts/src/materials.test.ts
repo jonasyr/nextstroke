@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { MaterialClaimSchema, SourceRecordSchema } from "./materials.ts";
+import {
+  FINELINER_PREDICATES,
+  FinelinerProfileSchema,
+  MaterialClaimSchema,
+  PaperProfileSchema,
+  SourceRecordSchema,
+} from "./materials.ts";
 
 const claim = {
   id: "micron-ink",
@@ -50,5 +56,43 @@ describe("material claims (material-knowledge-base.md)", () => {
     };
     expect(SourceRecordSchema.parse(source).publisher).toBe("Sakura");
     expect(() => SourceRecordSchema.parse({ ...source, url: "not a url" })).toThrow();
+  });
+});
+
+describe("fineliner and paper profiles", () => {
+  it("names a pen by brand and product line, or marks it generic", () => {
+    const pen = {
+      id: "p",
+      brand: "Sakura",
+      productLine: "Pigma Micron",
+      colorFamily: "black",
+      generic: false,
+    };
+    expect(FinelinerProfileSchema.parse(pen).id).toBe("p");
+    expect(() => FinelinerProfileSchema.parse({ ...pen, brand: undefined })).toThrow(/brand/);
+    expect(
+      FinelinerProfileSchema.parse({ id: "generic", colorFamily: "black", generic: true }).generic,
+    ).toBe(true);
+    expect(() => FinelinerProfileSchema.parse({ ...pen, colorFamily: "red" })).toThrow();
+  });
+
+  it("types every predicate's value", () => {
+    expect(FINELINER_PREDICATES.inkType.safeParse("pigment").success).toBe(true);
+    expect(FINELINER_PREDICATES.inkType.safeParse("gel").success).toBe(false);
+    expect(FINELINER_PREDICATES.tipSizesMm.safeParse("0.05,0.1,0.8").success).toBe(true);
+    expect(FINELINER_PREDICATES.tipSizesMm.safeParse("005, 01").success).toBe(false);
+    expect(FINELINER_PREDICATES.waterResistantWhenDry.safeParse("yes").success).toBe(false);
+  });
+
+  it("keeps papers generic categories", () => {
+    const paper = {
+      id: "copy",
+      name: "Kopierpapier",
+      surface: "smooth",
+      feathers: "likely",
+      generic: true,
+    };
+    expect(PaperProfileSchema.parse(paper).feathers).toBe("likely");
+    expect(() => PaperProfileSchema.parse({ ...paper, generic: false })).toThrow();
   });
 });

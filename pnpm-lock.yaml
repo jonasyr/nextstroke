@@ -245,7 +245,11 @@ importers:
 
   packages/imaging: {}
 
-  packages/materials: {}
+  packages/materials:
+    dependencies:
+      '@nextstroke/contracts':
+        specifier: workspace:*
+        version: link:../contracts
 
   packages/ui:
     dependencies:
