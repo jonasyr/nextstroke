@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { activateUpdate, watchForUpdate } from "./register.ts";
+import { activateUpdate, reloadOnRequestedUpdate, watchForUpdate } from "./register.ts";
 
 class FakeWorker extends EventTarget {
   state = "installing";
@@ -53,5 +53,19 @@ describe("service worker updates", () => {
     const worker = new FakeWorker();
     activateUpdate(worker as unknown as ServiceWorker);
     expect(worker.postMessage).toHaveBeenCalledWith("SKIP_WAITING");
+  });
+
+  it("reloads on a new controller only after the user asked for the update", () => {
+    const container = new EventTarget();
+    const reload = vi.fn();
+    const update = reloadOnRequestedUpdate(container, reload);
+    // iOS hands control over by itself, e.g. while the photo picker is open: no reload.
+    container.dispatchEvent(new Event("controllerchange"));
+    expect(reload).not.toHaveBeenCalled();
+    const worker = new FakeWorker();
+    update(worker as unknown as ServiceWorker);
+    expect(worker.postMessage).toHaveBeenCalledWith("SKIP_WAITING");
+    container.dispatchEvent(new Event("controllerchange"));
+    expect(reload).toHaveBeenCalledTimes(1);
   });
 });
