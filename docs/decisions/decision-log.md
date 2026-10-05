@@ -646,3 +646,12 @@
 - **Alternatives:** Last-write-wins saves (silently loses work across tabs); the `idb` wrapper library (small, but the adapter is thin enough without it); compressing images in the package (no gain, slower on the phone).
 - **Consequence:** Tested with fake-indexeddb in unit tests; the real-browser check follows with the guided flow (Task 5), and `persist()` is asked for when the first project is saved. The `persist()` result on a real iPhone, moved here by D-063, is still to be recorded.
 
+
+## D-067 — Start offers the coach and Quick Compare, then the projects on this device
+
+- **Date:** 2026-10-05
+- **Refines:** D-056 ("The app opens on the start screen … Projects and guided coaching keep their routes but are not linked until they exist"), Phase 3 Task 5.
+- **Trigger:** The owner approved the clickable guided-flow prototype ("Startbildschirm: ok"; "Stelle markieren: Antippen, und den Kreis per Ziehen vergrößern"; "Geschützte Stellen: weitere Optionen").
+- **Selected:** `#/` is a new start screen: "Was willst du heute machen?", then "Mit Coach weiterzeichnen" (prominent) and "Schnell vergleichen", then "Deine Projekte", newest first, with checkpoint count and last change, and the storage notes from `describeStorage`. Quick Compare moves to `#/compare` with "Zurück" to the start; it still works without an account, network or AI. A project opens at `#/projects/<id>`. Still no global navigation: every screen has its own way back. In the guided flow the area to work on is a circle: a tap places it, dragging from its ring resizes it; protected details sit under "Weitere Optionen" and are added or removed by tapping. The flow's state is pure (`apps/web/src/coach/flow.ts`) and ends in a `CoachRequest`.
+- **Alternatives:** Keeping Quick Compare as the start and linking the coach from it (hides the main Phase 3 path); a bottom tab bar (D-056 rejected global navigation for two destinations); painting the area with a brush (finer, but slower on a phone and harder to undo).
+- **Consequence:** Opening the app takes one more tap to compare. The browser tests open Quick Compare at `#/compare`. Phase 2's iPhone checklist is unaffected except that "Schnell vergleichen" is the way in.

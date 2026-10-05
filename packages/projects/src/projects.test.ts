@@ -40,7 +40,7 @@ beforeEach(() => {
 
 describe("local projects (Phase 3 Task 4)", () => {
   it("keeps the original immutable and adds checkpoints as new assets", async () => {
-    const project = await createProject(deps, "Leuchtturm", { ...photo(1), role: "original" });
+    const project = await createProject(deps, "Leuchtturm", photo(1));
     expect(project.revision).toBe(0);
     const original = await store.getAsset(project.originalAssetId);
     expect(original?.record.role).toBe("original");
@@ -54,7 +54,7 @@ describe("local projects (Phase 3 Task 4)", () => {
   });
 
   it("refuses to overwrite a newer revision", async () => {
-    const project = await createProject(deps, "A", { ...photo(1), role: "original" });
+    const project = await createProject(deps, "A", photo(1));
     await updateProject(deps, project, (p) => ({ ...p, title: "B" }));
     await expect(updateProject(deps, project, (p) => ({ ...p, title: "C" }))).rejects.toThrow(
       ConflictError,
@@ -63,7 +63,7 @@ describe("local projects (Phase 3 Task 4)", () => {
   });
 
   it("never replaces an asset with other content", async () => {
-    const project = await createProject(deps, "A", { ...photo(1), role: "original" });
+    const project = await createProject(deps, "A", photo(1));
     const stored = await store.getAsset(project.originalAssetId);
     if (!stored) throw new Error("missing");
     await store.putAsset(stored);
@@ -73,8 +73,8 @@ describe("local projects (Phase 3 Task 4)", () => {
   });
 
   it("deletes a project with the assets only it uses", async () => {
-    const a = await createProject(deps, "A", { ...photo(1), role: "original" });
-    const b = await createProject(deps, "B", { ...photo(2), role: "original" });
+    const a = await createProject(deps, "A", photo(1));
+    const b = await createProject(deps, "B", photo(2));
     // B also shows A's original as its reference.
     await updateProject(deps, b, (p) => ({ ...p, referenceAssetId: a.originalAssetId }));
     await deleteProject(deps, a.id);
@@ -90,7 +90,7 @@ describe("project packages", () => {
   it("round-trips a project with every hash checked", async () => {
     const project = await addCheckpoint(
       deps,
-      await createProject(deps, "Leuchtturm", { ...photo(1), role: "original" }),
+      await createProject(deps, "Leuchtturm", photo(1)),
       photo(2),
     );
     const zip = await exportProject(deps, project.id, "0.1.0");
@@ -110,7 +110,7 @@ describe("project packages", () => {
   });
 
   it("imports a project that exists already as a copy", async () => {
-    const project = await createProject(deps, "Leuchtturm", { ...photo(1), role: "original" });
+    const project = await createProject(deps, "Leuchtturm", photo(1));
     const copy = await importProject(deps, await exportProject(deps, project.id, "0.1.0"));
     expect(copy.id).not.toBe(project.id);
     expect(copy.title).toBe("Leuchtturm (Kopie)");
@@ -118,7 +118,7 @@ describe("project packages", () => {
   });
 
   it("refuses changed, incomplete or foreign packages", async () => {
-    const project = await createProject(deps, "A", { ...photo(1), role: "original" });
+    const project = await createProject(deps, "A", photo(1));
     const files = unzipSync(await exportProject(deps, project.id, "0.1.0"));
     const repack = (change: (f: Record<string, Uint8Array>) => void) => {
       const copy = { ...files };

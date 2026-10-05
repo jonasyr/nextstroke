@@ -103,6 +103,8 @@ Beginners and hobby artists with a started fineliner artwork and an iPhone.
 
 ## 6. Main flows
 
+The app opens on a start screen with two ways in, the guided coach and Quick Compare, followed by the projects stored on this device (D-067).
+
 ### 6.1 Quick Compare
 
 1. Choose original.

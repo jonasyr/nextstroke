@@ -1,0 +1,129 @@
+import type { CoachIntent, CoachRequest } from "@nextstroke/contracts";
+
+/**
+ * The guided flow's state (Phase 3 Task 5): photo, pen and paper, goal, three ideas, steps,
+ * check. Pure, so the React screens stay thin; every choice ends in a `CoachRequest`.
+ */
+
+export type FlowStep = "photo" | "tool" | "goal" | "ideas" | "steps" | "check";
+
+/** A circle on the photo, normalized to its width (x, r) and height (y). */
+export interface Spot {
+  x: number;
+  y: number;
+  r: number;
+}
+
+export interface FlowChoices {
+  finelinerId: string;
+  /** The tip the user draws with, in mm; null for "Weiß ich nicht". */
+  tipMm: number | null;
+  paperId: string;
+  intent: CoachIntent;
+  skill: CoachRequest["skill"];
+  area: Spot | null;
+  protectedSpots: Spot[];
+}
+
+export const DEFAULT_CHOICES: FlowChoices = {
+  finelinerId: "generic",
+  tipMm: null,
+  paperId: "unknown",
+  intent: "depth",
+  skill: "beginner",
+  area: null,
+  protectedSpots: [],
+};
+
+/** Smallest and default circle size, as a share of the photo's width. */
+export const SPOT = { min: 0.04, start: 0.12, max: 0.6 } as const;
+export const MAX_PROTECTED = 16;
+
+/** A spot as the polygon the contracts take: 16 points, clamped to the photo, y scaled by aspect. */
+export function spotToPolygon(spot: Spot, aspect: number): [number, number][] {
+  const clamp = (v: number) => Math.min(1, Math.max(0, v));
+  return Array.from({ length: 16 }, (_, i) => {
+    const a = (i / 16) * Math.PI * 2;
+    return [clamp(spot.x + spot.r * Math.cos(a)), clamp(spot.y + spot.r * aspect * Math.sin(a))];
+  });
+}
+
+/** The request for the coach; `aspect` is the photo's width over its height. */
+export function requestFrom(choices: FlowChoices, aspect: number): CoachRequest {
+  return {
+    intent: choices.intent,
+    skill: choices.skill,
+    finelinerId: choices.finelinerId,
+    paperId: choices.paperId,
+    ...(choices.tipMm === null ? {} : { ownedTipsMm: [choices.tipMm] }),
+    ...(choices.area ? { area: spotToPolygon(choices.area, aspect) } : {}),
+    ...(choices.protectedSpots.length
+      ? { protected: choices.protectedSpots.map((s) => spotToPolygon(s, aspect)) }
+      : {}),
+  };
+}
+
+/** What a press does on the photo: move the area here, or resize it when pressed on its ring. */
+export function pressArea(area: Spot | null, at: { x: number; y: number }, aspect: number) {
+  if (area) {
+    const d = Math.hypot(at.x - area.x, (at.y - area.y) / aspect);
+    if (d <= area.r * 1.25) return { area, resizing: true };
+  }
+  return { area: { x: at.x, y: at.y, r: SPOT.start }, resizing: false };
+}
+
+/** Dragging after a press on the ring: the radius follows the finger. */
+export function dragArea(area: Spot, at: { x: number; y: number }, aspect: number): Spot {
+  const r = Math.hypot(at.x - area.x, (at.y - area.y) / aspect);
+  return { ...area, r: Math.min(SPOT.max, Math.max(SPOT.min, r)) };
+}
+
+/** A tap in protection mode adds a protected spot there, or removes the one it hits. */
+export function toggleProtected(
+  spots: Spot[],
+  at: { x: number; y: number },
+  aspect: number,
+): Spot[] {
+  const hit = spots.findIndex((s) => Math.hypot(at.x - s.x, (at.y - s.y) / aspect) <= s.r);
+  if (hit >= 0) return spots.filter((_, i) => i !== hit);
+  if (spots.length >= MAX_PROTECTED) return spots;
+  return [...spots, { x: at.x, y: at.y, r: SPOT.start * 0.6 }];
+}
+
+const MONTHS = [
+  "Jan.",
+  "Feb.",
+  "März",
+  "Apr.",
+  "Mai",
+  "Juni",
+  "Juli",
+  "Aug.",
+  "Sep.",
+  "Okt.",
+  "Nov.",
+  "Dez.",
+];
+
+/** "5. Okt." */
+export function shortDate(iso: string): string {
+  const date = new Date(iso);
+  return `${date.getUTCDate()}. ${MONTHS[date.getUTCMonth()]}`;
+}
+
+/** "Projekt vom 5. Okt." */
+export function defaultTitle(iso: string): string {
+  return `Projekt vom ${shortDate(iso)}`;
+}
+
+/** Tip sizes from the maker's list, as numbers, ascending; empty when unknown. */
+export function tipChoices(tipSizesMm: string | number | boolean | null | undefined): number[] {
+  if (typeof tipSizesMm !== "string") return [];
+  return tipSizesMm
+    .split(",")
+    .map(Number)
+    .filter((n) => n > 0)
+    .sort((a, b) => a - b);
+}
+
+export const mmLabel = (mm: number) => String(mm).replace(".", ",");

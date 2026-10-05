@@ -57,7 +57,7 @@
 
 ## Task 5: Complete non-preview guided flow
 
-- [ ] Implement Capture → Straighten → Tool → Intent → Ideas → Execute → Check.
+- [ ] Implement Capture → Straighten → Tool → Intent → Ideas → Execute → Check. Done: start screen with the coach, Quick Compare and the projects list (D-067), pure flow state with the circle area and protected spots (`apps/web/src/coach/flow.ts`). Next: tool, goal, ideas and steps; photo and corners; checkpoints, project view and export.
 - [ ] Reuse Quick Compare for checkpoint inspection.
 - [ ] Test with 5–8 beginners without developer explanation.
 - [ ] This study is also the deferred Phase 0 beginner gate (D-048): use standardized starters first, define "understands" and "worsens" as in spec §15.2, and record it in the Phase 0 results report.

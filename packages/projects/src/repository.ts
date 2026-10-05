@@ -55,7 +55,7 @@ export async function addAsset(deps: ProjectDeps, input: AssetInput): Promise<Im
 export async function createProject(
   deps: ProjectDeps,
   title: string,
-  original: AssetInput,
+  original: Omit<AssetInput, "role">,
 ): Promise<Project> {
   const asset = await addAsset(deps, { ...original, role: "original" });
   const now = deps.now();

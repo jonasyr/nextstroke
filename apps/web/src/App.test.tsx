@@ -1,7 +1,17 @@
 // @vitest-environment jsdom
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
-import { App } from "./App.tsx";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+// IndexedDB is not in jsdom; Home then says projects cannot be stored, which the shell test needs not.
+vi.mock("./coach/browser.ts", () => ({
+  browserCoachDeps: {
+    projects: null,
+    storage: async () => ({ persisted: null }),
+    persist: async () => false,
+  },
+}));
+
+const { App } = await import("./App.tsx");
 
 afterEach(() => {
   cleanup();
@@ -13,32 +23,41 @@ function setOnline(value: boolean) {
   window.dispatchEvent(new Event(value ? "online" : "offline"));
 }
 
-describe("App shell (D-056)", () => {
-  it("opens on the comparison start screen without a navigation bar", () => {
+async function go(hash: string) {
+  await act(async () => {
+    window.location.hash = hash;
+    window.dispatchEvent(new HashChangeEvent("hashchange"));
+  });
+}
+
+describe("App shell (D-056, D-067)", () => {
+  it("opens on the start screen with the coach and quick compare, without a navigation bar", async () => {
     render(<App />);
+    await act(async () => undefined);
     expect(screen.getByText("NextStroke")).toBeTruthy();
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Was willst du heute machen?" }),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole("link", { name: /Mit Coach weiterzeichnen/ }).getAttribute("href"),
+    ).toBe("#/guided");
+    expect(screen.getByRole("link", { name: /Schnell vergleichen/ }).getAttribute("href")).toBe(
+      "#/compare",
+    );
+    expect(screen.queryByRole("navigation")).toBeNull();
+  });
+
+  it("opens quick compare with a way back to the start", async () => {
+    render(<App />);
+    await go("#/compare");
     expect(
       screen.getByRole("heading", {
         level: 1,
         name: "Vergleiche deine Zeichnung mit der Vorlage.",
       }),
     ).toBeTruthy();
-    expect(screen.queryByRole("navigation")).toBeNull();
-  });
-
-  it("keeps later sections reachable by address, with a way back", async () => {
-    render(<App />);
-    await act(async () => {
-      window.location.hash = "#/projects";
-      window.dispatchEvent(new HashChangeEvent("hashchange"));
-    });
-    expect(screen.getByRole("heading", { level: 1, name: "Projekte" })).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Zum Vergleich" }).getAttribute("href")).toBe("#/");
-    await act(async () => {
-      window.location.hash = "#/guided";
-      window.dispatchEvent(new HashChangeEvent("hashchange"));
-    });
-    expect(screen.getByRole("heading", { level: 1, name: "Geführtes Projekt" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Zurück" }));
+    expect(window.location.hash).toBe("#/");
   });
 
   it("says that comparing works offline while AI features need a network", async () => {

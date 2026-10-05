@@ -782,3 +782,96 @@ input[type="range"]::-moz-range-thumb {
   align-self: center;
   margin-top: -8px;
 }
+
+/* Start (D-067): coach or quick compare, then the projects on this device. */
+.ns-home {
+  gap: 20px;
+}
+.ns-group {
+  display: grid;
+  gap: 10px;
+}
+.ns-label {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.ns-choice {
+  display: grid;
+  grid-template-columns: 52px 1fr;
+  gap: 14px;
+  align-items: center;
+  min-height: 84px;
+  padding: 16px;
+  border-radius: 16px;
+  background: var(--surface);
+  color: var(--fg);
+  text-decoration: none;
+}
+.ns-choice b {
+  display: block;
+  font-size: 17px;
+}
+.ns-choice-main {
+  background: var(--surface-2);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.ns-choice-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: var(--surface-2);
+}
+.ns-choice-icon-main {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+.ns-choice:focus-visible,
+.ns-project:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.ns-projects {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+.ns-project {
+  display: grid;
+  grid-template-columns: 56px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  min-height: 44px;
+  padding: 8px;
+  border-radius: 12px;
+  color: var(--fg);
+  text-decoration: none;
+}
+.ns-project:hover {
+  background: var(--surface);
+}
+.ns-project-thumb {
+  display: block;
+  width: 56px;
+  height: 70px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: var(--surface-2);
+}
+.ns-project-text {
+  display: grid;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.ns-note {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
