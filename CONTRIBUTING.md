@@ -5,13 +5,15 @@ Read `AGENTS.md` and `docs/README.md` first. This file covers the mechanics: set
 ## Setup
 
 ```bash
-./scripts/setup.sh          # idempotent: tools, legacy vendor assets, uv/pnpm installs
+./scripts/setup.sh          # idempotent: tools, legacy vendor assets, uv/pnpm installs, Playwright Chromium + WebKit
 uvx pre-commit install      # run the same checks on every commit
 ```
 
 ## Checks
 
 `./scripts/check.sh` runs everything CI runs: documentation links; for each Python project (currently `lab/`) Ruff format, Ruff lint, mypy strict, and pytest; and for the TypeScript workspace `pnpm run check`, which runs Biome, `tsc` strict, dependency-cruiser boundary rules, the production license allowlist, Vitest with 90% coverage, and the web build.
+
+Browser tests: `pnpm run build`, then `pnpm run e2e`. They run in Chromium and, once `scripts/setup.sh` has installed it, in WebKit (Safari's engine); CI always runs both (D-063). `NEXTSTROKE_SKIP_BROWSERS=1 ./scripts/setup.sh` skips the browser download. WebKit is not iPhone Safari: what only an iPhone shows is in `docs/handoffs/2026-10-05-iphone-checklist.md`.
 
 Toolchain (D-052): Node 24 LTS (22.12 or newer works), pnpm 12.8.1 (`npm i -g pnpm@12.8.1` or Corepack), TypeScript 6.0.3.
 

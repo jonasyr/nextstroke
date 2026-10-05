@@ -53,9 +53,10 @@ Read in this order:
 Needs Node 22.12+ (CI uses 24), pnpm 12.8.1, uv, and Python 3.11+ (D-052).
 
 ```bash
-./scripts/setup.sh    # installs the Node workspace and the lab environment
+./scripts/setup.sh    # installs the Node workspace, the lab environment, and Playwright Chromium + WebKit
 ./scripts/check.sh    # everything CI runs: docs links, lab checks, workspace lint/types/boundaries/licenses/tests/build
 pnpm run build        # static web build in apps/web/dist/
+pnpm run e2e          # browser tests in Chromium and WebKit (after a build)
 ```
 
 See [`CONTRIBUTING.md`](CONTRIBUTING.md) for branches, commits and the individual commands, [`SECURITY.md`](SECURITY.md) for reporting vulnerabilities, [`docs/privacy/README.md`](docs/privacy/README.md) for the data flow, and [`docs/legal/license.md`](docs/legal/license.md) for the license status.
