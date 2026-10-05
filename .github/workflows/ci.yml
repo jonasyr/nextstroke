@@ -24,9 +24,8 @@ jobs:
           cache: pnpm
       - run: ./scripts/setup.sh
       - run: ./scripts/check.sh
+      # scripts/setup.sh above installed Chromium and WebKit with their system libraries.
       - name: Browser tests (Playwright, Chromium and WebKit)
         env:
           PW_WEBKIT: "1"
-        run: |
-          pnpm --filter @nextstroke/web exec playwright install --with-deps chromium webkit
-          pnpm run e2e
+        run: pnpm run e2e
