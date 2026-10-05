@@ -79,8 +79,9 @@ test("works offline after the first visit", async ({ page, context }) => {
   await page.evaluate(() => navigator.serviceWorker.ready);
   await page.reload();
   await context.setOffline(true);
-  await page.goto("#/compare");
-  await page.reload();
+  // A fresh navigation, not reload(): Playwright's WebKit fails reload() while offline.
+  await page.goto("about:blank");
+  await page.goto("./#/compare");
   const original = await syntheticImage(page, {
     width: 1200,
     height: 800,
