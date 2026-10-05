@@ -12,8 +12,32 @@
     <link rel="apple-touch-icon" href="./icon-180.png" />
     <title>NextStroke</title>
   </head>
-  <body>
-    <div id="root"></div>
+  <body style="margin: 0; background: #0e1012; color: #eef0f2">
+    <!-- Shown until React renders; names the reason if the app files never arrive. -->
+    <div id="root">
+      <p id="ns-boot" style="margin: 0; padding: 40px 16px; font: 15px/1.4 -apple-system, system-ui, sans-serif">
+        NextStroke lädt …
+      </p>
+    </div>
+    <script>
+      (() => {
+        function fail(reason) {
+          var boot = document.getElementById("ns-boot");
+          if (boot) boot.textContent = "NextStroke konnte nicht starten (" + reason + "). Bitte neu laden.";
+        }
+        window.addEventListener(
+          "error",
+          (event) => {
+            var target = event.target;
+            fail(target && target.src ? "Datei fehlt: " + target.src.split("/").pop() : event.message || "Fehler");
+          },
+          true,
+        );
+        setTimeout(() => {
+          if (document.getElementById("ns-boot")) fail("die App-Dateien kamen nicht an");
+        }, 15000);
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
