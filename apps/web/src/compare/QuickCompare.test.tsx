@@ -112,6 +112,31 @@ function fakeVision(over: Partial<VisionDeps> = {}): VisionDeps {
 }
 
 describe("start screen", () => {
+  it("opens the demo pair from the empty start screen (D-056)", async () => {
+    const demoPair = vi.fn(async () => ({
+      reference: png("Beispiel-Vorlage.png"),
+      original: png("Beispiel-Zeichnung.jpg"),
+    }));
+    render(<QuickCompare deps={makeDeps({ demoPair })} />);
+    fireEvent.click(button("Beispiel ansehen"));
+    expect(await screen.findByRole("dialog", { name: "Vergleich" })).toBeTruthy();
+    fireEvent.click(button("Zurück zu den Bildern"));
+    expect(screen.getByText("Beispiel-Zeichnung.jpg")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Beispiel ansehen" })).toBeNull();
+  });
+
+  it("explains a demo pair that cannot be made, and hides the link without one", async () => {
+    const demoPair = vi.fn(async () => {
+      throw new Error("no canvas");
+    });
+    const { unmount } = render(<QuickCompare deps={makeDeps({ demoPair })} />);
+    fireEvent.click(button("Beispiel ansehen"));
+    expect(await screen.findByText(/Datei nicht lesbar/)).toBeTruthy();
+    unmount();
+    render(<QuickCompare deps={makeDeps()} />);
+    expect(screen.queryByRole("button", { name: "Beispiel ansehen" })).toBeNull();
+  });
+
   it("offers the Vorlage, then the drawing, and compares only with both", async () => {
     render(<QuickCompare deps={makeDeps()} />);
     const labels = screen.getAllByText(/^(Vorlage|Deine Zeichnung)$/).map((e) => e.textContent);
