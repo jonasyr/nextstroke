@@ -619,11 +619,3 @@
 - **Reason:** WebKit in CI catches engine differences on every push; the iPhone time goes to what only it can reveal.
 - **Consequence:** Phase 2 exits when CI is green in both engines and the iPhone checklist passes; AGENTS rule 9 stands for those items.
 
-## D-064 — Deploys copy a CI build from the `site` branch
-
-- **Date:** 2026-10-05
-- **Trigger:** Two deploy runs by the owner's deploy agent (Codex) stopped correctly without deploying: first a global pnpm 11 instead of the pinned 12.8.1, then a runner with Node 22.16, no pnpm and no network, so no install or build was possible within the pinned toolchain.
-- **Selected:** After a green `check` job on `main`, a CI job `site` builds with Node 24 and pnpm 12.8.1 (`pnpm run pnpm-version` guards it) and commits `apps/web/dist` as `dist/` to the branch `site`, with `SHA256SUMS` and `BUILD.md` (source commit, build time, Node and pnpm versions) (`scripts/publish_site.sh`). A deploy fetches that branch, checks the source commit and the checksums, and uploads `dist/` unchanged; it never installs or builds.
-- **Alternatives:** Building in the deploy runner (needs network and the pinned toolchain there); GitHub Actions artifacts (expire, and need API access to download); committing `dist/` to `main` (mixes generated files into reviewed source).
-- **Consequence:** What is deployed is exactly what CI tested on that commit's toolchain. The `site` branch is generated; nobody edits it by hand.
-
