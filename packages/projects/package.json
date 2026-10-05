@@ -1,0 +1,13 @@
+{
+  "name": "@nextstroke/projects",
+  "private": true,
+  "type": "module",
+  "description": "Local projects: immutable assets, revisions, export and import packages (Phase 3).",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@nextstroke/contracts": "workspace:*",
+    "fflate": "0.8.3"
+  }
+}

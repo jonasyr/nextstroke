@@ -7,4 +7,5 @@ export * from "./manifest.ts";
 export * from "./masks.ts";
 export * from "./materials.ts";
 export * from "./preview.ts";
+export * from "./project.ts";
 export * from "./strokes.ts";

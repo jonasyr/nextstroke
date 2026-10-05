@@ -4,6 +4,7 @@ import { CoachRequestSchema, SuggestionSetSchema } from "./coaching.ts";
 import { newId } from "./ids.ts";
 import { ExportManifestSchema } from "./manifest.ts";
 import { MaskRevisionSchema } from "./masks.ts";
+import { ProjectSchema } from "./project.ts";
 import { StrokePlanSchema } from "./strokes.ts";
 
 const asset = {
@@ -161,7 +162,15 @@ describe("export manifest", () => {
       formatVersion: 1,
       appVersion: "0.1.0",
       exportedAt: "2026-10-03T18:00:00.000Z",
-      assets: [{ id: "ast_original01", sha256: "b".repeat(64), path: "assets/ast_original01.jpg" }],
+      project: { id: "prj_0001", sha256: "c".repeat(64), path: "project.json" },
+      assets: [
+        {
+          id: "ast_original01",
+          sha256: "b".repeat(64),
+          path: "assets/ast_original01.jpg",
+          record: "assets/ast_original01.json",
+        },
+      ],
     };
     expect(ExportManifestSchema.parse(manifest).assets).toHaveLength(1);
     expect(() => ExportManifestSchema.parse({ ...manifest, formatVersion: 9 })).toThrow();
@@ -180,5 +189,25 @@ describe("coach requests (Phase 3 Task 3)", () => {
     expect(CoachRequestSchema.safeParse({ ...request, intent: "lighten" }).success).toBe(false);
     expect(CoachRequestSchema.safeParse({ ...request, ownedTipsMm: [0] }).success).toBe(false);
     expect(CoachRequestSchema.safeParse({ ...request, extra: 1 }).success).toBe(false);
+  });
+});
+
+describe("projects (Phase 3 Task 4)", () => {
+  const project = {
+    schemaVersion: 1,
+    id: "prj_0001",
+    title: "Leuchtturm",
+    createdAt: "2026-10-05T18:00:00.000Z",
+    updatedAt: "2026-10-05T18:00:00.000Z",
+    revision: 0,
+    originalAssetId: "ast_original01",
+    checkpoints: [{ assetId: "ast_check0001", createdAt: "2026-10-05T19:00:00.000Z" }],
+  };
+
+  it("refers to immutable assets by id and counts revisions", () => {
+    expect(ProjectSchema.parse(project).checkpoints).toHaveLength(1);
+    expect(() => ProjectSchema.parse({ ...project, revision: -1 })).toThrow();
+    expect(() => ProjectSchema.parse({ ...project, selectedIdea: 3 })).toThrow();
+    expect(() => ProjectSchema.parse({ ...project, originalAssetId: "x" })).toThrow();
   });
 });
