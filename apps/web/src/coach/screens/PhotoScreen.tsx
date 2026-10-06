@@ -1,12 +1,27 @@
+import type { Point, Quad } from "@nextstroke/compare";
 import { t } from "@nextstroke/ui";
 import { Camera } from "lucide-react";
 import type { ChangeEvent } from "react";
 import { ICON } from "../../compare/IconButton.tsx";
+import { CornerEditor } from "../CornerEditor.tsx";
 import { FlowBar, Foot } from "./parts.tsx";
 
-/** Step 1 of 3: a photo of the drawing; it becomes the project's immutable original. */
+export interface CornerProps {
+  quad: Quad;
+  unsure: number[];
+  onMove: (index: number, point: Point) => void;
+  onDrop: (index: number) => void;
+}
+
+const ACCEPT = "image/*";
+
+/**
+ * Step 1 of 3: a photo of the drawing, which becomes the project's immutable original, and
+ * its four paper corners, from which the straight view is computed.
+ */
 export function PhotoScreen({
   image,
+  corners,
   busy,
   status,
   onPick,
@@ -14,6 +29,7 @@ export function PhotoScreen({
   onNext,
 }: {
   image: ImageBitmap | null;
+  corners: CornerProps | null;
   busy: boolean;
   status: string;
   onPick: (file: File) => void;
@@ -25,6 +41,14 @@ export function PhotoScreen({
     event.target.value = "";
     if (file) onPick(file);
   };
+  const input = {
+    type: "file",
+    accept: ACCEPT,
+    className: "ns-hidden-input",
+    "aria-label": t("guided.photo.label"),
+    onChange: change,
+    disabled: busy,
+  } as const;
   return (
     <>
       <FlowBar
@@ -34,29 +58,26 @@ export function PhotoScreen({
         step={t("guided.photo.step")}
       />
       <div className="ns-g-body">
-        <label className="ns-g-empty" data-loaded={image ? "" : undefined}>
-          {image ? (
-            <PhotoPreview image={image} />
-          ) : (
-            <>
-              <Camera {...ICON} size={40} />
-              <span>
-                <b>{t("guided.photo.lead")}</b>
-                <br />
-                {t("guided.photo.hint")}
-              </span>
-            </>
-          )}
-          <span className="ns-link">{t(image ? "guided.photo.change" : "guided.photo.pick")}</span>
-          <input
-            type="file"
-            accept="image/*"
-            className="ns-hidden-input"
-            aria-label={t("guided.photo.label")}
-            onChange={change}
-            disabled={busy}
-          />
-        </label>
+        {image && corners ? (
+          <div className="ns-group">
+            <CornerEditor image={image} label={t("guided.corners.label")} {...corners} />
+            <label className="ns-text ns-accent ns-g-file">
+              {t("guided.photo.change")}
+              <input {...input} />
+            </label>
+          </div>
+        ) : (
+          <label className="ns-g-empty">
+            <Camera {...ICON} size={40} />
+            <span>
+              <b>{t("guided.photo.lead")}</b>
+              <br />
+              {t("guided.photo.hint")}
+            </span>
+            <span className="ns-link">{t("guided.photo.pick")}</span>
+            <input {...input} />
+          </label>
+        )}
         <p className="ns-status" role="status" aria-live="polite">
           {status}
         </p>
@@ -67,21 +88,5 @@ export function PhotoScreen({
         </button>
       </Foot>
     </>
-  );
-}
-
-function PhotoPreview({ image }: { image: ImageBitmap }) {
-  return (
-    <canvas
-      className="ns-g-photo"
-      style={{ aspectRatio: String(image.width / image.height) }}
-      ref={(el) => {
-        const ctx = el?.getContext("2d");
-        if (!el || !ctx) return;
-        el.width = image.width;
-        el.height = image.height;
-        ctx.drawImage(image, 0, 0);
-      }}
-    />
   );
 }

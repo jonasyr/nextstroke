@@ -35,6 +35,12 @@ describe("guided flow state (Phase 3 Task 5)", () => {
     expect(CoachRequestSchema.parse(full).ownedTipsMm).toEqual([0.3]);
     expect(full.area).toHaveLength(16);
     expect(full.protected).toHaveLength(1);
+    const shifted = requestFrom(
+      { ...DEFAULT_CHOICES, area: { x: 0.5, y: 0.5, r: 0.1 } },
+      1,
+      ([x, y]) => [x / 2, y / 2],
+    );
+    expect(shifted.area?.[0]).toEqual([0.3, 0.25]);
   });
 
   it("draws a circle as a polygon inside the photo, round on screen", () => {

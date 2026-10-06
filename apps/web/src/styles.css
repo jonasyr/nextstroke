@@ -947,12 +947,6 @@ input[type="range"]::-moz-range-thumb {
   border-radius: 50%;
   border: 2px solid var(--line);
 }
-.ns-g-option:has(.ns-g-radio:focus-visible),
-.ns-g-chip:has(.ns-g-radio:focus-visible) > span,
-.ns-g-seg:has(.ns-g-radio:focus-visible) > span {
-  outline: 2px solid var(--accent);
-  outline-offset: -2px;
-}
 .ns-g-radio:checked ~ .ns-g-tick {
   border-color: var(--accent);
   background: radial-gradient(var(--accent) 45%, transparent 50%);
@@ -1033,11 +1027,6 @@ input[type="range"]::-moz-range-thumb {
 }
 .ns-g-empty b {
   color: var(--fg);
-}
-.ns-g-empty[data-loaded] {
-  padding: 0;
-  border: 0;
-  background: none;
 }
 .ns-g-empty:focus-within {
   outline: 2px solid var(--accent);
@@ -1162,4 +1151,19 @@ input[type="range"]::-moz-range-thumb {
   position: fixed;
   top: auto;
   bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+}
+.ns-g-file {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  overflow: hidden;
+}
+
+/* Keyboard focus on a choice: after the base rules, so it always wins. */
+.ns-g-option:has(.ns-g-radio:focus-visible),
+.ns-g-chip:has(.ns-g-radio:focus-visible) > span,
+.ns-g-seg:has(.ns-g-radio:focus-visible) > span {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
 }

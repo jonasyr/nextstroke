@@ -49,18 +49,24 @@ export function spotToPolygon(spot: Spot, aspect: number): [number, number][] {
   });
 }
 
-/** The request for the coach; `aspect` is the photo's width over its height. */
-export function requestFrom(choices: FlowChoices, aspect: number): CoachRequest {
+/**
+ * The request for the coach; `aspect` is the marked image's width over its height, and `map`
+ * carries its normalized points to the original's (the straight view's corners, D-067).
+ */
+export function requestFrom(
+  choices: FlowChoices,
+  aspect: number,
+  map: (p: [number, number]) => [number, number] = (p) => p,
+): CoachRequest {
+  const polygon = (spot: Spot) => spotToPolygon(spot, aspect).map(map);
   return {
     intent: choices.intent,
     skill: choices.skill,
     finelinerId: choices.finelinerId,
     paperId: choices.paperId,
     ...(choices.tipMm === null ? {} : { ownedTipsMm: [choices.tipMm] }),
-    ...(choices.area ? { area: spotToPolygon(choices.area, aspect) } : {}),
-    ...(choices.protectedSpots.length
-      ? { protected: choices.protectedSpots.map((s) => spotToPolygon(s, aspect)) }
-      : {}),
+    ...(choices.area ? { area: polygon(choices.area) } : {}),
+    ...(choices.protectedSpots.length ? { protected: choices.protectedSpots.map(polygon) } : {}),
   };
 }
 

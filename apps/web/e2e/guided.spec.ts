@@ -8,9 +8,14 @@ test("guided flow: photo, pen and paper, goal with a marked spot, ideas, steps, 
   await page.getByRole("link", { name: /Mit Coach weiterzeichnen/ }).click();
   const { photo } = await paperPhoto(page);
   await page.getByLabel("Foto der Zeichnung wählen").setInputFiles(photo);
+  // opencv.js finds the sheet; the rings sit on its corners.
+  await expect(page.getByText(/Die Ringe sitzen auf den Blattecken|Prüf die gelb/)).toBeVisible({
+    timeout: 30_000,
+  });
   await expect(page.getByRole("button", { name: "Weiter" })).toBeEnabled();
   await page.getByRole("button", { name: "Weiter" }).click();
 
+  // Straightened: the goal screen later shows the upright sheet.
   await page.getByRole("radio", { name: "Sakura Pigma Micron" }).check();
   await page.getByRole("radio", { name: "0,3", exact: true }).check();
   await page.getByRole("radio", { name: "Zeichenpapier" }).check();

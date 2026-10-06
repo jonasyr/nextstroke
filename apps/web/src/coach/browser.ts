@@ -24,4 +24,7 @@ export const browserCoachDeps: CoachDeps = {
   storage: () => storageStatus(storage),
   persist: () => requestPersistence(storage),
   decode: (blob) => browserDeps.decode(blob),
+  ...(browserDeps.vision ? { vision: browserDeps.vision } : {}),
+  rgba: (image) => browserDeps.rgba(image),
+  fromRgba: (rgba) => browserDeps.fromRgba(rgba),
 };

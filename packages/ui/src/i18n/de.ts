@@ -16,6 +16,13 @@ export const de = {
   "guided.photo.change": "Anderes Foto",
   "guided.photo.label": "Foto der Zeichnung wählen",
   "guided.photo.loading": "Foto wird geladen …",
+  "guided.corners.label": "Blattecken",
+  "guided.corners.finding": "Blattecken werden gesucht …",
+  "guided.corners.found":
+    "Die Ringe sitzen auf den Blattecken. Zieh einen Ring, wenn er daneben liegt; er rastet ein.",
+  "guided.corners.check": "Prüf die gelb gestrichelten Ringe und zieh sie auf die Blattecken.",
+  "guided.corners.missing": "Blatt nicht erkannt. Zieh die vier Ringe auf die Blattecken.",
+  "guided.corners.folded": "Die Ringe ergeben kein Blatt. Zieh jeden Ring auf seine Ecke.",
   "guided.photo.failed": "Das Foto konnte nicht geöffnet werden. Versuch ein anderes.",
   "guided.tool.title": "Stift und Papier",
   "guided.tool.step": "Schritt 2 von 3",

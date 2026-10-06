@@ -27,6 +27,12 @@ function coach(projects: ProjectDeps | null, persisted: boolean | null = false):
     decode: async () => {
       throw new Error("not used");
     },
+    rgba: () => {
+      throw new Error("not used");
+    },
+    fromRgba: async () => {
+      throw new Error("not used");
+    },
   };
 }
 

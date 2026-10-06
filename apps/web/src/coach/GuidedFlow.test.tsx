@@ -30,6 +30,12 @@ function coach(projects: ProjectDeps | null, persisted = false) {
       sourceWidth: 3000,
       sourceHeight: 4000,
     }),
+    rgba: (image) => ({
+      width: image.width,
+      height: image.height,
+      data: new Uint8ClampedArray(image.width * image.height * 4),
+    }),
+    fromRgba: async (rgba) => ({ width: rgba.width, height: rgba.height }) as ImageBitmap,
   };
   return { deps, persist };
 }
@@ -61,7 +67,7 @@ describe("guided flow (Phase 3 Task 5)", () => {
     expect(original?.record).toMatchObject({ role: "original", width: 3000, height: 4000 });
     expect(persist).toHaveBeenCalledOnce();
 
-    click("Weiter");
+    await act(async () => click("Weiter"));
     expect(screen.getByRole("heading", { name: /Stift und Papier/ })).toBeTruthy();
     choose("Sakura Pigma Micron");
     choose("0,3");
@@ -105,7 +111,8 @@ describe("guided flow (Phase 3 Task 5)", () => {
     });
     expect(saved?.suggestions?.ideas).toHaveLength(3);
     expect(saved?.selectedIdea).toBe(1);
-    expect(saved?.revision).toBe(2);
+    expect(saved?.revision).toBe(3);
+    expect(saved?.paperCorners?.[0]).toEqual([0.06, 0.06]);
 
     click("Fertig für heute");
     expect(exit).toHaveBeenCalled();
@@ -115,7 +122,7 @@ describe("guided flow (Phase 3 Task 5)", () => {
     const { deps } = coach(projectDeps(), true);
     render(<GuidedFlow deps={deps} onExit={() => undefined} />);
     await takePhoto();
-    click("Weiter");
+    await act(async () => click("Weiter"));
     fireEvent.click(screen.getAllByRole("radio", { name: /^Weiß ich nicht/ })[0] as HTMLElement);
     click("Weiter");
     click("Zurück");
@@ -149,10 +156,52 @@ describe("guided flow (Phase 3 Task 5)", () => {
     render(<GuidedFlow deps={deps} onExit={() => undefined} />);
     await takePhoto();
     projects.store.putProject = async () => false;
-    click("Weiter");
+    await act(async () => click("Weiter"));
     click("Weiter");
     await act(async () => click("Vorschläge zeigen"));
     expect(screen.getAllByRole("listitem")).toHaveLength(3);
     expect(screen.getByText(/in einem anderen Tab geändert/)).toBeTruthy();
+  });
+
+  it("finds the sheet, lets a ring snap, and refuses folded corners", async () => {
+    const { deps } = coach(projectDeps());
+    const at = { x: 0.1, y: 0.1 };
+    deps.vision = {
+      load: async () => ({ ok: true, ms: 1 }),
+      detectPaper: async () => ({
+        corners: [at, { x: 0.9, y: 0.1 }, { x: 0.9, y: 0.9 }, { x: 0.1, y: 0.9 }],
+        confidence: 0.6,
+      }),
+      align: async () => null,
+      refine: async () => null,
+      corners: async (_image, _quad, indices) => indices.map((i) => (i === 0 ? at : null)),
+    };
+    render(<GuidedFlow deps={deps} onExit={() => undefined} />);
+    await takePhoto();
+    expect(screen.getByText(/Prüf die gelb gestrichelten Ringe/)).toBeTruthy();
+    const canvas = screen.getByRole("img", { name: "Blattecken" });
+    const rect = { left: 0, top: 0, width: 300, height: 400, right: 300, bottom: 400, x: 0, y: 0 };
+    canvas.getBoundingClientRect = () => ({ ...rect, toJSON: () => rect });
+    // Ring 0 dragged a little away, then let go: it snaps back onto the corner.
+    fireEvent.pointerDown(canvas, { clientX: 30, clientY: 40, pointerId: 1 });
+    fireEvent.pointerMove(canvas, { clientX: 45, clientY: 55, pointerId: 1 });
+    await act(async () => fireEvent.pointerUp(canvas, { pointerId: 1 }));
+    expect(screen.getByText("An der Blattecke eingerastet")).toBeTruthy();
+    // Ring 0 dragged onto the opposite corner: no sheet, so no straight view.
+    fireEvent.pointerDown(canvas, { clientX: 30, clientY: 40, pointerId: 1 });
+    fireEvent.pointerMove(canvas, { clientX: 285, clientY: 380, pointerId: 1 });
+    deps.vision.corners = async () => null;
+    await act(async () => fireEvent.pointerUp(canvas, { pointerId: 1 }));
+    await act(async () => click("Weiter"));
+    expect(screen.getByText(/Die Ringe ergeben kein Blatt/)).toBeTruthy();
+  });
+
+  it("replaces a photo without leaving an empty project behind", async () => {
+    const projects = projectDeps();
+    const { deps } = coach(projects, true);
+    render(<GuidedFlow deps={deps} onExit={() => undefined} />);
+    await takePhoto();
+    await takePhoto();
+    expect(await projects.store.listProjects()).toHaveLength(1);
   });
 });

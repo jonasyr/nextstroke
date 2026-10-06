@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { fakeCanvas } from "./fakeCanvas.ts";
 import { SPOT, type Spot } from "./flow.ts";
 import { normalized, PhotoMarker } from "./PhotoMarker.tsx";
 
@@ -64,6 +65,20 @@ describe("PhotoMarker (D-067)", () => {
     const { canvas, onArea, onProtected } = show({ mode: "protect", label: "Geschützte Stellen" });
     fireEvent.pointerDown(canvas, { clientX: 100, clientY: 100, pointerId: 1 });
     expect(onProtected).toHaveBeenCalledWith([{ x: 0.25, y: 0.25, r: SPOT.start * 0.6 }]);
+    expect(onArea).not.toHaveBeenCalled();
+  });
+
+  it("draws the area dashed and protected spots solid", () => {
+    const canvas2d = fakeCanvas();
+    show({ area: { x: 0.5, y: 0.5, r: 0.1 }, protectedSpots: [{ x: 0.2, y: 0.2, r: 0.05 }] });
+    expect(canvas2d.calls.filter((c) => c === "arc")).toHaveLength(2);
+    canvas2d.restore();
+  });
+
+  it("ignores presses it cannot place", () => {
+    const { canvas, onArea } = show();
+    canvas.getBoundingClientRect = () => ({ ...RECT, width: 0, height: 0, toJSON: () => RECT });
+    fireEvent.pointerDown(canvas, { clientX: 1, clientY: 1, pointerId: 1 });
     expect(onArea).not.toHaveBeenCalled();
   });
 });

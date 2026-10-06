@@ -11,6 +11,12 @@ vi.mock("./coach/browser.ts", () => ({
     decode: async () => {
       throw new Error("not used");
     },
+    rgba: () => {
+      throw new Error("not used");
+    },
+    fromRgba: async () => {
+      throw new Error("not used");
+    },
   },
 }));
 

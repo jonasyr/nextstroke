@@ -1,7 +1,9 @@
 import { suggest } from "@nextstroke/coaching";
+import { moveCorner, type Point, type Quad } from "@nextstroke/compare";
 import { newId, type Project, type SuggestionSet } from "@nextstroke/contracts";
+import { warpPerspective } from "@nextstroke/imaging";
 import { DATASET } from "@nextstroke/materials";
-import { ConflictError, createProject, updateProject } from "@nextstroke/projects";
+import { ConflictError, createProject, deleteProject, updateProject } from "@nextstroke/projects";
 import { t } from "@nextstroke/ui";
 import { useRef, useState } from "react";
 import type { CoachDeps } from "./deps.ts";
@@ -13,11 +15,13 @@ import {
   requestFrom,
 } from "./flow.ts";
 import { ideasLead } from "./labels.ts";
+import { guessCorners, INSET_CORNERS, snapCorner } from "./paper.ts";
 import { GoalScreen } from "./screens/GoalScreen.tsx";
 import { IdeasScreen } from "./screens/IdeasScreen.tsx";
 import { PhotoScreen } from "./screens/PhotoScreen.tsx";
 import { StepsScreen } from "./screens/StepsScreen.tsx";
 import { ToolScreen } from "./screens/ToolScreen.tsx";
+import { quadToPairs, straightPointMapper, straightSize, straightToSource } from "./straighten.ts";
 
 /**
  * The guided flow (Phase 3 Task 5, D-067): photo, pen and paper, goal, three ideas, steps.
@@ -33,8 +37,19 @@ export function GuidedFlow({ deps, onExit }: { deps: CoachDeps; onExit: () => vo
   const [suggestions, setSuggestions] = useState<SuggestionSet | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
   const [done, setDone] = useState<number[]>([]);
+  const [quad, setQuad] = useState<Quad>(INSET_CORNERS);
+  const [unsure, setUnsure] = useState<number[]>([]);
+  /** The straight view of the sheet and the map from it back to the original. */
+  const [straight, setStraight] = useState<{
+    bitmap: ImageBitmap;
+    map: (p: [number, number]) => [number, number];
+  } | null>(null);
   const project = useRef<Project | null>(null);
   const asked = useRef(false);
+  /** Set once the user moves a ring, so a late automatic guess does not overwrite it. */
+  const moved = useRef(false);
+  /** Where each ring snapped before (D-062). */
+  const snaps = useRef(new Map<number, Point[]>());
 
   const go = (next: FlowStep) => {
     setStep(next);
@@ -59,10 +74,23 @@ export function GuidedFlow({ deps, onExit }: { deps: CoachDeps; onExit: () => vo
     try {
       const decoded = await deps.decode(file);
       setImage(decoded.bitmap);
-      setStatus("");
+      setStraight(null);
+      setChoices((c) => ({ ...c, area: null, protectedSpots: [] }));
+      setQuad(INSET_CORNERS);
+      setUnsure([]);
+      moved.current = false;
+      snaps.current = new Map();
+      setStatus(t("guided.corners.finding"));
+      void findCorners(decoded.bitmap);
       const projects = deps.projects;
       if (!projects) return;
       try {
+        // A photo replaced before any idea was chosen leaves no project behind.
+        const previous = project.current;
+        if (previous && !previous.request) {
+          project.current = null;
+          await deleteProject(projects, previous.id).catch(() => undefined);
+        }
         project.current = await createProject(projects, defaultTitle(projects.now()), {
           bytes: new Uint8Array(await file.arrayBuffer()),
           origin: "user-upload",
@@ -85,9 +113,67 @@ export function GuidedFlow({ deps, onExit }: { deps: CoachDeps; onExit: () => vo
     }
   };
 
+  /** The automatic guess, unless the user already moved a ring. */
+  const findCorners = async (bitmap: ImageBitmap) => {
+    const guess = await guessCorners(deps.vision ?? null, bitmap);
+    if (moved.current) return;
+    setQuad(guess.quad);
+    setUnsure(guess.unsure);
+    setStatus(
+      t(
+        !guess.found
+          ? "guided.corners.missing"
+          : guess.unsure.length
+            ? "guided.corners.check"
+            : "guided.corners.found",
+      ),
+    );
+  };
+
+  const moveRing = (index: number, point: Point) => {
+    moved.current = true;
+    setQuad((q) => moveCorner(q, index, point));
+    setUnsure((u) => u.filter((i) => i !== index));
+  };
+
+  const dropRing = async (index: number) => {
+    if (!image) return;
+    const earlier = snaps.current.get(index) ?? [];
+    const found = await snapCorner(deps.vision ?? null, image, quad, index, earlier);
+    if (!found) return;
+    snaps.current.set(index, [...earlier, found]);
+    setQuad((q) => moveCorner(q, index, found));
+    setStatus(t("status.snapped"));
+  };
+
+  /** Straightens the sheet from the corners and saves them; the original stays as it is. */
+  const straighten = async () => {
+    if (!image) return;
+    const size = straightSize(quad, image.width, image.height);
+    const toSource = straightToSource(quad, image.width, image.height, size);
+    const map = straightPointMapper(quad);
+    if (!toSource || !map) {
+      setStatus(t("guided.corners.folded"));
+      return;
+    }
+    setBusy(true);
+    try {
+      const pixels = warpPerspective(deps.rgba(image), toSource, size.width, size.height);
+      setStraight({ bitmap: await deps.fromRgba(pixels), map });
+      setStatus("");
+      go("tool");
+      void save((p) => ({ ...p, paperCorners: quadToPairs(quad) }));
+    } catch {
+      setStatus(t("guided.photo.failed"));
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const showIdeas = () => {
-    const aspect = image ? image.width / image.height : 1;
-    const request = requestFrom(choices, aspect);
+    const marked = straight?.bitmap ?? image;
+    const aspect = marked ? marked.width / marked.height : 1;
+    const request = requestFrom(choices, aspect, straight?.map);
     const set = suggest(request, DATASET, deps.projects?.id("sug") ?? newId("sug"));
     setSuggestions(set);
     setSelected(null);
@@ -115,11 +201,14 @@ export function GuidedFlow({ deps, onExit }: { deps: CoachDeps; onExit: () => vo
       {step === "photo" && (
         <PhotoScreen
           image={image}
+          corners={
+            image ? { quad, unsure, onMove: moveRing, onDrop: (i) => void dropRing(i) } : null
+          }
           busy={busy}
           status={status}
           onPick={(file) => void pick(file)}
           onCancel={onExit}
-          onNext={() => go("tool")}
+          onNext={() => void straighten()}
         />
       )}
       {step === "tool" && (
@@ -132,7 +221,7 @@ export function GuidedFlow({ deps, onExit }: { deps: CoachDeps; onExit: () => vo
       )}
       {step === "goal" && (
         <GoalScreen
-          image={image}
+          image={straight?.bitmap ?? image}
           choices={choices}
           onChange={change}
           onBack={() => go("tool")}

@@ -1,5 +1,7 @@
+import type { Rgba } from "@nextstroke/imaging";
 import type { ProjectDeps, StorageStatus } from "@nextstroke/projects";
 import type { Decoded } from "../compare/decode.ts";
+import type { VisionDeps } from "../compare/visionClient.ts";
 
 /** What the guided flow needs from outside; the browser binds it in `browser.ts`, tests fake it. */
 export interface CoachDeps {
@@ -10,4 +12,9 @@ export interface CoachDeps {
   persist(): Promise<boolean>;
   /** A photo at working size, upright, with its source size. */
   decode(blob: Blob): Promise<Decoded>;
+  /** Paper detection and corner snapping; absent, the user places the rings alone. */
+  vision?: VisionDeps;
+  /** Pixels of a bitmap and back, for straightening the sheet. */
+  rgba(image: ImageBitmap): Rgba;
+  fromRgba(rgba: Rgba): Promise<ImageBitmap>;
 }
