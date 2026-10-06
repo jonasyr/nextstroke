@@ -46,7 +46,7 @@
 - [x] Define input schema for intent, target area, protected details, skill level, tool, and paper (`CoachRequestSchema`).
 - [x] Return exactly three bounded ideas with risk level, required technique, and Careful/Balanced/Bold classification (D-014; deterministic, D-065).
 - [x] Generate ordered physical instructions from rule-approved facts only.
-- [ ] Show source/evidence summaries in accessible language (`evidenceFor` gives the text; the view comes with the guided flow, Task 5).
+- [x] Show source/evidence summaries in accessible language ("Woher wissen wir das?" in the steps view, with the pen brand, link, retrieval date and the general spacing rule).
 
 ## Task 4: Local project repository and export
 
@@ -57,8 +57,8 @@
 
 ## Task 5: Complete non-preview guided flow
 
-- [ ] Implement Capture → Straighten → Tool → Intent → Ideas → Execute → Check.
-- [ ] Reuse Quick Compare for checkpoint inspection.
+- [x] Implement Capture → Straighten → Tool → Intent → Ideas → Execute → Check. Done: start screen with the coach, Quick Compare and the projects list (D-067), pure flow state with the circle area and protected spots (`apps/web/src/coach/flow.ts`). Tool, goal (circle area, protected spots under "Weitere Optionen"), three ideas and tickable steps with "Woher wissen wir das?" are done; the photo becomes the project original and the request, ideas and chosen idea are saved as revisions (`apps/web/src/coach/GuidedFlow.tsx`, e2e `guided.spec.ts` in Chromium and WebKit). The photo's paper corners are found and snapped with the Quick Compare rules (D-061, D-062), with a loupe while dragging; "Weiter" straightens the sheet locally from the immutable original, saves the corners as `paperCorners`, and marks on the straight view are carried back to the original's coordinates for the coach request. A checkpoint photo gets its own corners, is straightened into the start's frame and stored as an immutable checkpoint with `paperCorners`; "Vorher und jetzt" compares both with a divider. The project view (`#/projects/<id>`) shows start and checkpoints, the last idea, "Als Datei sichern" (the verified package), deleting with a second tap, and "Weiterzeichnen", which reopens the flow at the goal with the straight sheet and the last choices; "Projekt aus Datei öffnen" on the start screen imports a package as a copy. E2E: `guided.spec.ts`, `guided-project.spec.ts` in Chromium and WebKit.
+- [ ] Reuse Quick Compare for checkpoint inspection. (The flow has its own "Vorher und jetzt" split view on the straightened sheets; opening a project's pair in Quick Compare is still open.)
 - [ ] Test with 5–8 beginners without developer explanation.
 - [ ] This study is also the deferred Phase 0 beginner gate (D-048): use standardized starters first, define "understands" and "worsens" as in spec §15.2, and record it in the Phase 0 results report.
 

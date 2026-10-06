@@ -12,6 +12,7 @@ export default defineConfig({
         "**/*.test.{ts,tsx}",
         "apps/web/src/main.tsx",
         "apps/web/src/compare/browser.ts",
+        "apps/web/src/coach/browser.ts",
         "apps/web/src/compare/decode.worker.ts",
         "apps/web/src/compare/vision.worker.ts",
       ],

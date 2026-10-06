@@ -9,16 +9,18 @@
     "e2e": "playwright test"
   },
   "dependencies": {
+    "@nextstroke/coaching": "workspace:*",
     "@nextstroke/compare": "workspace:*",
+    "@nextstroke/contracts": "workspace:*",
     "@nextstroke/imaging": "workspace:*",
+    "@nextstroke/materials": "workspace:*",
+    "@nextstroke/projects": "workspace:*",
     "@nextstroke/ui": "workspace:*",
     "@techstark/opencv-js": "5.0.0-release.1",
     "lucide-react": "1.49.0",
     "pdfjs-dist": "6.3.289",
     "react": "19.3.0",
-    "react-dom": "19.3.0",
-    "@nextstroke/projects": "workspace:*",
-    "@nextstroke/contracts": "workspace:*"
+    "react-dom": "19.3.0"
   },
   "devDependencies": {
     "fake-indexeddb": "6.2.5"

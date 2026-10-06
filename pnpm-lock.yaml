@@ -208,6 +208,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@nextstroke/coaching':
+        specifier: workspace:*
+        version: link:../../packages/coaching
       '@nextstroke/compare':
         specifier: workspace:*
         version: link:../../packages/compare
@@ -217,6 +220,9 @@ importers:
       '@nextstroke/imaging':
         specifier: workspace:*
         version: link:../../packages/imaging
+      '@nextstroke/materials':
+        specifier: workspace:*
+        version: link:../../packages/materials
       '@nextstroke/projects':
         specifier: workspace:*
         version: link:../../packages/projects

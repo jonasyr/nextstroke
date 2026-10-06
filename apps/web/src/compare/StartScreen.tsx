@@ -43,6 +43,7 @@ export function StartScreen({
   onOpen,
   onMore,
   onDemo,
+  onHome,
 }: {
   images: Partial<Record<Slot, Picked>>;
   busy: boolean;
@@ -52,6 +53,8 @@ export function StartScreen({
   onMore: () => void;
   /** Opens the bundled demo pair; the link shows only when one is available. */
   onDemo?: () => void;
+  /** Back to the app's start (D-067). */
+  onHome?: () => void;
 }) {
   const ready = Boolean(images.original && images.reference);
   const change = (slot: Slot) => (event: ChangeEvent<HTMLInputElement>) => {
@@ -62,7 +65,13 @@ export function StartScreen({
   return (
     <div className="ns-start">
       <div className="ns-start-top">
-        <span className="ns-wordmark">{t("app.name")}</span>
+        {onHome ? (
+          <button type="button" className="ns-text" onClick={onHome}>
+            {t("nav.back")}
+          </button>
+        ) : (
+          <span className="ns-wordmark">{t("app.name")}</span>
+        )}
         <IconButton label={t("start.more")} onClick={onMore}>
           <Ellipsis {...ICON} />
         </IconButton>

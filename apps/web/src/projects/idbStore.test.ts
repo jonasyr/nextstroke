@@ -43,7 +43,7 @@ describe("IndexedDB project store (Phase 3 Task 4)", () => {
   it("stores projects and immutable assets, and refuses stale writes", async () => {
     const store = new IdbStore(new IDBFactory());
     const deps = depsFor(store);
-    const project = await createProject(deps, "Leuchtturm", { ...photo(1), role: "original" });
+    const project = await createProject(deps, "Leuchtturm", photo(1));
     const next = await addCheckpoint(deps, project, photo(2));
     expect((await store.getProject(project.id))?.revision).toBe(1);
     expect((await store.getAsset(project.originalAssetId))?.bytes).toEqual(photo(1).bytes);
@@ -61,7 +61,7 @@ describe("IndexedDB project store (Phase 3 Task 4)", () => {
 
   it("round-trips a package between two browsers' databases", async () => {
     const a = new IdbStore(new IDBFactory());
-    const project = await createProject(depsFor(a), "A", { ...photo(3), role: "original" });
+    const project = await createProject(depsFor(a), "A", photo(3));
     const zip = await exportProject(depsFor(a), project.id, "0.1.0");
     const b = new IdbStore(new IDBFactory());
     expect(await importProject(depsFor(b), zip)).toEqual(project);
@@ -73,7 +73,7 @@ describe("IndexedDB project store (Phase 3 Task 4)", () => {
   it("reopens after the connection was closed, as iOS does in the background", async () => {
     const factory = new IDBFactory();
     const store = new IdbStore(factory);
-    const project = await createProject(depsFor(store), "A", { ...photo(1), role: "original" });
+    const project = await createProject(depsFor(store), "A", photo(1));
     await store.close();
     expect((await store.getProject(project.id))?.title).toBe("A");
   });
@@ -81,7 +81,7 @@ describe("IndexedDB project store (Phase 3 Task 4)", () => {
   it("yields to a newer tab's upgrade, then reopens and keeps the data", async () => {
     const factory = new IDBFactory();
     const store = new IdbStore(factory);
-    const project = await createProject(depsFor(store), "A", { ...photo(1), role: "original" });
+    const project = await createProject(depsFor(store), "A", photo(1));
     const addIndex: Migration = (_db, tx) =>
       tx.objectStore("projects").createIndex("title", "title");
     // Another tab ships version 2: this connection closes so its upgrade is not blocked.

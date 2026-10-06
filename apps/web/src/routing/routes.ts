@@ -10,3 +10,13 @@ export function parseRoute(hash: string): Route {
 export function hrefFor(route: Route): string {
   return route === "home" ? "#/" : `#/${route}`;
 }
+
+/** A route and its id, e.g. `#/projects/prj_…` → projects, prj_…; ids are entity ids only. */
+export function parseLocation(hash: string): { route: Route; id: string | null } {
+  const [, id] = hash.replace(/^#\/?/, "").split(/[?#]/)[0]?.split("/") ?? [];
+  return { route: parseRoute(hash), id: id && /^[a-z]{2,4}_[0-9a-z]{4,64}$/.test(id) ? id : null };
+}
+
+export function hrefWith(route: Route, id: string): string {
+  return `#/${route}/${id}`;
+}

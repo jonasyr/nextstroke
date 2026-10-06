@@ -129,7 +129,7 @@ const modeOf = (s: CompareState): Mode =>
 /** Below this confidence the corner step says "Ecken prüfen". */
 const SURE = 0.95;
 
-export function QuickCompare({ deps }: { deps: CompareDeps }) {
+export function QuickCompare({ deps, onHome }: { deps: CompareDeps; onHome?: () => void }) {
   const [state, dispatch] = useReducer(compare, undefined, initialState);
   const apply = useCallback((action: CompareAction, record = false) => {
     if (record) dispatch({ type: "checkpoint" });
@@ -956,6 +956,7 @@ export function QuickCompare({ deps }: { deps: CompareDeps }) {
           }}
           onMore={() => setSheet("info")}
           {...(deps.demoPair ? { onDemo: () => void loadDemo() } : {})}
+          {...(onHome ? { onHome } : {})}
         />
       )}
       {open && (

@@ -84,14 +84,6 @@ h2 {
   color: var(--warn);
   font-size: 13px;
 }
-.ns-later {
-  display: grid;
-  gap: 12px;
-  padding: calc(env(safe-area-inset-top, 0px) + 24px) 16px 24px;
-}
-.ns-later a {
-  color: var(--accent);
-}
 .ns-muted {
   color: var(--muted);
 }
@@ -781,4 +773,466 @@ input[type="range"]::-moz-range-thumb {
 .ns-demo {
   align-self: center;
   margin-top: -8px;
+}
+
+/* Start (D-067): coach or quick compare, then the projects on this device. */
+.ns-home {
+  gap: 20px;
+}
+.ns-group {
+  display: grid;
+  gap: 10px;
+}
+.ns-label {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.ns-choice {
+  display: grid;
+  grid-template-columns: 52px 1fr;
+  gap: 14px;
+  align-items: center;
+  min-height: 84px;
+  padding: 16px;
+  border-radius: 16px;
+  background: var(--surface);
+  color: var(--fg);
+  text-decoration: none;
+}
+.ns-choice b {
+  display: block;
+  font-size: 17px;
+}
+.ns-choice-main {
+  background: var(--surface-2);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.ns-choice-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: var(--surface-2);
+}
+.ns-choice-icon-main {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+.ns-choice:focus-visible,
+.ns-project:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.ns-projects {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+.ns-project {
+  display: grid;
+  grid-template-columns: 56px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  min-height: 44px;
+  padding: 8px;
+  border-radius: 12px;
+  color: var(--fg);
+  text-decoration: none;
+}
+.ns-project:hover {
+  background: var(--surface);
+}
+.ns-project-thumb {
+  display: block;
+  width: 56px;
+  height: 70px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: var(--surface-2);
+}
+.ns-project-text {
+  display: grid;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Guided flow (D-067): top bar, scrolling body, sticky foot with the one primary action. */
+.ns-g {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.ns-g-bar {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  min-height: 52px;
+  padding: calc(env(safe-area-inset-top, 0px) + 4px) 12px 4px 6px;
+  background: var(--bg);
+}
+.ns-g-bar > :first-child {
+  justify-self: start;
+}
+.ns-g-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  text-align: center;
+}
+.ns-g-title small {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+}
+.ns-g-body {
+  flex: 1;
+  display: grid;
+  align-content: start;
+  gap: 24px;
+  padding: 8px 16px 24px;
+}
+.ns-g-foot {
+  position: sticky;
+  bottom: 0;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+  background: linear-gradient(to top, var(--bg) 70%, transparent);
+}
+.ns-g-options {
+  display: grid;
+  gap: 2px;
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--line);
+}
+.ns-g-radio {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.ns-g-option {
+  position: relative;
+  cursor: pointer;
+  display: grid;
+  grid-template-columns: 1fr 24px;
+  gap: 12px;
+  align-items: center;
+  min-height: 52px;
+  padding: 10px 14px;
+  background: var(--surface);
+  text-align: left;
+}
+.ns-g-option small {
+  display: block;
+  color: var(--muted);
+  font-size: 13px;
+}
+.ns-g-tick {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--line);
+}
+.ns-g-radio:checked ~ .ns-g-tick {
+  border-color: var(--accent);
+  background: radial-gradient(var(--accent) 45%, transparent 50%);
+}
+.ns-g-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.ns-g-chip,
+.ns-g-seg {
+  position: relative;
+  cursor: pointer;
+}
+.ns-g-chip > span {
+  display: inline-grid;
+  place-items: center;
+  min-height: 44px;
+  min-width: 48px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: var(--surface);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+.ns-g-segs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  padding: 4px;
+  border-radius: 12px;
+  background: var(--surface);
+}
+.ns-g-seg > span {
+  display: grid;
+  place-items: center;
+  text-align: center;
+  min-height: 44px;
+  border-radius: 9px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.ns-g-chip > .ns-g-radio:checked + span {
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 700;
+}
+.ns-g-segs .ns-g-radio:checked + span {
+  background: var(--surface-2);
+  color: var(--fg);
+}
+.ns-g-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px;
+}
+.ns-g-photo {
+  display: block;
+  width: 100%;
+  border-radius: 14px;
+  background: var(--surface);
+  touch-action: none;
+}
+.ns-g-empty {
+  position: relative;
+  display: grid;
+  place-items: center;
+  gap: 10px;
+  min-height: 320px;
+  padding: 24px;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px dashed var(--line);
+  color: var(--muted);
+  text-align: center;
+  cursor: pointer;
+}
+.ns-g-empty b {
+  color: var(--fg);
+}
+.ns-g-empty:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.ns-g-ideas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+.ns-g-idea {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  padding: 16px;
+  border-radius: 16px;
+  background: var(--surface);
+  text-align: left;
+}
+.ns-g-idea b {
+  font-size: 18px;
+}
+.ns-g-level {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.ns-g-meter {
+  display: inline-flex;
+  gap: 3px;
+}
+.ns-g-meter i {
+  width: 14px;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--line);
+}
+.ns-g-meter i[data-on] {
+  background: var(--accent);
+}
+.ns-g-headline {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.ns-g-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 2px;
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--line);
+}
+.ns-g-steps li {
+  background: var(--surface);
+}
+.ns-g-step {
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  gap: 12px;
+  align-items: start;
+  width: 100%;
+  padding: 14px;
+  text-align: left;
+}
+.ns-g-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+  font-weight: 700;
+  background: var(--surface-2);
+  font-variant-numeric: tabular-nums;
+}
+.ns-g-step[aria-pressed="true"] .ns-g-num {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+.ns-g-step[aria-pressed="true"] > span:last-child {
+  color: var(--muted);
+  text-decoration: line-through;
+  text-decoration-color: var(--line);
+}
+.ns-g-details {
+  border-radius: 14px;
+  background: var(--surface);
+  padding: 4px 14px;
+}
+.ns-g-details summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ns-g-evidence {
+  display: grid;
+  gap: 10px;
+  padding: 4px 0 12px;
+}
+.ns-g-evidence p {
+  margin: 0;
+}
+.ns-g-evidence small {
+  display: block;
+  color: var(--muted);
+}
+.ns-g-evidence a {
+  color: var(--accent);
+}
+.ns-g-toast {
+  position: fixed;
+  top: auto;
+  bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+}
+.ns-g-file {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  overflow: hidden;
+}
+
+/* Keyboard focus on a choice: after the base rules, so it always wins. */
+.ns-g-option:has(.ns-g-radio:focus-visible),
+.ns-g-chip:has(.ns-g-radio:focus-visible) > span,
+.ns-g-seg:has(.ns-g-radio:focus-visible) > span {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.ns-g-check {
+  position: relative;
+}
+.ns-g-tag {
+  position: absolute;
+  top: 10px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--plate);
+  font-size: 13px;
+  font-weight: 600;
+}
+.ns-g-tag[data-side="left"] {
+  left: 10px;
+}
+.ns-g-tag[data-side="right"] {
+  right: 10px;
+}
+.ns-g-range {
+  width: 100%;
+  min-height: 44px;
+  accent-color: var(--accent);
+}
+.ns-g-row2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.ns-g-secondary {
+  min-height: 52px;
+  border-radius: 14px;
+  background: var(--surface);
+  font-weight: 600;
+}
+.ns-g-primary-file {
+  position: relative;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  cursor: pointer;
+}
+.ns-g-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.ns-g-timeline li {
+  display: grid;
+  gap: 6px;
+}
+.ns-g-shot {
+  display: block;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  border-radius: 8px;
+  object-fit: cover;
+  background: var(--surface);
+}
+.ns-g-danger {
+  justify-self: start;
+  color: var(--warn);
+}
+a.ns-primary {
+  color: var(--accent-ink);
+  text-decoration: none;
 }

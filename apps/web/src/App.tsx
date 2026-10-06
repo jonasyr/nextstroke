@@ -1,11 +1,11 @@
 import { t } from "@nextstroke/ui";
 import { Page } from "./pages/Pages.tsx";
-import { useRoute } from "./routing/useRoute.ts";
+import { useLocation } from "./routing/useRoute.ts";
 import { useOnline } from "./useOnline.ts";
 
 /** `onReloadForUpdate` is set when a new service worker is waiting (see sw/register.ts). */
 export function App({ onReloadForUpdate }: { onReloadForUpdate?: () => void }) {
-  const route = useRoute();
+  const { route, id } = useLocation();
   const online = useOnline();
   return (
     <div className="ns-shell">
@@ -23,7 +23,7 @@ export function App({ onReloadForUpdate }: { onReloadForUpdate?: () => void }) {
         </p>
       )}
       <main className="ns-main">
-        <Page route={route} />
+        <Page route={route} id={id} />
       </main>
     </div>
   );
