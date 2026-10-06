@@ -51,6 +51,9 @@ test("guided flow: photo, pen and paper, goal with a marked spot, ideas, steps, 
   await page.getByText("Woher wissen wir das?").click();
   await expect(page.getByText(/Laut Sakura/)).toBeVisible();
   await page.getByRole("button", { name: "Fertig für heute" }).click();
+  // The project view, then back to the projects on the start screen.
+  await expect(page.getByText("Die dunkelste Stelle schraffieren")).toBeVisible();
+  await page.getByRole("button", { name: "Projekte" }).click();
 
   // Back on the start screen, the project is listed from IndexedDB, with the photo as thumbnail.
   const project = page.getByRole("link", { name: /Projekt vom/ });
