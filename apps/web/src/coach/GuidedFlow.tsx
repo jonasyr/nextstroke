@@ -326,23 +326,19 @@ export function GuidedFlow({
           done={done}
           onToggle={(i) => setDone((d) => (d.includes(i) ? d.filter((x) => x !== i) : [...d, i]))}
           onBack={() => go("ideas")}
+          onDone={exit}
           foot={
-            <div className="ns-g-row2">
-              <button type="button" className="ns-g-secondary" onClick={exit}>
-                {t("guided.steps.doneForToday")}
-              </button>
-              <label className="ns-primary ns-g-primary-file">
-                {t("guided.check.take")}
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="ns-hidden-input"
-                  aria-label={t("guided.check.photoLabel")}
-                  onChange={takeCheckpoint}
-                  disabled={busy}
-                />
-              </label>
-            </div>
+            <label className="ns-primary ns-g-primary-file">
+              {t("guided.check.take")}
+              <input
+                type="file"
+                accept="image/*"
+                className="ns-hidden-input"
+                aria-label={t("guided.check.photoLabel")}
+                onChange={takeCheckpoint}
+                disabled={busy}
+              />
+            </label>
           }
         />
       )}

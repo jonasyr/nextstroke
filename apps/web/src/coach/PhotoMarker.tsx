@@ -1,5 +1,6 @@
 import { type PointerEvent, useEffect, useRef, useState } from "react";
 import { dragArea, pressArea, type Spot, toggleProtected } from "./flow.ts";
+import { photoStyle } from "./photoStyle.ts";
 
 export type MarkMode = "area" | "protect";
 
@@ -73,7 +74,7 @@ export function PhotoMarker({
     <canvas
       ref={canvas}
       className="ns-g-photo"
-      style={{ aspectRatio: String(aspect) }}
+      style={photoStyle(aspect)}
       role="img"
       aria-label={label}
       onPointerDown={(event) => {

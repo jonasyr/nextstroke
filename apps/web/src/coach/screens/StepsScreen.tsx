@@ -26,6 +26,7 @@ export function StepsScreen({
   done,
   onToggle,
   onBack,
+  onDone,
   foot,
 }: {
   idea: Idea;
@@ -33,15 +34,21 @@ export function StepsScreen({
   done: number[];
   onToggle: (index: number) => void;
   onBack: () => void;
+  /** Ends the session without a checkpoint. */
+  onDone: () => void;
   /** The step's action at the bottom: photographing the checkpoint. */
   foot: ReactNode;
 }) {
   const evidence = evidenceFor(idea, DATASET);
   return (
     <>
-      <FlowBar back={onBack} title={t("guided.steps.title")} />
+      <FlowBar
+        back={onBack}
+        title={t("guided.steps.title")}
+        action={{ label: t("guided.steps.doneForToday"), onClick: onDone }}
+      />
       <div className="ns-g-body">
-        <div className="ns-group">
+        <div className="ns-stack">
           <span className="ns-label">{levelLabel(idea.risk)}</span>
           <h2 className="ns-g-headline">{idea.title}</h2>
           <p className="ns-sub">{idea.why}</p>

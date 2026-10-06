@@ -36,7 +36,12 @@ test("guided flow: photo, pen and paper, goal with a marked spot, ideas, steps, 
   await page.mouse.up();
   await page.getByRole("button", { name: "Weitere Optionen" }).click();
   await page.getByRole("button", { name: /Geschützte Stellen \(0\)/ }).click();
-  await page.mouse.click(box.x + box.width * 0.8, box.y + box.height * 0.2);
+  // The page may have scrolled to the buttons: measure the photo again.
+  const protect = page.getByRole("img", { name: "Geschützte Stellen markieren" });
+  await protect.scrollIntoViewIfNeeded();
+  const now = await protect.boundingBox();
+  if (!now) throw new Error("no photo");
+  await page.mouse.click(now.x + now.width * 0.8, now.y + now.height * 0.2);
   await page.getByRole("button", { name: "Fertig mit geschützten Stellen" }).click();
   await expect(page.getByRole("button", { name: /Geschützte Stellen \(1\)/ })).toBeVisible();
   await page.getByRole("button", { name: "Vorschläge zeigen" }).click();

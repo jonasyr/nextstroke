@@ -31,7 +31,7 @@ export function GoalScreen({
     <>
       <FlowBar back={onBack} title={t("guided.goal.title")} step={t("guided.goal.step")} />
       <div className="ns-g-body">
-        <section className="ns-group">
+        <section className="ns-stack">
           <h2 className="ns-label">{t("guided.goal.intent")}</h2>
           <Options label={t("guided.goal.intentGroup")}>
             {INTENTS.map((intent) => (
@@ -47,7 +47,7 @@ export function GoalScreen({
           </Options>
         </section>
         {image && (
-          <section className="ns-group">
+          <section className="ns-stack">
             <h2 className="ns-label">{t("guided.goal.where")}</h2>
             <PhotoMarker
               image={image}
@@ -86,7 +86,7 @@ export function GoalScreen({
             </div>
           </section>
         )}
-        <section className="ns-group">
+        <section className="ns-stack">
           <h2 className="ns-label">{t("guided.goal.skill")}</h2>
           <div className="ns-g-segs" role="radiogroup" aria-label={t("guided.goal.skillGroup")}>
             {SKILLS.map((skill) => (

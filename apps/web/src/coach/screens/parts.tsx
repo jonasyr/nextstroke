@@ -7,11 +7,14 @@ export function FlowBar({
   backLabel = t("nav.back"),
   title,
   step,
+  action,
 }: {
   back: () => void;
   backLabel?: string;
   title: string;
   step?: string;
+  /** A secondary action on the right, so the foot keeps one full-width primary button. */
+  action?: { label: string; onClick: () => void };
 }) {
   return (
     <div className="ns-g-bar">
@@ -22,7 +25,13 @@ export function FlowBar({
         {title}
         {step && <small>{step}</small>}
       </h1>
-      <span />
+      {action ? (
+        <button type="button" className="ns-text ns-accent ns-g-action" onClick={action.onClick}>
+          {action.label}
+        </button>
+      ) : (
+        <span />
+      )}
     </div>
   );
 }

@@ -104,11 +104,11 @@ export function ProjectView({
             </li>
           ))}
         </ul>
-        <section className="ns-group">
+        <section className="ns-stack">
           <h2 className="ns-label">{t("project.last")}</h2>
           <p>{idea ? idea.title : t("project.noIdea")}</p>
         </section>
-        <section className="ns-group">
+        <section className="ns-stack">
           <button type="button" className="ns-g-secondary" onClick={() => void save()}>
             {t("project.export")}
           </button>

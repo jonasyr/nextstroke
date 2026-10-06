@@ -125,6 +125,7 @@ test("the app keeps working after being hidden during automatic alignment", asyn
   });
   await expect(page.getByText(outcome).first()).toBeVisible({ timeout: 60_000 });
   // Still usable: a step moves the Vorlage and can be undone.
+  await page.getByRole("button", { name: "Feinjustieren" }).click();
   await page.getByRole("button", { name: "Nach rechts", exact: true }).click();
   await expect(page.getByRole("button", { name: "Rückgängig" })).toBeEnabled();
   await page.getByRole("button", { name: "Fertig" }).click();
@@ -153,6 +154,7 @@ test("manual alignment recovers when automatic alignment finds nothing", async (
   await page.getByRole("button", { name: "Automatisch ausrichten" }).click();
   await expect(page.getByText(outcome).first()).toBeVisible({ timeout: 60_000 });
   // By hand: steps, size and rotation, then the corner flow.
+  await page.getByRole("button", { name: "Feinjustieren" }).click();
   await page.getByRole("button", { name: "Nach rechts", exact: true }).click();
   await page.getByRole("button", { name: "Vorlage vergrößern" }).click();
   await page.getByRole("button", { name: "Nach rechts drehen" }).click();

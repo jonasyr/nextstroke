@@ -261,8 +261,9 @@ export function drawComparison(
     ctx.stroke();
     const labels = input.splitLabels;
     if (!labels) return;
-    label(ctx, labels.left, x - 12, viewport.height - 40, "right");
-    label(ctx, labels.right, x + 12, viewport.height - 40, "left");
+    // At the top: the zoom control sits in the bottom right corner (iPhone test, 2026-10-06).
+    label(ctx, labels.left, x - 12, 12, "right");
+    label(ctx, labels.right, x + 12, 12, "left");
   });
 }
 
