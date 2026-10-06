@@ -46,7 +46,7 @@
 - [x] Define input schema for intent, target area, protected details, skill level, tool, and paper (`CoachRequestSchema`).
 - [x] Return exactly three bounded ideas with risk level, required technique, and Careful/Balanced/Bold classification (D-014; deterministic, D-065).
 - [x] Generate ordered physical instructions from rule-approved facts only.
-- [ ] Show source/evidence summaries in accessible language (`evidenceFor` gives the text; the view comes with the guided flow, Task 5).
+- [x] Show source/evidence summaries in accessible language ("Woher wissen wir das?" in the steps view, with the pen brand, link, retrieval date and the general spacing rule).
 
 ## Task 4: Local project repository and export
 
@@ -57,7 +57,7 @@
 
 ## Task 5: Complete non-preview guided flow
 
-- [ ] Implement Capture → Straighten → Tool → Intent → Ideas → Execute → Check. Done: start screen with the coach, Quick Compare and the projects list (D-067), pure flow state with the circle area and protected spots (`apps/web/src/coach/flow.ts`). Next: tool, goal, ideas and steps; photo and corners; checkpoints, project view and export.
+- [ ] Implement Capture → Straighten → Tool → Intent → Ideas → Execute → Check. Done: start screen with the coach, Quick Compare and the projects list (D-067), pure flow state with the circle area and protected spots (`apps/web/src/coach/flow.ts`). Tool, goal (circle area, protected spots under "Weitere Optionen"), three ideas and tickable steps with "Woher wissen wir das?" are done; the photo becomes the project original and the request, ideas and chosen idea are saved as revisions (`apps/web/src/coach/GuidedFlow.tsx`, e2e `guided.spec.ts` in Chromium and WebKit). Next: corners and straightening for the photo; checkpoints, project view and export.
 - [ ] Reuse Quick Compare for checkpoint inspection.
 - [ ] Test with 5–8 beginners without developer explanation.
 - [ ] This study is also the deferred Phase 0 beginner gate (D-048): use standardized starters first, define "understands" and "worsens" as in spec §15.2, and record it in the Phase 0 results report.

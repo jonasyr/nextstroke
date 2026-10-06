@@ -1,4 +1,5 @@
 import type { CoachIntent, CoachRequest } from "@nextstroke/contracts";
+import { t } from "@nextstroke/ui";
 
 /**
  * The guided flow's state (Phase 3 Task 5): photo, pen and paper, goal, three ideas, steps,
@@ -113,7 +114,7 @@ export function shortDate(iso: string): string {
 
 /** "Projekt vom 5. Okt." */
 export function defaultTitle(iso: string): string {
-  return `Projekt vom ${shortDate(iso)}`;
+  return t("guided.projectTitle", { date: shortDate(iso) });
 }
 
 /** Tip sizes from the maker's list, as numbers, ascending; empty when unknown. */

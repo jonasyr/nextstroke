@@ -20,7 +20,14 @@ function projectDeps(): ProjectDeps {
 }
 
 function coach(projects: ProjectDeps | null, persisted: boolean | null = false): CoachDeps {
-  return { projects, storage: async () => ({ persisted }), persist: async () => true };
+  return {
+    projects,
+    storage: async () => ({ persisted }),
+    persist: async () => true,
+    decode: async () => {
+      throw new Error("not used");
+    },
+  };
 }
 
 async function show(deps: CoachDeps) {

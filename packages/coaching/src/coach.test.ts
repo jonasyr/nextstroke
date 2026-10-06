@@ -36,7 +36,7 @@ describe("the deterministic coach (Phase 3 Task 3)", () => {
     const careful = suggest({ ...request, ownedTipsMm: [0.3] }, DATASET, ID).ideas[0];
     expect(careful.materialClaimIds).toEqual(["sakura-pigma-micron-tipSizesMm-7"]);
     const [evidence] = evidenceFor(careful, DATASET);
-    expect(evidence?.text).toMatch(/^Laut .*: Spitzen von 0,15 mm bis 0,7 mm$/);
+    expect(evidence?.text).toBe("Laut Sakura: Spitzen von 0,15 mm bis 0,7 mm");
     expect(evidence?.url).toMatch(/^https:\/\/sakuracraypas\.com\//);
   });
 

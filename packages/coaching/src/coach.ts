@@ -138,9 +138,11 @@ export function evidenceFor(idea: Idea, data: MaterialDataset): Evidence[] {
     const claim = data.claims.find((c) => c.id === id);
     const source = claim && data.sources.find((s) => s.id === claim.sourceId);
     if (!claim || !source) return [];
+    // The pen's brand reads better than the publisher's legal name ("Laut Sakura").
+    const brand = data.fineliners.find((f) => f.id === claim.subjectId)?.brand;
     return [
       {
-        text: `Laut ${source.publisher}: ${describeClaim(claim)}`,
+        text: `Laut ${brand ?? source.publisher}: ${describeClaim(claim)}`,
         publisher: source.publisher,
         url: source.url,
         retrievedAt: source.retrievedAt,

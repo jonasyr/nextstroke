@@ -1,6 +1,6 @@
-import { t } from "@nextstroke/ui";
 import { browserCoachDeps } from "../coach/browser.ts";
 import type { CoachDeps } from "../coach/deps.ts";
+import { GuidedFlow } from "../coach/GuidedFlow.tsx";
 import { Home } from "../coach/Home.tsx";
 import { browserDeps } from "../compare/browser.ts";
 import { type CompareDeps, QuickCompare } from "../compare/QuickCompare.tsx";
@@ -28,12 +28,5 @@ export function Page({
   if (route === "home" || route === "projects") {
     return <Home deps={coach} now={() => new Date().toISOString()} />;
   }
-  return (
-    <div className="ns-later">
-      <h1>{t("nav.guided")}</h1>
-      <p>{t("page.guided.intro")}</p>
-      <p className="ns-muted">{t("page.notReady")}</p>
-      <a href={hrefFor("home")}>{t("page.toHome")}</a>
-    </div>
-  );
+  return <GuidedFlow deps={coach} onExit={goHome} />;
 }

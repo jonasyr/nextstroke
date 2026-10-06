@@ -8,6 +8,9 @@ vi.mock("./coach/browser.ts", () => ({
     projects: null,
     storage: async () => ({ persisted: null }),
     persist: async () => false,
+    decode: async () => {
+      throw new Error("not used");
+    },
   },
 }));
 

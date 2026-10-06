@@ -4,6 +4,7 @@
  */
 import { newId } from "@nextstroke/contracts";
 import { sha256Hex } from "@nextstroke/projects";
+import { browserDeps } from "../compare/browser.ts";
 import { IdbStore, requestPersistence, storageStatus } from "../projects/idbStore.ts";
 import type { CoachDeps } from "./deps.ts";
 
@@ -22,4 +23,5 @@ export const browserCoachDeps: CoachDeps = {
         },
   storage: () => storageStatus(storage),
   persist: () => requestPersistence(storage),
+  decode: (blob) => browserDeps.decode(blob),
 };
