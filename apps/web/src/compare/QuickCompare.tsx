@@ -143,6 +143,7 @@ export function QuickCompare({ deps, onHome }: { deps: CompareDeps; onHome?: () 
   const [sheet, setSheet] = useState<Sheet>(null);
   const [chrome, setChrome] = useState(true);
   const [fine, setFine] = useState(true);
+  const [fineOpen, setFineOpen] = useState(false);
   const [loupe, setLoupe] = useState(false);
   /** Rings of an automatic guess still to be checked, per corner step (D-061). */
   const [unsure, setUnsure] = useState<Record<CornerStep, number[]>>({
@@ -933,6 +934,8 @@ export function QuickCompare({ deps, onHome }: { deps: CompareDeps; onHome?: () 
           images={both}
           fine={fine}
           onFine={setFine}
+          open={fineOpen}
+          onOpen={setFineOpen}
           busy={busy}
           onAuto={() => void (state.corners ? runRefine() : runAutoAlign())}
           onCorners={beginCorners}

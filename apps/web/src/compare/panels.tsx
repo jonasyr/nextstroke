@@ -181,6 +181,8 @@ export function AlignPanel({
   images,
   fine,
   onFine,
+  open,
+  onOpen,
   busy,
   onAuto,
   onCorners,
@@ -190,6 +192,9 @@ export function AlignPanel({
   images: Images;
   fine: boolean;
   onFine: (fine: boolean) => void;
+  /** Feinjustieren unfolded; folded by default so a small iPhone keeps room for the image. */
+  open: boolean;
+  onOpen: (open: boolean) => void;
   busy: boolean;
   /** Everything automatic: content, paper corners, position search (D-058). */
   onAuto: () => void;
@@ -219,7 +224,18 @@ export function AlignPanel({
       </div>
       <section className="ns-section" aria-labelledby="ns-fine-title">
         <div className="ns-section-head">
-          <h2 id="ns-fine-title">{t("align.fine")}</h2>
+          <h2 id="ns-fine-title">
+            <button
+              type="button"
+              className="ns-fold"
+              aria-expanded={open}
+              aria-controls="ns-fine-body"
+              onClick={() => onOpen(!open)}
+            >
+              {t("align.fine")}
+              <ChevronDown {...ICON} size={18} data-open={open ? "" : undefined} />
+            </button>
+          </h2>
           <button
             type="button"
             className="ns-text ns-accent"
@@ -228,7 +244,7 @@ export function AlignPanel({
             {t("align.reset")}
           </button>
         </div>
-        <div className="ns-fine">
+        <div className="ns-fine" id="ns-fine-body" hidden={!open}>
           <fieldset className="ns-pad" aria-label={t("align.move")}>
             {ARROWS.map(({ key, dx, dy, Icon, area }) => (
               <IconButton

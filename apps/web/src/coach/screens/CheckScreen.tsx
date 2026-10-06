@@ -1,5 +1,6 @@
 import { t } from "@nextstroke/ui";
 import { useEffect, useRef, useState } from "react";
+import { photoStyle } from "../photoStyle.ts";
 import { FlowBar, Foot } from "./parts.tsx";
 
 /**
@@ -51,7 +52,7 @@ export function CheckScreen({
           <canvas
             ref={canvas}
             className="ns-g-photo"
-            style={{ aspectRatio: String(aspect) }}
+            style={photoStyle(aspect)}
             role="img"
             aria-label={t("guided.check.view")}
           />
@@ -62,7 +63,7 @@ export function CheckScreen({
             {t("guided.check.now")}
           </span>
         </div>
-        <label className="ns-group">
+        <label className="ns-stack">
           <span className="ns-sub">{t("guided.check.split")}</span>
           <input
             type="range"

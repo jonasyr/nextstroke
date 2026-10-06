@@ -1,6 +1,7 @@
 import type { Point, Quad } from "@nextstroke/compare";
 import { type PointerEvent, useEffect, useRef, useState } from "react";
 import { normalized } from "./PhotoMarker.tsx";
+import { photoStyle } from "./photoStyle.ts";
 
 const ACCENT = "#8fb0ff";
 const WARN = "#ffd479";
@@ -131,7 +132,7 @@ export function CornerEditor({
     <canvas
       ref={canvas}
       className="ns-g-photo"
-      style={{ aspectRatio: String(aspect) }}
+      style={photoStyle(aspect)}
       role="img"
       aria-label={label}
       onPointerDown={(event) => {

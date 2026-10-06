@@ -25,6 +25,10 @@
 * {
   box-sizing: border-box;
 }
+/* Author display rules must not override the hidden attribute. */
+[hidden] {
+  display: none !important;
+}
 html,
 body {
   height: 100%;
@@ -779,7 +783,7 @@ input[type="range"]::-moz-range-thumb {
 .ns-home {
   gap: 20px;
 }
-.ns-group {
+.ns-stack {
   display: grid;
   gap: 10px;
 }
@@ -1235,4 +1239,37 @@ input[type="range"]::-moz-range-thumb {
 a.ns-primary {
   color: var(--accent-ink);
   text-decoration: none;
+}
+/* Feinjustieren folds away, so a small iPhone keeps room for the image (iPhone test, 2026-10-06). */
+.ns-fold {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 44px;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: inherit;
+}
+.ns-fold svg {
+  transition: transform 0.15s ease;
+  transform: rotate(-90deg);
+}
+.ns-fold svg[data-open] {
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ns-fold svg {
+    transition: none;
+  }
+}
+.ns-g-photo {
+  margin-inline: auto;
+}
+.ns-g-file {
+  margin-left: -10px;
+}
+.ns-g-action {
+  justify-self: end;
+  padding-right: 4px;
 }

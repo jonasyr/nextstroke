@@ -61,7 +61,7 @@ export function Home({
         <span className="ns-wordmark">{t("app.name")}</span>
       </div>
       <h1 className="ns-lead">{t("home.lead")}</h1>
-      <div className="ns-group">
+      <div className="ns-stack">
         <a className="ns-choice ns-choice-main" href={hrefFor("guided")}>
           <span className="ns-choice-icon ns-choice-icon-main">
             <PenLine {...ICON} />
@@ -81,7 +81,7 @@ export function Home({
           </span>
         </a>
       </div>
-      <section className="ns-group" aria-labelledby="ns-projects">
+      <section className="ns-stack" aria-labelledby="ns-projects">
         <h2 id="ns-projects" className="ns-label">
           {t("home.projects")}
         </h2>

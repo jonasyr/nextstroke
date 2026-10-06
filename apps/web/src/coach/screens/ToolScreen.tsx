@@ -30,7 +30,7 @@ export function ToolScreen({
     <>
       <FlowBar back={onBack} title={t("guided.tool.title")} step={t("guided.tool.step")} />
       <div className="ns-g-body">
-        <section className="ns-group">
+        <section className="ns-stack">
           <h2 className="ns-label">{t("guided.tool.pen")}</h2>
           <Options label={t("guided.tool.penGroup")}>
             {shown.map((p) => (
@@ -60,7 +60,7 @@ export function ToolScreen({
             </button>
           )}
         </section>
-        <section className="ns-group">
+        <section className="ns-stack">
           <h2 className="ns-label">{t("guided.tool.tip")}</h2>
           <div className="ns-g-chips" role="radiogroup" aria-label={t("guided.tool.tipGroup")}>
             {tips.map((mm) => (
@@ -88,7 +88,7 @@ export function ToolScreen({
             {t("guided.tool.tipUse")}
           </p>
         </section>
-        <section className="ns-group">
+        <section className="ns-stack">
           <h2 className="ns-label">{t("guided.tool.paper")}</h2>
           <Options label={t("guided.tool.paperGroup")}>
             {DATASET.papers.map((paper) => (

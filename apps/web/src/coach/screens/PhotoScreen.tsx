@@ -70,8 +70,11 @@ export function PhotoScreen({
       />
       <div className="ns-g-body">
         {image && corners ? (
-          <div className="ns-group">
+          <div className="ns-stack">
             <CornerEditor image={image} label={t("guided.corners.label")} {...corners} />
+            <p className="ns-status" role="status" aria-live="polite">
+              {status}
+            </p>
             <label className="ns-text ns-accent ns-g-file">
               {t("guided.photo.change")}
               <input {...input} />
@@ -89,9 +92,11 @@ export function PhotoScreen({
             <input {...input} />
           </label>
         )}
-        <p className="ns-status" role="status" aria-live="polite">
-          {status}
-        </p>
+        {!(image && corners) && (
+          <p className="ns-status" role="status" aria-live="polite">
+            {status}
+          </p>
+        )}
       </div>
       <Foot>
         <button type="button" className="ns-primary" disabled={!image || busy} onClick={onNext}>

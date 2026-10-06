@@ -424,6 +424,9 @@ describe("editor: aligning", () => {
     await loadBoth(makeDeps());
     fireEvent.click(screen.getByRole("tab", { name: /Ausrichten/ }));
     expect(screen.getByRole("heading", { name: "Feinjustieren" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Nach oben" })).toBeNull();
+    fireEvent.click(button("Feinjustieren"));
+    expect(button("Feinjustieren").getAttribute("aria-expanded")).toBe("true");
     for (const name of ["Nach oben", "Nach unten", "Nach links", "Nach rechts"])
       fireEvent.click(button(name));
     fireEvent.click(button("Vorlage vergrößern"));
@@ -449,6 +452,7 @@ describe("editor: aligning", () => {
     await loadBoth(makeDeps());
     fireEvent.click(screen.getByRole("tab", { name: /Ausrichten/ }));
     drag(1, [10, 10], [60, 10]);
+    fireEvent.click(button("Feinjustieren"));
     fireEvent.click(button("Vorlage vergrößern"));
     fireEvent.click(button("Abbrechen"));
     expect(screen.getByRole("tab", { name: /Ausrichten/ }).querySelector(".ns-dot")).toBeNull();
