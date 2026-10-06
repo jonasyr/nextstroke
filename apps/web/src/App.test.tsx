@@ -17,6 +17,7 @@ vi.mock("./coach/browser.ts", () => ({
     fromRgba: async () => {
       throw new Error("not used");
     },
+    download: () => undefined,
   },
 }));
 

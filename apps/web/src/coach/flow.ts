@@ -6,7 +6,7 @@ import { t } from "@nextstroke/ui";
  * check. Pure, so the React screens stay thin; every choice ends in a `CoachRequest`.
  */
 
-export type FlowStep = "photo" | "tool" | "goal" | "ideas" | "steps" | "check";
+export type FlowStep = "photo" | "tool" | "goal" | "ideas" | "steps" | "checkPhoto" | "check";
 
 /** A circle on the photo, normalized to its width (x, r) and height (y). */
 export interface Spot {
@@ -35,6 +35,21 @@ export const DEFAULT_CHOICES: FlowChoices = {
   area: null,
   protectedSpots: [],
 };
+
+/** The choices behind a saved request; pens or papers no longer known fall back to "Weiß ich nicht". */
+export function choicesFrom(
+  request: CoachRequest,
+  known: { pens: readonly string[]; papers: readonly string[] },
+): FlowChoices {
+  return {
+    ...DEFAULT_CHOICES,
+    intent: request.intent,
+    skill: request.skill,
+    finelinerId: known.pens.includes(request.finelinerId) ? request.finelinerId : "generic",
+    paperId: known.papers.includes(request.paperId) ? request.paperId : "unknown",
+    tipMm: request.ownedTipsMm?.[0] ?? null,
+  };
+}
 
 /** Smallest and default circle size, as a share of the photo's width. */
 export const SPOT = { min: 0.04, start: 0.12, max: 0.6 } as const;

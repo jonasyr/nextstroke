@@ -19,6 +19,15 @@ const ACCEPT = "image/*";
  * Step 1 of 3: a photo of the drawing, which becomes the project's immutable original, and
  * its four paper corners, from which the straight view is computed.
  */
+/** Labels of the original's photo step; a checkpoint passes its own. */
+const ORIGINAL = {
+  title: t("guided.photo.title"),
+  step: t("guided.photo.step"),
+  back: t("nav.cancel"),
+  next: t("guided.next"),
+  input: t("guided.photo.label"),
+};
+
 export function PhotoScreen({
   image,
   corners,
@@ -27,7 +36,9 @@ export function PhotoScreen({
   onPick,
   onCancel,
   onNext,
+  labels = ORIGINAL,
 }: {
+  labels?: { title: string; step?: string; back: string; next: string; input: string };
   image: ImageBitmap | null;
   corners: CornerProps | null;
   busy: boolean;
@@ -45,7 +56,7 @@ export function PhotoScreen({
     type: "file",
     accept: ACCEPT,
     className: "ns-hidden-input",
-    "aria-label": t("guided.photo.label"),
+    "aria-label": labels.input,
     onChange: change,
     disabled: busy,
   } as const;
@@ -53,9 +64,9 @@ export function PhotoScreen({
     <>
       <FlowBar
         back={onCancel}
-        backLabel={t("nav.cancel")}
-        title={t("guided.photo.title")}
-        step={t("guided.photo.step")}
+        backLabel={labels.back}
+        title={labels.title}
+        {...(labels.step ? { step: labels.step } : {})}
       />
       <div className="ns-g-body">
         {image && corners ? (
@@ -84,7 +95,7 @@ export function PhotoScreen({
       </div>
       <Foot>
         <button type="button" className="ns-primary" disabled={!image || busy} onClick={onNext}>
-          {t("guided.next")}
+          {labels.next}
         </button>
       </Foot>
     </>

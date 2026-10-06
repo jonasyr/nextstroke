@@ -17,4 +17,6 @@ export interface CoachDeps {
   /** Pixels of a bitmap and back, for straightening the sheet. */
   rgba(image: ImageBitmap): Rgba;
   fromRgba(rgba: Rgba): Promise<ImageBitmap>;
+  /** Saves a file directly (the project export). */
+  download(file: File): void;
 }

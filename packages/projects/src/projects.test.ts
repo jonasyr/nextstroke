@@ -51,6 +51,21 @@ describe("local projects (Phase 3 Task 4)", () => {
     const checkpoint = await store.getAsset(next.checkpoints[0]?.assetId ?? "");
     expect(checkpoint?.record.role).toBe("checkpoint");
     expect((await store.getAsset(project.originalAssetId))?.bytes).toEqual(photo(1).bytes);
+    const corners: [number, number][] = [
+      [0.1, 0.1],
+      [0.9, 0.1],
+      [0.9, 0.9],
+      [0.1, 0.9],
+    ];
+    const third = await addCheckpoint(deps, next, photo(3), {
+      paperCorners: corners as [
+        [number, number],
+        [number, number],
+        [number, number],
+        [number, number],
+      ],
+    });
+    expect(third.checkpoints[1]?.paperCorners).toEqual(corners);
   });
 
   it("refuses to overwrite a newer revision", async () => {

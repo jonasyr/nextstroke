@@ -1,6 +1,7 @@
 import { CoachRequestSchema } from "@nextstroke/contracts";
 import { describe, expect, it } from "vitest";
 import {
+  choicesFrom,
   DEFAULT_CHOICES,
   defaultTitle,
   dragArea,
@@ -74,5 +75,28 @@ describe("guided flow state (Phase 3 Task 5)", () => {
     expect(tipChoices("0.5,0.15,0.3")).toEqual([0.15, 0.3, 0.5]);
     expect(tipChoices(undefined)).toEqual([]);
     expect(mmLabel(0.15)).toBe("0,15");
+  });
+
+  it("restores the choices of a saved request", () => {
+    const known = { pens: ["sakura-pigma-micron"], papers: ["drawing"] };
+    const request = {
+      intent: "texture" as const,
+      skill: "advanced" as const,
+      finelinerId: "sakura-pigma-micron",
+      paperId: "drawing",
+      ownedTipsMm: [0.5],
+    };
+    expect(choicesFrom(request, known)).toMatchObject({
+      intent: "texture",
+      tipMm: 0.5,
+      paperId: "drawing",
+    });
+    expect(
+      choicesFrom({ ...request, finelinerId: "gone", paperId: "gone", ownedTipsMm: [] }, known),
+    ).toMatchObject({
+      finelinerId: "generic",
+      paperId: "unknown",
+      tipMm: null,
+    });
   });
 });

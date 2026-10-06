@@ -2,6 +2,7 @@ import { evidenceFor } from "@nextstroke/coaching";
 import type { CoachRequest, Idea } from "@nextstroke/contracts";
 import { DATASET } from "@nextstroke/materials";
 import { t } from "@nextstroke/ui";
+import type { ReactNode } from "react";
 import { generalRules, levelLabel } from "../labels.ts";
 import { FlowBar, Foot } from "./parts.tsx";
 
@@ -25,14 +26,15 @@ export function StepsScreen({
   done,
   onToggle,
   onBack,
-  primary,
+  foot,
 }: {
   idea: Idea;
   skill: CoachRequest["skill"];
   done: number[];
   onToggle: (index: number) => void;
   onBack: () => void;
-  primary: { label: string; onClick: () => void };
+  /** The step's action at the bottom: photographing the checkpoint. */
+  foot: ReactNode;
 }) {
   const evidence = evidenceFor(idea, DATASET);
   return (
@@ -79,11 +81,7 @@ export function StepsScreen({
           </div>
         </details>
       </div>
-      <Foot>
-        <button type="button" className="ns-primary" onClick={primary.onClick}>
-          {primary.label}
-        </button>
-      </Foot>
+      <Foot>{foot}</Foot>
     </>
   );
 }

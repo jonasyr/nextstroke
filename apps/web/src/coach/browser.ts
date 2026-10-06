@@ -27,4 +27,5 @@ export const browserCoachDeps: CoachDeps = {
   ...(browserDeps.vision ? { vision: browserDeps.vision } : {}),
   rgba: (image) => browserDeps.rgba(image),
   fromRgba: (rgba) => browserDeps.fromRgba(rgba),
+  download: (file) => browserDeps.download(file),
 };

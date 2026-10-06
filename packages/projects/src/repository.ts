@@ -1,4 +1,5 @@
 import {
+  type Checkpoint,
   type IdPrefix,
   type ImmutableAsset,
   ImmutableAssetSchema,
@@ -97,11 +98,12 @@ export async function addCheckpoint(
   deps: ProjectDeps,
   seen: Project,
   photo: Omit<AssetInput, "role">,
+  extra: Pick<Checkpoint, "paperCorners"> = {},
 ): Promise<Project> {
   const asset = await addAsset(deps, { ...photo, role: "checkpoint" });
   return updateProject(deps, seen, (p) => ({
     ...p,
-    checkpoints: [...p.checkpoints, { assetId: asset.id, createdAt: asset.createdAt }],
+    checkpoints: [...p.checkpoints, { assetId: asset.id, createdAt: asset.createdAt, ...extra }],
   }));
 }
 

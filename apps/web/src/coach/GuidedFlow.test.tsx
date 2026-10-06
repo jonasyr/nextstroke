@@ -36,6 +36,7 @@ function coach(projects: ProjectDeps | null, persisted = false) {
       data: new Uint8ClampedArray(image.width * image.height * 4),
     }),
     fromRgba: async (rgba) => ({ width: rgba.width, height: rgba.height }) as ImageBitmap,
+    download: () => undefined,
   };
   return { deps, persist };
 }
@@ -114,6 +115,37 @@ describe("guided flow (Phase 3 Task 5)", () => {
     expect(saved?.revision).toBe(3);
     expect(saved?.paperCorners?.[0]).toEqual([0.06, 0.06]);
 
+    // A checkpoint: photo, corners, then before and now side by side.
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText("Foto des Zwischenstands wählen"), {
+        target: { files: [photo()] },
+      });
+    });
+    expect(screen.getByRole("heading", { name: "Zwischenstand" })).toBeTruthy();
+    await act(async () => click("Vergleichen"));
+    expect(screen.getByRole("heading", { name: "Vorher und jetzt" })).toBeTruthy();
+    expect(screen.getByText("Der Zwischenstand ist gespeichert.")).toBeTruthy();
+    fireEvent.change(screen.getByRole("slider", { name: "Trenner verschieben" }), {
+      target: { value: "30" },
+    });
+    const [withCheckpoint] = await projects.store.listProjects();
+    expect(withCheckpoint?.checkpoints).toHaveLength(1);
+    expect(withCheckpoint?.checkpoints[0]?.paperCorners?.[2]).toEqual([0.94, 0.94]);
+    const asset = await projects.store.getAsset(withCheckpoint?.checkpoints[0]?.assetId ?? "");
+    expect(asset?.record.role).toBe("checkpoint");
+
+    click("Nächster Schritt");
+    expect(screen.getByRole("heading", { name: /Dein Ziel/ })).toBeTruthy();
+    await act(async () => click("Vorschläge zeigen"));
+    await act(async () =>
+      fireEvent.click(screen.getAllByRole("button", { name: /Schritte/ })[0] as HTMLElement),
+    );
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText("Foto des Zwischenstands wählen"), {
+        target: { files: [photo()] },
+      });
+    });
+    await act(async () => click("Vergleichen"));
     click("Fertig für heute");
     expect(exit).toHaveBeenCalled();
   });
@@ -203,5 +235,41 @@ describe("guided flow (Phase 3 Task 5)", () => {
     await takePhoto();
     await takePhoto();
     expect(await projects.store.listProjects()).toHaveLength(1);
+  });
+
+  it("draws on a saved project from its goal, with the last choices", async () => {
+    const projects = projectDeps();
+    const { deps } = coach(projects, true);
+    const exit = vi.fn();
+    const first = render(<GuidedFlow deps={deps} onExit={exit} />);
+    await takePhoto();
+    await act(async () => click("Weiter"));
+    choose("Sakura Pigma Micron");
+    click("Weiter");
+    choose(/Oberfläche/);
+    await act(async () => click("Vorschläge zeigen"));
+    first.unmount();
+    const [saved] = await projects.store.listProjects();
+
+    render(<GuidedFlow deps={deps} projectId={saved?.id ?? null} onExit={exit} />);
+    await act(async () => undefined);
+    expect(screen.getByRole("heading", { name: /Dein Ziel/ })).toBeTruthy();
+    expect((screen.getByRole("radio", { name: /Oberfläche/ }) as HTMLInputElement).checked).toBe(
+      true,
+    );
+    click("Zurück");
+    expect(
+      (screen.getByRole("radio", { name: "Sakura Pigma Micron" }) as HTMLInputElement).checked,
+    ).toBe(true);
+    click("Zurück");
+    click("Abbrechen");
+    expect(exit).toHaveBeenCalledWith(saved?.id);
+  });
+
+  it("says when a saved project cannot be opened", async () => {
+    const { deps } = coach(projectDeps());
+    render(<GuidedFlow deps={deps} projectId="prj_none" onExit={() => undefined} />);
+    await act(async () => undefined);
+    expect(screen.getByText("Das Projekt konnte nicht geöffnet werden.")).toBeTruthy();
   });
 });

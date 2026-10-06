@@ -1,8 +1,8 @@
 import type { Project } from "@nextstroke/contracts";
-import { describeStorage } from "@nextstroke/projects";
+import { describeStorage, importProject, PackageError } from "@nextstroke/projects";
 import { t } from "@nextstroke/ui";
 import { ChevronRight, PenLine, SquareStack } from "lucide-react";
-import { useEffect, useState } from "react";
+import { type ChangeEvent, useEffect, useState } from "react";
 import { ICON } from "../compare/IconButton.tsx";
 import { hrefFor, hrefWith } from "../routing/routes.ts";
 import { AssetImage } from "./AssetImage.tsx";
@@ -13,8 +13,32 @@ import { projectLine, sortProjects } from "./home.ts";
  * Start (D-067): two ways in, coach or quick compare, then the projects on this device with
  * what the browser promises about keeping them.
  */
-export function Home({ deps, now }: { deps: CoachDeps; now: () => string }) {
+export function Home({
+  deps,
+  now,
+  navigate,
+}: {
+  deps: CoachDeps;
+  now: () => string;
+  navigate: (hash: string) => void;
+}) {
   const store = deps.projects?.store;
+  const [status, setStatus] = useState("");
+
+  /** Opens a saved project file; it is checked completely before anything is stored. */
+  const open = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    const projects = deps.projects;
+    if (!file || !projects) return;
+    setStatus(t("home.importing"));
+    try {
+      const project = await importProject(projects, new Uint8Array(await file.arrayBuffer()));
+      navigate(hrefWith("projects", project.id));
+    } catch (error) {
+      setStatus(error instanceof PackageError ? error.message : t("project.resumeFailed"));
+    }
+  };
   const [projects, setProjects] = useState<Project[] | null>(null);
   const [notes, setNotes] = useState<string[]>([]);
   useEffect(() => {
@@ -83,6 +107,21 @@ export function Home({ deps, now }: { deps: CoachDeps; now: () => string }) {
             ))}
           </ul>
         )}
+        {store && (
+          <label className="ns-text ns-accent ns-g-file">
+            {t("home.import")}
+            <input
+              type="file"
+              accept=".zip,application/zip"
+              className="ns-hidden-input"
+              aria-label={t("home.importLabel")}
+              onChange={(e) => void open(e)}
+            />
+          </label>
+        )}
+        <p className="ns-status" role="status" aria-live="polite">
+          {status}
+        </p>
         {store &&
           notes.map((note) => (
             <p key={note} className="ns-note">
