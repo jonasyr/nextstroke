@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const ID_PREFIXES = ["ast", "prj", "rev", "msk", "tr", "prv", "sug", "run"] as const;
+export const ID_PREFIXES = ["ast", "prj", "rev", "msk", "tr", "prv", "sug", "run", "cal"] as const;
 export type IdPrefix = (typeof ID_PREFIXES)[number];
 
 const ALPHABET = "0123456789abcdefghijklmnopqrstuvwxyz";

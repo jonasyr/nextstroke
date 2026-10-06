@@ -1,0 +1,9 @@
+{
+  "name": "@nextstroke/calibration",
+  "private": true,
+  "type": "module",
+  "description": "Optional pen-and-paper test card: layout, relative measurements, advice (Phase 3 Task 2).",
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}

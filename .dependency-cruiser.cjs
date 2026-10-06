@@ -1,5 +1,5 @@
 /** Package boundaries (D-039): domain logic stays pure; apps depend on packages, never the reverse. */
-const domain = "^packages/(contracts|compare|imaging|materials|coaching|projects)/";
+const domain = "^packages/(contracts|compare|imaging|materials|coaching|projects|calibration)/";
 
 module.exports = {
   forbidden: [

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { CalibrationAdviceSchema } from "./calibration.ts";
 import { NonEmpty, Polygon } from "./common.ts";
 import { idOf } from "./ids.ts";
 
@@ -50,6 +51,14 @@ export const CoachRequestSchema = z
     /** Tip sizes the user owns, in mm. */
     ownedTipsMm: z.array(z.number().positive().max(5)).max(12).optional(),
     paperId: NonEmpty,
+    /** The user's test card for this pen and paper, when there is one (Phase 3 Task 2). */
+    calibration: CalibrationAdviceSchema.extend({
+      sampleId: idOf("cal"),
+      /** The wipe test's answer: did dried ink smear? null when skipped. */
+      smudged: z.boolean().nullable(),
+    })
+      .strict()
+      .optional(),
   })
   .strict();
 export type CoachRequest = z.infer<typeof CoachRequestSchema>;

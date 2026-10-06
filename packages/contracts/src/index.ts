@@ -1,5 +1,6 @@
 /** Versioned runtime schemas shared by every package (spec §7, §10, §13). */
 export * from "./asset.ts";
+export * from "./calibration.ts";
 export * from "./coaching.ts";
 export * from "./common.ts";
 export * from "./ids.ts";

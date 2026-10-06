@@ -132,4 +132,20 @@ describe("claims in plain German", () => {
     const idea = { ...suggest(request, DATASET, ID).ideas[0], materialClaimIds: ["missing"] };
     expect(evidenceFor(idea, DATASET)).toEqual([]);
   });
+
+  it("takes spacing from the user's test card", () => {
+    const calibration = {
+      sampleId: "cal_0001",
+      lineWidthMm: 0.42,
+      minSpacingMm: 0.7,
+      spreads: false,
+      overdrawDarkens: true,
+      approximate: false,
+      smudged: false,
+    };
+    const set = suggest({ ...request, skill: "advanced", calibration }, DATASET, ID);
+    expect(set.ideas[0].steps.join(" ")).toContain("0,7 mm");
+    const beginner = suggest({ ...request, skill: "beginner", calibration }, DATASET, ID);
+    expect(beginner.ideas[0].steps.join(" ")).toContain("0,9 mm");
+  });
 });

@@ -104,4 +104,55 @@ describe("technique feasibility (Phase 3 Task 1)", () => {
     expect(all.map((f) => f.technique)).toContain("negativeSpace");
     expect(all.filter((f) => !f.feasible).map((f) => f.technique)).toEqual(["lighten"]);
   });
+
+  it("uses the user's test card instead of the rule of thumb", () => {
+    const card = {
+      lineWidthMm: 0.42,
+      minSpacingMm: 0.7,
+      spreads: false,
+      overdrawDarkens: true,
+      approximate: false,
+      smudged: false,
+    };
+    const unknown: Situation = { pen: {}, paper: unknownPaper, card };
+    const hatching = feasibility("hatching", unknown);
+    expect(hatching.minSpacingMm).toBe(0.7);
+    expect(hatching.risk).toBe("low");
+    expect(hatching.reasons).toEqual([
+      {
+        kind: "spacing",
+        text: "Laut deiner Testkarte: Linien etwa 0,42 mm breit, ab 0,7 mm Abstand bleiben sie getrennt.",
+        claims: [],
+        fromCard: true,
+      },
+    ]);
+    const cross = feasibility("crossHatching", unknown);
+    expect(cross.reasons.at(-1)?.text).toMatch(/nicht verwischt/);
+    expect(cross.risk).toBe("low");
+
+    const spreading = { ...card, spreads: true, smudged: true, approximate: true };
+    const onCopy = feasibility("stippling", { pen: {}, paper: copy, card: spreading });
+    expect(onCopy.minSpacingMm).toBe(0.7);
+    expect(onCopy.reasons[0]?.text).toMatch(/ungefähr 0,42 mm/);
+    expect(onCopy.reasons[1]?.text).toMatch(/Tinte verläuft auf diesem Papier/);
+    expect(onCopy.risk).toBe("medium");
+    const smeared = feasibility("crossHatching", { pen: {}, paper: bristol, card: spreading });
+    expect(smeared.reasons.at(-1)?.text).toMatch(/hat die Tinte verwischt/);
+    expect(smeared.risk).toBe("high");
+
+    // Unknown spreading (no tip or scale): the known-feathering paper caution still applies.
+    const unsure = feasibility("hatching", {
+      pen: {},
+      paper: copy,
+      card: { ...card, spreads: null },
+    });
+    expect(unsure.minSpacingMm).toBe(0.7);
+    expect(unsure.reasons[1]?.text).toMatch(/kann die Tinte verlaufen/);
+    const unsureSmear = feasibility("crossHatching", {
+      pen: {},
+      paper: bristol,
+      card: { ...card, smudged: null },
+    });
+    expect(unsureSmear.reasons.at(-1)?.text).toMatch(/Zweite Lage erst/);
+  });
 });

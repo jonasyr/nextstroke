@@ -34,6 +34,7 @@ function situation(request: CoachRequest, data: MaterialDataset): Situation {
     pen: factsFor(data, pen.id),
     paper,
     ...(request.ownedTipsMm?.length ? { ownedTipsMm: request.ownedTipsMm } : {}),
+    ...(request.calibration ? { card: request.calibration } : {}),
   };
 }
 
