@@ -2,18 +2,20 @@ import type { FormTones } from "@nextstroke/coaching";
 import type { LightSide } from "@nextstroke/contracts";
 import {
   type FormKind,
+  formCandidates,
   formTones,
   type Gray,
-  inkMask,
+  joinForms,
   paint,
   type Refusal,
-  regionFrom,
   shadeBands,
+  suggestKind,
   traceMask,
 } from "@nextstroke/imaging";
 
 /**
- * Form mode (D-073): accepted taps, hand corrections and whether the form is round or flat.
+ * Form mode (D-073, D-074): accepted taps, how much smaller or larger than offered each tap's
+ * form is, hand corrections, and whether the form is round or flat.
  * Points are shares of the straight view's width and height, so they survive a new size.
  */
 export type Pt = [number, number];
@@ -27,24 +29,34 @@ export interface BrushStroke {
 
 export interface FormMarks {
   taps: Pt[];
+  /** Per tap: steps from the offered form to a smaller (negative) or larger one. */
+  sizes: number[];
   strokes: BrushStroke[];
   /** What was added in which order, for "Rückgängig". */
   steps: ("tap" | "stroke")[];
   kind: FormKind;
 }
 
-export const NO_FORM: FormMarks = { taps: [], strokes: [], steps: [], kind: "round" };
+export const NO_FORM: FormMarks = {
+  taps: [],
+  sizes: [],
+  strokes: [],
+  steps: [],
+  kind: "round",
+};
 
 /** The brush covers this share of the long side: about a fingertip on a phone photo. */
 export const BRUSH = 0.03;
 
-/** The straight view in gray at the computing size, and its ink lines. */
+type Candidates = ReturnType<typeof formCandidates>;
+
+/** The straight view in gray at the computing size, with each tap's forms once found. */
 export interface FormImage {
   gray: Gray;
-  ink: Uint8Array;
+  found: Map<string, Candidates>;
 }
 
-export const formImage = (gray: Gray): FormImage => ({ gray, ink: inkMask(gray) });
+export const formImage = (gray: Gray): FormImage => ({ gray, found: new Map() });
 
 const px = (image: FormImage, [x, y]: Pt): Pt => [
   x * (image.gray.width - 1),
@@ -71,37 +83,81 @@ export function applyStroke(image: FormImage, mask: Uint8Array, stroke: BrushStr
   return out;
 }
 
-/** The form's mask: the area of the accepted taps, then every hand correction in order. */
+/** The forms a tap can mean (found once per tap, then remembered). */
+function candidatesAt(image: FormImage, tap: Pt): Candidates {
+  const key = `${tap[0].toFixed(5)},${tap[1].toFixed(5)}`;
+  let found = image.found.get(key);
+  if (!found) {
+    found = formCandidates(image.gray, px(image, tap));
+    image.found.set(key, found);
+  }
+  return found;
+}
+
+/** Which of a tap's forms is shown, given its size steps. */
+function chosen(found: Candidates, size: number): { mask: Uint8Array; index: number } | null {
+  if (!("regions" in found)) return null;
+  const index = Math.min(found.regions.length - 1, Math.max(0, found.pick + size));
+  return { mask: found.regions[index] as Uint8Array, index };
+}
+
+/** The form's mask: the chosen form of every tap joined, then every hand correction in order. */
 export function formMask(image: FormImage, marks: FormMarks): Uint8Array {
   const { width: w, height: h } = image.gray;
   let mask: Uint8Array = new Uint8Array(w * h);
-  if (marks.taps.length) {
-    const region = regionFrom(
-      image.ink,
-      w,
-      h,
-      marks.taps.map((t) => px(image, t)),
-    );
-    if ("mask" in region) mask = region.mask;
-  }
+  marks.taps.forEach((tap, i) => {
+    const part = chosen(candidatesAt(image, tap), marks.sizes[i] ?? 0);
+    if (part) mask = mask.map((v, j) => v | (part.mask[j] as number));
+  });
+  if (marks.taps.length > 1) mask = joinForms(mask, w, h);
   return marks.strokes.reduce<Uint8Array>((m, stroke) => applyStroke(image, m, stroke), mask);
 }
 
-/** Adds a tap when it finds an area together with the earlier ones; otherwise why not. */
+/**
+ * Adds a tap when it finds a form; otherwise why not. The first form also suggests round or
+ * flat from its outline.
+ */
 export function addTap(
   image: FormImage,
   marks: FormMarks,
   tap: Pt,
 ): { marks: FormMarks } | { refused: Refusal } {
+  const found = candidatesAt(image, tap);
+  if (!("regions" in found)) return found;
   const { width: w, height: h } = image.gray;
-  const region = regionFrom(
-    image.ink,
-    w,
-    h,
-    [...marks.taps, tap].map((t) => px(image, t)),
-  );
-  if (!("mask" in region)) return region;
-  return { marks: { ...marks, taps: [...marks.taps, tap], steps: [...marks.steps, "tap"] } };
+  const kind = marks.taps.length
+    ? marks.kind
+    : suggestKind(found.regions[found.pick] as Uint8Array, w, h);
+  return {
+    marks: {
+      ...marks,
+      kind,
+      taps: [...marks.taps, tap],
+      sizes: [...marks.sizes, 0],
+      steps: [...marks.steps, "tap"],
+    },
+  };
+}
+
+/** Whether the last tap's form can get smaller or larger. */
+export function sizeRange(
+  image: FormImage,
+  marks: FormMarks,
+): { smaller: boolean; larger: boolean } {
+  const tap = marks.taps.at(-1);
+  const found = tap ? candidatesAt(image, tap) : null;
+  const now = found ? chosen(found, marks.sizes.at(-1) ?? 0) : null;
+  if (!found || !now || !("regions" in found)) return { smaller: false, larger: false };
+  return { smaller: now.index > 0, larger: now.index < found.regions.length - 1 };
+}
+
+/** The last tap's form one step smaller (-1) or larger (+1). */
+export function resize(image: FormImage, marks: FormMarks, step: -1 | 1): FormMarks {
+  const range = sizeRange(image, marks);
+  if ((step < 0 && !range.smaller) || (step > 0 && !range.larger)) return marks;
+  const sizes = [...marks.sizes];
+  sizes[sizes.length - 1] = (sizes.at(-1) ?? 0) + step;
+  return { ...marks, sizes };
 }
 
 /** Adds a hand correction. */
@@ -115,7 +171,9 @@ export const addStroke = (marks: FormMarks, stroke: BrushStroke): FormMarks => (
 export function undo(marks: FormMarks): FormMarks {
   const last = marks.steps.at(-1);
   const steps = marks.steps.slice(0, -1);
-  if (last === "tap") return { ...marks, taps: marks.taps.slice(0, -1), steps };
+  if (last === "tap") {
+    return { ...marks, taps: marks.taps.slice(0, -1), sizes: marks.sizes.slice(0, -1), steps };
+  }
   if (last === "stroke") return { ...marks, strokes: marks.strokes.slice(0, -1), steps };
   return marks;
 }

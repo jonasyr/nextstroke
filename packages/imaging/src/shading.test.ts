@@ -156,6 +156,9 @@ describe("shadow from the form", () => {
     expect(row(60)).toEqual(row(140));
     expect(row(100).at(-1)).toBe(3);
     expect(row(100)[0]).toBe(1);
+    // A cylinder, not a pillow: the ends are shaded like the middle.
+    expect(row(21)).toEqual(row(100));
+    expect(row(178)).toEqual(row(100));
   });
 
   it("runs the whole way from a photo and taps", () => {

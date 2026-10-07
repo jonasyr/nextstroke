@@ -4,6 +4,7 @@
  * distance to the outline (as in Lumo, Teddy and Monster Mash), lit from one side, and cut into
  * three tone bands. Pure; images are grayscale arrays.
  */
+import { dilate, erode, fillHoles, flood, invert, nearestFree } from "./maskOps.ts";
 
 export interface Gray {
   width: number;
@@ -71,91 +72,6 @@ export function inkMask(gray: Gray): Uint8Array {
   return ink;
 }
 
-/** Grows a mask by `r` pixels (square), separably. */
-function dilate(mask: Uint8Array, w: number, h: number, r: number): Uint8Array {
-  if (r <= 0) return mask.slice();
-  const tmp = new Uint8Array(w * h);
-  for (let y = 0; y < h; y++) {
-    let last = -Infinity;
-    // Distance to the last set pixel on the left, then on the right.
-    for (let x = 0; x < w; x++) {
-      if (mask[y * w + x]) last = x;
-      if (x - last <= r) tmp[y * w + x] = 1;
-    }
-    last = Infinity;
-    for (let x = w - 1; x >= 0; x--) {
-      if (mask[y * w + x]) last = x;
-      if (last - x <= r) tmp[y * w + x] = 1;
-    }
-  }
-  const out = new Uint8Array(w * h);
-  for (let x = 0; x < w; x++) {
-    let last = -Infinity;
-    for (let y = 0; y < h; y++) {
-      if (tmp[y * w + x]) last = y;
-      if (y - last <= r) out[y * w + x] = 1;
-    }
-    last = Infinity;
-    for (let y = h - 1; y >= 0; y--) {
-      if (tmp[y * w + x]) last = y;
-      if (last - y <= r) out[y * w + x] = 1;
-    }
-  }
-  return out;
-}
-
-const invert = (mask: Uint8Array) => mask.map((v) => (v ? 0 : 1));
-const erode = (mask: Uint8Array, w: number, h: number, r: number) =>
-  invert(dilate(invert(mask), w, h, r));
-
-/** Pixels of `free` 4-connected to `start`; `touches` tells whether it reached the border. */
-function flood(free: Uint8Array, w: number, h: number, start: number) {
-  const seen = new Uint8Array(w * h);
-  const stack = [start];
-  seen[start] = 1;
-  let touches = false;
-  let size = 0;
-  while (stack.length) {
-    const i = stack.pop() as number;
-    size++;
-    const x = i % w;
-    const y = (i - x) / w;
-    if (x === 0 || y === 0 || x === w - 1 || y === h - 1) touches = true;
-    const next = [
-      x > 0 ? i - 1 : -1,
-      x < w - 1 ? i + 1 : -1,
-      y > 0 ? i - w : -1,
-      y < h - 1 ? i + w : -1,
-    ];
-    for (const j of next) {
-      if (j >= 0 && free[j] && !seen[j]) {
-        seen[j] = 1;
-        stack.push(j);
-      }
-    }
-  }
-  return { seen, touches, size };
-}
-
-/** The nearest pixel of `free` within `reach` of (x, y), or -1. */
-function nearestFree(free: Uint8Array, w: number, h: number, x: number, y: number, reach: number) {
-  let best = -1;
-  let bestD = Infinity;
-  for (let dy = -reach; dy <= reach; dy++) {
-    for (let dx = -reach; dx <= reach; dx++) {
-      const px = x + dx;
-      const py = y + dy;
-      const d = dx * dx + dy * dy;
-      if (px < 0 || py < 0 || px >= w || py >= h || d > reach * reach || d >= bestD) continue;
-      if (free[py * w + px]) {
-        best = py * w + px;
-        bestD = d;
-      }
-    }
-  }
-  return best;
-}
-
 /** The union of the tapped areas with ink grown by `gap`, or why there is none. */
 function fill(
   ink: Uint8Array,
@@ -206,37 +122,7 @@ export function regionFrom(
   const grown = dilate(union, w, h, gap).map((v, i) => (v && !ink[i] ? 1 : 0));
   const join = gap * 3;
   const joined = erode(dilate(grown, w, h, join), w, h, join);
-  // Holes: whatever the outside cannot reach.
-  const outside = invert(joined);
-  const reach = new Uint8Array(w * h);
-  const stack: number[] = [];
-  for (let x = 0; x < w; x++) {
-    for (const i of [x, (h - 1) * w + x]) {
-      if (outside[i] && !reach[i]) {
-        reach[i] = 1;
-        stack.push(i);
-      }
-    }
-  }
-  for (let y = 0; y < h; y++) {
-    for (const i of [y * w, y * w + w - 1]) {
-      if (outside[i] && !reach[i]) {
-        reach[i] = 1;
-        stack.push(i);
-      }
-    }
-  }
-  while (stack.length) {
-    const i = stack.pop() as number;
-    const x = i % w;
-    for (const j of [x > 0 ? i - 1 : -1, x < w - 1 ? i + 1 : -1, i - w, i + w]) {
-      if (j >= 0 && j < w * h && outside[j] && !reach[j]) {
-        reach[j] = 1;
-        stack.push(j);
-      }
-    }
-  }
-  const mask = reach.map((v) => (v ? 0 : 1));
+  const mask = fillHoles(joined, w, h);
   const area = mask.reduce((n, v) => n + v, 0);
   if (area > w * h * MAX_SHARE) return { refused: "tooBig" };
   if (area < w * h * MIN_SHARE) return { refused: "tooSmall" };
@@ -395,6 +281,82 @@ export function shadeBands(
   return bands;
 }
 
+/** A dome over the whole area: steep at the outline, flat on the ridge. */
+function domeHeights(mask: Uint8Array, w: number, h: number): Float32Array {
+  const d = distanceInside(mask, w, h);
+  const deepest = d.reduce((m, v) => Math.max(m, v), 0);
+  const smooth = blurInside(d, mask, w, h, Math.max(1, Math.round(deepest * 0.08)));
+  return smooth.map((v) => {
+    const t = Math.min(v, deepest);
+    return Math.sqrt(Math.max(0, deepest * deepest - (deepest - t) * (deepest - t)));
+  });
+}
+
+/**
+ * A long form (more than twice as long as wide) as a cylinder along its main axis: each cut
+ * across it is a half circle as wide as the form there. Null for forms that are not long.
+ */
+function cylinderHeights(mask: Uint8Array, w: number, h: number): Float32Array | null {
+  let n = 0;
+  let mx = 0;
+  let my = 0;
+  mask.forEach((v, i) => {
+    if (!v) return;
+    n++;
+    mx += i % w;
+    my += Math.floor(i / w);
+  });
+  if (n < 9) return null;
+  mx /= n;
+  my /= n;
+  let sxx = 0;
+  let syy = 0;
+  let sxy = 0;
+  mask.forEach((v, i) => {
+    if (!v) return;
+    const dx = (i % w) - mx;
+    const dy = Math.floor(i / w) - my;
+    sxx += dx * dx;
+    syy += dy * dy;
+    sxy += dx * dy;
+  });
+  const trace = (sxx + syy) / n;
+  const det = (sxx * syy - sxy * sxy) / (n * n);
+  const gap = Math.sqrt(Math.max(0, (trace * trace) / 4 - det));
+  const big = trace / 2 + gap;
+  const small = trace / 2 - gap;
+  if (small <= 0 || big / small < 4) return null;
+  const angle = 0.5 * Math.atan2(2 * sxy, sxx - syy);
+  const along: [number, number] = [Math.cos(angle), Math.sin(angle)];
+  const across: [number, number] = [-along[1], along[0]];
+  const lo = new Map<number, number>();
+  const hi = new Map<number, number>();
+  const key = (x: number, y: number) => Math.round(x * along[0] + y * along[1]);
+  const pos = (x: number, y: number) => x * across[0] + y * across[1];
+  mask.forEach((v, i) => {
+    if (!v) return;
+    const x = i % w;
+    const y = (i - x) / w;
+    const k = key(x, y);
+    const s = pos(x, y);
+    lo.set(k, Math.min(lo.get(k) ?? s, s));
+    hi.set(k, Math.max(hi.get(k) ?? s, s));
+  });
+  const out = new Float32Array(w * h);
+  mask.forEach((v, i) => {
+    if (!v) return;
+    const x = i % w;
+    const y = (i - x) / w;
+    const k = key(x, y);
+    const a = lo.get(k) as number;
+    const b = hi.get(k) as number;
+    const r = (b - a + 1) / 2;
+    const c = pos(x, y) - (a + b) / 2;
+    out[i] = Math.sqrt(Math.max(0, r * r - c * c));
+  });
+  return out;
+}
+
 function shadeCropped(
   mask: Uint8Array,
   w: number,
@@ -403,28 +365,27 @@ function shadeCropped(
   kind: FormKind,
 ): Uint8Array {
   if (kind === "flat") return flatBands(mask, w, h, light);
-  const d = distanceInside(mask, w, h);
-  const deepest = d.reduce((m, v) => Math.max(m, v), 0);
-  const smooth = blurInside(d, mask, w, h, Math.max(1, Math.round(deepest * 0.08)));
-  // A round profile: steep at the outline, flat on the ridge.
-  const height = smooth.map((v) => {
-    const t = Math.min(v, deepest);
-    return Math.sqrt(Math.max(0, deepest * deepest - (deepest - t) * (deepest - t)));
-  });
+  const cylinder = cylinderHeights(mask, w, h);
+  const height = cylinder ?? domeHeights(mask, w, h);
   const [lx, ly] = LIGHT[light];
   const L = [lx * Math.cos(ELEVATION), ly * Math.cos(ELEVATION), Math.sin(ELEVATION)] as const;
   const bands = new Uint8Array(w * h);
-  const at = (x: number, y: number, fallback: number) =>
+  // A dome falls away at its whole outline; a cylinder only across its length, so its ends
+  // stay as lit as its middle.
+  const at = (x: number, y: number, here: number) =>
     x < 0 || y < 0 || x >= w || y >= h || !mask[y * w + x]
-      ? fallback
+      ? cylinder
+        ? here
+        : 0
       : (height[y * w + x] as number);
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
       const i = y * w + x;
       if (!mask[i]) continue;
       // Outside the area counts as height 0: the form falls away at its outline.
-      const gx = (at(x + 1, y, 0) - at(x - 1, y, 0)) / 2;
-      const gy = (at(x, y + 1, 0) - at(x, y - 1, 0)) / 2;
+      const here = height[i] as number;
+      const gx = (at(x + 1, y, here) - at(x - 1, y, here)) / 2;
+      const gy = (at(x, y + 1, here) - at(x, y - 1, here)) / 2;
       const nx = -gx;
       const ny = -gy;
       const length = Math.hypot(nx, ny, 1);
