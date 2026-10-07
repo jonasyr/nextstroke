@@ -62,6 +62,24 @@
 - [ ] Test with 5–8 beginners without developer explanation.
 - [ ] This study is also the deferred Phase 0 beginner gate (D-048): use standardized starters first, define "understands" and "worsens" as in spec §15.2, and record it in the Phase 0 results report.
 
+## Task 6: Template in a project (D-070, track step T1)
+
+- [ ] Offer an optional template after the drawing's photo (camera, photos, files, PDF page); no extra screen for people without one.
+- [ ] Store it as an immutable `reference` asset (`referenceAssetId`) with its own paper corners, straightened into the drawing's frame like a checkpoint.
+- [ ] Project view: the template beside start and checkpoints; add, replace or remove it.
+- [ ] "Vorher und jetzt" can show the template as a third view.
+- [ ] "Im Schnellvergleich öffnen" from the project view: drawing and template, or start and latest checkpoint, already aligned; this closes Task 5's open Quick Compare item.
+- [ ] Export/import carries the template; tests in Chromium and WebKit.
+
+## Task 7: Goal "Näher an die Vorlage" (D-070, track step T2)
+
+After the beginner study; not part of the exit gate.
+
+- [ ] Local, deterministic comparison of the straight drawing and template: tone difference per region, robust to paper colour and light (relative, like the test card).
+- [ ] Propose the areas where the template is clearly darker as the marked area; the user confirms or moves it.
+- [ ] Ideas and steps refer to the template ("wie in der Vorlage"); no claim that the result will match.
+- [ ] When the template is a photo rather than a drawing, show the comparison only and give no area hints.
+
 ## Exit gate
 
 The first two criteria are hard gates carried over from Phase 0 (D-048). If either fails, Phase 4 does not start and the owner selects and records a further pivot.
