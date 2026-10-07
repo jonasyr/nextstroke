@@ -28,6 +28,7 @@ export function StepsScreen({
   onBack,
   onDone,
   foot,
+  preview,
 }: {
   idea: Idea;
   skill: CoachRequest["skill"];
@@ -38,6 +39,8 @@ export function StepsScreen({
   onDone: () => void;
   /** The step's action at the bottom: photographing the checkpoint. */
   foot: ReactNode;
+  /** The stroke-plan preview, or why there is none (D-071). */
+  preview?: ReactNode;
 }) {
   const evidence = evidenceFor(idea, DATASET);
   return (
@@ -53,6 +56,7 @@ export function StepsScreen({
           <h2 className="ns-g-headline">{idea.title}</h2>
           <p className="ns-sub">{idea.why}</p>
         </div>
+        {preview}
         <ol className="ns-g-steps">
           {idea.steps.map((step, i) => (
             <li key={step}>

@@ -12,7 +12,7 @@ import {
 } from "@nextstroke/projects";
 import { t } from "@nextstroke/ui";
 import type { ChangeEvent } from "react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Decoded } from "../compare/decode.ts";
 import { Thumb } from "../compare/Thumb.tsx";
 import type { CoachDeps } from "./deps.ts";
@@ -24,11 +24,13 @@ import {
   type FlowStep,
   requestFrom,
 } from "./flow.ts";
+import { ideaPlan } from "./ideaPlan.ts";
 import { ideasLead } from "./labels.ts";
 import { CheckScreen } from "./screens/CheckScreen.tsx";
 import { GoalScreen } from "./screens/GoalScreen.tsx";
 import { IdeasScreen } from "./screens/IdeasScreen.tsx";
 import { PhotoScreen } from "./screens/PhotoScreen.tsx";
+import { PlanPreview, PlanThumb } from "./screens/PlanPreview.tsx";
 import { StepsScreen } from "./screens/StepsScreen.tsx";
 import { TemplateCard } from "./screens/TemplateCard.tsx";
 import { ToolScreen } from "./screens/ToolScreen.tsx";
@@ -343,6 +345,17 @@ export function GuidedFlow({
   };
 
   const change = (next: Partial<FlowChoices>) => setChoices((c) => ({ ...c, ...next }));
+  /** Each idea's stroke plan on the straight view, or why there is none (D-071). */
+  const plans = useMemo(() => {
+    if (!suggestions || !straight) return null;
+    const aspect = straight.bitmap.width / straight.bitmap.height;
+    return suggestions.ideas.map((i) => ideaPlan(i, choices, aspect));
+  }, [suggestions, straight, choices]);
+  /** The light's side is kept with the request, so a resumed project shows the same preview. */
+  const changeLight = (light: FlowChoices["light"]) => {
+    change({ light });
+    void save((p) => (p.request ? { ...p, request: { ...p.request, light } } : p));
+  };
   const pen = DATASET.fineliners.find((p) => p.id === choices.finelinerId);
   const paper = DATASET.papers.find((p) => p.id === choices.paperId);
   const idea = suggestions && selected !== null ? suggestions.ideas[selected] : undefined;
@@ -405,6 +418,12 @@ export function GuidedFlow({
           suggestions={suggestions}
           onBack={() => go("goal")}
           onPick={pickIdea}
+          preview={(i) => {
+            const result = plans?.[i];
+            return straight && result && "plan" in result ? (
+              <PlanThumb image={straight.bitmap} result={result} area={choices.area} />
+            ) : null;
+          }}
         />
       )}
       {step === "steps" && idea && (
@@ -415,6 +434,18 @@ export function GuidedFlow({
           onToggle={(i) => setDone((d) => (d.includes(i) ? d.filter((x) => x !== i) : [...d, i]))}
           onBack={() => go("ideas")}
           onDone={exit}
+          preview={
+            straight && selected !== null && plans?.[selected] ? (
+              <PlanPreview
+                image={straight.bitmap}
+                result={plans[selected]}
+                area={choices.area}
+                light={choices.light}
+                onLight={changeLight}
+                onMark={() => go("goal")}
+              />
+            ) : null
+          }
           foot={
             <label className="ns-primary ns-g-primary-file">
               {t("guided.check.take")}

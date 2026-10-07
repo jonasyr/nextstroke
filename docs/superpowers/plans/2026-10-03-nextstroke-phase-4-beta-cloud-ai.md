@@ -27,6 +27,8 @@
 
 ## Task 1: Retain one preview adapter (D-051)
 
+Builds on Phase 3 Task 8 (D-071): the stroke-plan format, renderer and preview UI exist; the model supplies better plans for the same renderer.
+
 - [ ] Implement the hybrid route: masked image edit as template (S1, experimental), then a stroke-plan transfer (S3 with hatch fills) rendered and composited locally; fall back to plain S3, then to "no controlled preview available".
 - [ ] Never promote the template image; show it only as labeled inspiration.
 - [ ] Validate runtime responses and record version/cost/latency metadata for both calls.

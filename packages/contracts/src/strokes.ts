@@ -15,16 +15,21 @@ export const StrokeSchema = z
   })
   .strict();
 
-/** Parallel hatching clipped to a polygon; angle 0 horizontal, 90 vertical (D-049). */
+/**
+ * Parallel hatching clipped to a polygon; angle 0 horizontal, 90 vertical (D-049). Spacing is a
+ * share of the image width; the smallest allows lines a hand can hold on A3 (D-071). A dot
+ * pattern places dots along the same rows, `spacing` apart, for stippling.
+ */
 export const FillSchema = z
   .object({
     order: Order,
     polygon: z.array(NormalizedPoint).min(3).max(64),
     angleDeg: z.number().min(0).lt(180),
-    spacing: z.number().min(0.002).max(0.05),
+    spacing: z.number().min(0.0005).max(0.05),
     width: Width,
     darkness: Darkness,
     cross: z.boolean(),
+    pattern: z.enum(["lines", "dots"]).optional(),
   })
   .strict();
 

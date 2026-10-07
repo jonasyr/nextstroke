@@ -71,6 +71,17 @@
 - [x] "Im Schnellvergleich öffnen" from the project view (`#/compare/<id>`): the latest drawing and the template, or the latest checkpoint and the start, aligned at the saved corners without re-running automatic alignment; "Zurück" returns to the project. This closes Task 5's open Quick Compare item.
 - [x] Export/import carries the template; e2e `template.spec.ts` in Chromium and WebKit.
 
+## Task 8: Rule-based stroke-plan preview (D-071)
+
+Before the beginner study; the study tests instruction plus preview.
+
+- [x] Sheet format (A5, A4, A3; default A4) on "Stift und Papier", so millimetres become positions on the photo; kept in the request with the light's side.
+- [x] Deterministic plan builder (`packages/coaching/src/plan.ts`): per template, fills inside the marked area on the side away from the light (darkest third, shadow half, crossed layers, dots denser in the shadow), the coach's spacing on the chosen sheet, protected details kept free (with a halo for "Lichthof"). No preview, with a reason, for contour and line weight, bright edges, surface direction, without a marked area, or when darkening around a form that is not marked as protected.
+- [x] Local renderer (`apps/web/src/coach/planRender.ts`): the plan on its own layer, protected details cut out, laid over the straight photo; the photo itself is never changed.
+- [x] Preview in the steps view (zoomed to the marked area or the whole sheet, light from left, top or right when it matters, hold to see the sheet without strokes) and small previews on the idea cards; labelled "Eine Hilfe zum Zeichnen, kein Bild vom Ergebnis".
+- [x] Tests for builder, renderer and flow; e2e in Chromium and WebKit (pixels change with the hold and the light).
+- [ ] iPhone check: checklist item 12.
+
 ## Task 7: Goal "Näher an die Vorlage" (D-070, track step T2)
 
 After the beginner study; not part of the exit gate.
@@ -84,7 +95,7 @@ After the beginner study; not part of the exit gate.
 
 The first two criteria are hard gates carried over from Phase 0 (D-048). If either fails, Phase 4 does not start and the owner selects and records a further pivot.
 
-- At least 70% of study participants understand the instruction unaided.
+- At least 70% of study participants understand the instruction (with its stroke-plan preview, D-071) unaided.
 - At least 60% execute without worsening the work under the approved rubric.
 - No user-facing material claim lacks provenance or explicit generic status.
 - Calibration can be completed, skipped, or rejected without blocking progress.

@@ -146,6 +146,11 @@ describe("stroke plans (lab schema version 2, D-049)", () => {
       ],
     };
     expect(StrokePlanSchema.parse(plan).fills).toHaveLength(1);
+    const dots = { ...plan.fills[0], spacing: 0.0007, pattern: "dots" };
+    expect(StrokePlanSchema.parse({ ...plan, fills: [dots] }).fills[0]?.pattern).toBe("dots");
+    expect(() =>
+      StrokePlanSchema.parse({ ...plan, fills: [{ ...dots, spacing: 0.0004 }] }),
+    ).toThrow();
     expect(() => StrokePlanSchema.parse({ ...plan, strokes: [], fills: [] })).toThrow(
       /strokes or fills/,
     );
@@ -189,6 +194,8 @@ describe("coach requests (Phase 3 Task 3)", () => {
     expect(CoachRequestSchema.safeParse({ ...request, intent: "lighten" }).success).toBe(false);
     expect(CoachRequestSchema.safeParse({ ...request, ownedTipsMm: [0] }).success).toBe(false);
     expect(CoachRequestSchema.safeParse({ ...request, extra: 1 }).success).toBe(false);
+    expect(CoachRequestSchema.parse({ ...request, sheet: "A3", light: "right" }).sheet).toBe("A3");
+    expect(CoachRequestSchema.safeParse({ ...request, sheet: "A6" }).success).toBe(false);
   });
 });
 

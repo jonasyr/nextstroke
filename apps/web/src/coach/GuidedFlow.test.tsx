@@ -3,6 +3,7 @@ import { MemoryStore, type ProjectDeps } from "@nextstroke/projects";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { CoachDeps } from "./deps.ts";
+import { fakeCanvas } from "./fakeCanvas.ts";
 import { GuidedFlow } from "./GuidedFlow.tsx";
 
 afterEach(cleanup);
@@ -77,6 +78,7 @@ describe("guided flow (Phase 3 Task 5)", () => {
     click("Alle 17 Stifte");
     expect(screen.getByRole("radio", { name: "Tombow MONO drawing pen" })).toBeTruthy();
     choose("Zeichenpapier");
+    choose("A3");
     click("Weiter");
 
     choose(/Mehr Kontrast/);
@@ -97,6 +99,8 @@ describe("guided flow (Phase 3 Task 5)", () => {
       fireEvent.click(screen.getAllByRole("button", { name: /Schritte/ })[1] as HTMLElement),
     );
     expect(screen.getByRole("heading", { name: "Anleitung" })).toBeTruthy();
+    // Bright edges are only on the drawing: no stroke-plan preview, and it says why (D-071).
+    expect(screen.getByText(/Kanten ab, die die App auf dem Foto nicht erkennt/)).toBeTruthy();
     const first = screen.getAllByRole("button", { pressed: false })[0] as HTMLElement;
     fireEvent.click(first);
     expect(first.getAttribute("aria-pressed")).toBe("true");
@@ -110,6 +114,8 @@ describe("guided flow (Phase 3 Task 5)", () => {
       finelinerId: "sakura-pigma-micron",
       ownedTipsMm: [0.3],
       paperId: "drawing",
+      sheet: "A3",
+      light: "left",
     });
     expect(saved?.suggestions?.ideas).toHaveLength(3);
     expect(saved?.selectedIdea).toBe(1);
@@ -149,6 +155,59 @@ describe("guided flow (Phase 3 Task 5)", () => {
     await act(async () => click("Vergleichen"));
     click("Fertig für heute");
     expect(exit).toHaveBeenCalled();
+  });
+
+  it("shows the chosen idea's stroke plan on the sheet, with the light's side (D-071)", async () => {
+    const canvas = fakeCanvas();
+    const projects = projectDeps();
+    const { deps } = coach(projects, true);
+    render(<GuidedFlow deps={deps} onExit={() => undefined} />);
+    await takePhoto();
+    await act(async () => click("Weiter"));
+    click("Weiter");
+    const rect = { left: 0, top: 0, width: 300, height: 400, right: 300, bottom: 400, x: 0, y: 0 };
+    const marker = screen.getByRole("img", { name: "Stelle markieren" });
+    marker.getBoundingClientRect = () => ({ ...rect, toJSON: () => rect });
+    fireEvent.pointerDown(marker, { clientX: 150, clientY: 200, pointerId: 1 });
+    await act(async () => click("Vorschläge zeigen"));
+    // Depth: all three ideas shade the marked area, so each card has a small preview.
+    expect(document.querySelectorAll(".ns-g-plan-thumb")).toHaveLength(3);
+    await act(async () =>
+      fireEvent.click(screen.getAllByRole("button", { name: /Schritte/ })[0] as HTMLElement),
+    );
+    expect(
+      screen.getByRole("img", { name: "Dein Blatt mit den Strichen der Anleitung" }),
+    ).toBeTruthy();
+    expect(canvas.calls).toContain("clip");
+    choose("Ganzes Blatt");
+    choose("rechts");
+    await act(async () => undefined);
+    const [saved] = await projects.store.listProjects();
+    expect(saved?.request?.light).toBe("right");
+    const hold = screen.getByRole("button", { name: "Halten: ohne Striche" });
+    fireEvent.pointerDown(hold);
+    expect(hold.getAttribute("aria-pressed")).toBe("true");
+    fireEvent.pointerUp(hold);
+    fireEvent.keyDown(hold, { key: " " });
+    expect(hold.getAttribute("aria-pressed")).toBe("true");
+    fireEvent.keyUp(hold, { key: " " });
+    expect(hold.getAttribute("aria-pressed")).toBe("false");
+    canvas.restore();
+  });
+
+  it("asks for a marked area before it can show a stroke plan", async () => {
+    const { deps } = coach(projectDeps(), true);
+    render(<GuidedFlow deps={deps} onExit={() => undefined} />);
+    await takePhoto();
+    await act(async () => click("Weiter"));
+    click("Weiter");
+    await act(async () => click("Vorschläge zeigen"));
+    await act(async () =>
+      fireEvent.click(screen.getAllByRole("button", { name: /Schritte/ })[0] as HTMLElement),
+    );
+    expect(screen.getByText(/Markiere einen Bereich, dann zeigt die Vorschau/)).toBeTruthy();
+    click("Bereich markieren");
+    expect(screen.getByRole("heading", { name: /Dein Ziel/ })).toBeTruthy();
   });
 
   it("goes back step by step and keeps the choices", async () => {
