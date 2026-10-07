@@ -1371,3 +1371,48 @@ a.ns-primary {
   color: var(--fg);
   text-decoration: none;
 }
+
+/* Stroke-plan preview (D-071): the instruction drawn on the user's sheet. */
+.ns-g-plan-view {
+  display: block;
+  width: 100%;
+  margin-inline: auto;
+  border-radius: 14px;
+  background: var(--surface);
+}
+.ns-g-plan-tools {
+  display: grid;
+  gap: 12px;
+}
+.ns-g-plan-light {
+  gap: 6px;
+}
+.ns-g-hold {
+  min-height: 44px;
+  touch-action: none;
+}
+.ns-g-hold[aria-pressed="true"] {
+  background: var(--surface-2);
+}
+.ns-g-plan-none {
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--surface);
+}
+.ns-g-idea-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: start;
+}
+.ns-g-idea-head {
+  display: grid;
+  gap: 8px;
+}
+.ns-g-plan-thumb {
+  display: block;
+  width: 72px;
+  max-height: 96px;
+  border-radius: 10px;
+  background: var(--surface-2);
+}

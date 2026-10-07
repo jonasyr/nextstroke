@@ -38,6 +38,9 @@ export const de = {
   "guided.tool.paper": "Auf welchem Papier?",
   "guided.tool.paperGroup": "Papier",
   "guided.tool.feathers": "Tinte kann verlaufen",
+  "guided.tool.sheet": "Wie groß ist dein Blatt?",
+  "guided.tool.sheetGroup": "Blattgröße",
+  "guided.tool.sheetUse": "Damit die Vorschau die Abstände in echter Größe zeigt.",
   "guided.goal.title": "Dein Ziel",
   "guided.goal.step": "Schritt 3 von 3",
   "guided.goal.intent": "Was soll besser werden?",
@@ -65,6 +68,30 @@ export const de = {
   "guided.steps.why": "Woher wissen wir das?",
   "guided.steps.retrieved": "abgerufen am {date}",
   "guided.steps.doneForToday": "Fertig für heute",
+  "guided.plan.title": "Vorschau auf deinem Blatt",
+  "guided.plan.note":
+    "So ungefähr gehören die Striche hin. Eine Hilfe zum Zeichnen, kein Bild vom Ergebnis.",
+  "guided.plan.image": "Dein Blatt mit den Strichen der Anleitung",
+  "guided.plan.view": "Ansicht",
+  "guided.plan.zoom": "Ausschnitt",
+  "guided.plan.sheet": "Ganzes Blatt",
+  "guided.plan.light": "Licht von",
+  "guided.plan.light.left": "links",
+  "guided.plan.light.top": "oben",
+  "guided.plan.light.right": "rechts",
+  "guided.plan.original": "Halten: ohne Striche",
+  "guided.plan.none.lines":
+    "Für Linien an den Konturen gibt es keine Vorschau. Wo sie hingehören, siehst du am besten selbst.",
+  "guided.plan.none.form":
+    "Für diese Idee gibt es keine Vorschau. Sie hängt von Kanten ab, die die App auf dem Foto nicht erkennt.",
+  "guided.plan.none.direction":
+    "Für diese Idee gibt es keine Vorschau. Die Striche folgen der Oberfläche, und deren Richtung erkennt die App nicht.",
+  "guided.plan.none.protect":
+    "Markiere die Form als geschützt, dann zeigt die Vorschau, wo es dunkler wird.",
+  "guided.plan.none.noArea":
+    "Markiere einen Bereich, dann zeigt die Vorschau, wo die Striche hingehören.",
+  "guided.plan.mark": "Bereich markieren",
+  "guided.ideas.preview": "Vorschau",
   "guided.check.take": "Zwischenstand fotografieren",
   "guided.check.photoTitle": "Zwischenstand",
   "guided.check.photoLabel": "Foto des Zwischenstands wählen",

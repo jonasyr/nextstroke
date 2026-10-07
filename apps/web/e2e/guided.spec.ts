@@ -53,6 +53,21 @@ test("guided flow: photo, pen and paper, goal with a marked spot, ideas, steps, 
   await page.getByRole("button", { name: /Vorsichtig/ }).click();
   await expect(page.getByText("Die geschützten Stellen nicht berühren.")).toBeVisible();
   await expect(page.getByText(/im markierten Bereich/).first()).toBeVisible();
+  // The instruction drawn on the straight sheet (D-071): strokes over the photo, a hold shows it
+  // without them, and the light's side moves the shadow.
+  const preview = page.getByRole("img", { name: "Dein Blatt mit den Strichen der Anleitung" });
+  await expect(preview).toBeVisible();
+  const pixels = () => preview.evaluate((c: HTMLCanvasElement) => c.toDataURL());
+  const withPlan = await pixels();
+  const hold = page.getByRole("button", { name: "Halten: ohne Striche" });
+  await hold.dispatchEvent("pointerdown");
+  await expect(hold).toHaveAttribute("aria-pressed", "true");
+  expect(await pixels()).not.toBe(withPlan);
+  await hold.dispatchEvent("pointerup");
+  await expect(hold).toHaveAttribute("aria-pressed", "false");
+  expect(await pixels()).toBe(withPlan);
+  await page.getByRole("radio", { name: "rechts" }).check();
+  await expect.poll(pixels).not.toBe(withPlan);
   await page.getByText("Woher wissen wir das?").click();
   await expect(page.getByText(/Laut Sakura/)).toBeVisible();
   await page.getByRole("button", { name: "Fertig für heute" }).click();

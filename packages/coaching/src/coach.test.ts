@@ -1,7 +1,13 @@
 import { type CoachRequest, CoachRequestSchema, SuggestionSetSchema } from "@nextstroke/contracts";
 import { DATASET } from "@nextstroke/materials";
 import { describe, expect, it } from "vitest";
-import { describeClaim, evidenceFor, suggest, UnknownMaterialError } from "./coach.ts";
+import {
+  describeClaim,
+  evidenceFor,
+  ideaSpacingMm,
+  suggest,
+  UnknownMaterialError,
+} from "./coach.ts";
 import { TEMPLATES } from "./templates.ts";
 
 const request: CoachRequest = {
@@ -45,6 +51,9 @@ describe("the deterministic coach (Phase 3 Task 3)", () => {
       " ",
     );
     expect(beginner).toMatch(/0,8 mm Abstand/);
+    const beginnerRequest = { ...request, skill: "beginner" as const };
+    const first = suggest(beginnerRequest, DATASET, ID).ideas[0];
+    expect(ideaSpacingMm(beginnerRequest, first, DATASET)).toBe(0.8);
     const unknown = suggest(
       { ...request, intent: "texture", finelinerId: "generic", paperId: "unknown" },
       DATASET,

@@ -37,6 +37,18 @@ export const CoachIntent = z.enum([
 ]);
 export type CoachIntent = z.infer<typeof CoachIntent>;
 
+/** Paper formats the stroke-plan preview knows (D-071); sizes in `SHEET_MM`. */
+export const SheetFormat = z.enum(["A5", "A4", "A3"]);
+export type SheetFormat = z.infer<typeof SheetFormat>;
+/** Short and long side in millimetres (ISO 216). */
+export const SHEET_MM: Record<SheetFormat, readonly [number, number]> = {
+  A5: [148, 210],
+  A4: [210, 297],
+  A3: [297, 420],
+};
+export const LightSide = z.enum(["left", "top", "right"]);
+export type LightSide = z.infer<typeof LightSide>;
+
 /** A request to the coach (Phase 3 Task 3): intent, area, tool, paper and skill. */
 export const CoachRequestSchema = z
   .object({
@@ -50,6 +62,10 @@ export const CoachRequestSchema = z
     /** Tip sizes the user owns, in mm. */
     ownedTipsMm: z.array(z.number().positive().max(5)).max(12).optional(),
     paperId: NonEmpty,
+    /** The sheet's format, so millimetres become positions on the photo (D-071). */
+    sheet: SheetFormat.optional(),
+    /** Where the light comes from in the preview (D-071). */
+    light: LightSide.optional(),
   })
   .strict();
 export type CoachRequest = z.infer<typeof CoachRequestSchema>;

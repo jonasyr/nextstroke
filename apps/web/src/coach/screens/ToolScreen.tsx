@@ -1,3 +1,4 @@
+import { SheetFormat } from "@nextstroke/contracts";
 import { DATASET, factsFor } from "@nextstroke/materials";
 import { t } from "@nextstroke/ui";
 import { useState } from "react";
@@ -6,6 +7,7 @@ import { COMMON_TIPS_MM, orderPens, POPULAR_PENS, penName } from "../labels.ts";
 import { FlowBar, Foot, Option, Options, Pill } from "./parts.tsx";
 
 const PENS = orderPens(DATASET.fineliners);
+const SHEETS = SheetFormat.options;
 
 /** Step 2 of 3: which fineliner, which tip, which paper. */
 export function ToolScreen({
@@ -102,6 +104,22 @@ export function ToolScreen({
               />
             ))}
           </Options>
+        </section>
+        <section className="ns-stack">
+          <h2 className="ns-label">{t("guided.tool.sheet")}</h2>
+          <div className="ns-g-chips" role="radiogroup" aria-label={t("guided.tool.sheetGroup")}>
+            {SHEETS.map((sheet) => (
+              <Pill
+                key={sheet}
+                name="sheet"
+                selected={choices.sheet === sheet}
+                onSelect={() => onChange({ sheet })}
+              >
+                {sheet}
+              </Pill>
+            ))}
+          </div>
+          <p className="ns-note">{t("guided.tool.sheetUse")}</p>
         </section>
       </div>
       <Foot>

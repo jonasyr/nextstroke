@@ -1,5 +1,6 @@
 import type { SuggestionSet } from "@nextstroke/contracts";
 import { t } from "@nextstroke/ui";
+import type { ReactNode } from "react";
 import { LEVELS, levelLabel, techniqueLabel } from "../labels.ts";
 import { FlowBar } from "./parts.tsx";
 
@@ -9,11 +10,14 @@ export function IdeasScreen({
   suggestions,
   onBack,
   onPick,
+  preview,
 }: {
   lead: string;
   suggestions: SuggestionSet;
   onBack: () => void;
   onPick: (index: number) => void;
+  /** A small stroke-plan preview for an idea, when it has one (D-071). */
+  preview?: (index: number) => ReactNode;
 }) {
   return (
     <>
@@ -27,15 +31,20 @@ export function IdeasScreen({
             return (
               <li key={idea.risk}>
                 <button type="button" className="ns-g-idea" onClick={() => onPick(i)}>
-                  <span className="ns-g-level">
-                    <span className="ns-g-meter" aria-hidden="true">
-                      {[1, 2, 3].map((k) => (
-                        <i key={k} data-on={k <= LEVELS[idea.risk] ? "" : undefined} />
-                      ))}
+                  <span className="ns-g-idea-row">
+                    <span className="ns-g-idea-head">
+                      <span className="ns-g-level">
+                        <span className="ns-g-meter" aria-hidden="true">
+                          {[1, 2, 3].map((k) => (
+                            <i key={k} data-on={k <= LEVELS[idea.risk] ? "" : undefined} />
+                          ))}
+                        </span>
+                        {levelLabel(idea.risk)}
+                      </span>
+                      <b>{idea.title}</b>
                     </span>
-                    {levelLabel(idea.risk)}
+                    {preview?.(i)}
                   </span>
-                  <b>{idea.title}</b>
                   <span className="ns-muted">{idea.why}</span>
                   <small className="ns-muted">
                     {techniqueLabel(idea.technique)} ·{" "}

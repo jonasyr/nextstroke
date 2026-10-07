@@ -1,4 +1,4 @@
-import type { CoachIntent, CoachRequest } from "@nextstroke/contracts";
+import type { CoachIntent, CoachRequest, LightSide, SheetFormat } from "@nextstroke/contracts";
 import { t } from "@nextstroke/ui";
 
 /**
@@ -32,6 +32,10 @@ export interface FlowChoices {
   skill: CoachRequest["skill"];
   area: Spot | null;
   protectedSpots: Spot[];
+  /** The sheet's format, for the stroke-plan preview (D-071). */
+  sheet: SheetFormat;
+  /** Where the light comes from in the preview. */
+  light: LightSide;
 }
 
 export const DEFAULT_CHOICES: FlowChoices = {
@@ -42,6 +46,8 @@ export const DEFAULT_CHOICES: FlowChoices = {
   skill: "beginner",
   area: null,
   protectedSpots: [],
+  sheet: "A4",
+  light: "left",
 };
 
 /** The choices behind a saved request; pens or papers no longer known fall back to "Weiß ich nicht". */
@@ -56,6 +62,8 @@ export function choicesFrom(
     finelinerId: known.pens.includes(request.finelinerId) ? request.finelinerId : "generic",
     paperId: known.papers.includes(request.paperId) ? request.paperId : "unknown",
     tipMm: request.ownedTipsMm?.[0] ?? null,
+    ...(request.sheet ? { sheet: request.sheet } : {}),
+    ...(request.light ? { light: request.light } : {}),
   };
 }
 
@@ -87,6 +95,8 @@ export function requestFrom(
     skill: choices.skill,
     finelinerId: choices.finelinerId,
     paperId: choices.paperId,
+    sheet: choices.sheet,
+    light: choices.light,
     ...(choices.tipMm === null ? {} : { ownedTipsMm: [choices.tipMm] }),
     ...(choices.area ? { area: polygon(choices.area) } : {}),
     ...(choices.protectedSpots.length ? { protected: choices.protectedSpots.map(polygon) } : {}),

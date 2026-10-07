@@ -5,6 +5,7 @@ import {
   feasibility,
   type MaterialDataset,
   type Situation,
+  type Technique,
 } from "@nextstroke/materials";
 import { FALLBACKS, type Level, TEMPLATES, type Template } from "./templates.ts";
 
@@ -55,11 +56,22 @@ function pick(
   return { template: fallback, check: feasibility(fallback.technique, s) };
 }
 
-function idea(request: CoachRequest, level: Level, s: Situation): Idea {
-  const { template, check } = pick(request, level, s);
+/** The spacing an idea states, in mm, to a tenth. */
+function spacingValue(request: CoachRequest, check: Feasibility, s: Situation): number {
   // Every template states a spacing; techniques without one use the hatching spacing.
   const base = check.minSpacingMm ?? feasibility("hatching", s).minSpacingMm ?? 1;
-  const spacing = spacingMm(request.skill === "beginner" ? base * BEGINNER_SPACING : base);
+  return Math.round((request.skill === "beginner" ? base * BEGINNER_SPACING : base) * 10) / 10;
+}
+
+/** The spacing in mm an idea for this request states, for the stroke-plan preview (D-071). */
+export function ideaSpacingMm(request: CoachRequest, idea: Idea, data: MaterialDataset): number {
+  const s = situation(request, data);
+  return spacingValue(request, feasibility(idea.technique as Technique, s), s);
+}
+
+function idea(request: CoachRequest, level: Level, s: Situation): Idea {
+  const { template, check } = pick(request, level, s);
+  const spacing = spacingMm(spacingValue(request, check, s));
   const values = {
     spacing,
     place: request.area ? "im markierten Bereich" : "an der gewählten Stelle",

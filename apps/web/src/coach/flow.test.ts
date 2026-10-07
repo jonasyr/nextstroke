@@ -23,6 +23,8 @@ describe("guided flow state (Phase 3 Task 5)", () => {
       skill: "beginner",
       finelinerId: "generic",
       paperId: "unknown",
+      sheet: "A4",
+      light: "left",
     });
     const full = requestFrom(
       {
@@ -90,6 +92,11 @@ describe("guided flow state (Phase 3 Task 5)", () => {
       intent: "texture",
       tipMm: 0.5,
       paperId: "drawing",
+      sheet: "A4",
+    });
+    expect(choicesFrom({ ...request, sheet: "A3", light: "top" }, known)).toMatchObject({
+      sheet: "A3",
+      light: "top",
     });
     expect(
       choicesFrom({ ...request, finelinerId: "gone", paperId: "gone", ownedTipsMm: [] }, known),
