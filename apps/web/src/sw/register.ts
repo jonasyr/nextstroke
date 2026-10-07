@@ -40,3 +40,30 @@ export function reloadOnRequestedUpdate(
     activateUpdate(worker);
   };
 }
+
+/**
+ * Applies an update by itself at a moment without work in progress (`isIdle`), checked now and
+ * whenever `subscribe` reports a change (navigation, returning to the app). The installed iPhone
+ * app rarely shows the update banner, so it kept running an old version (owner, 2026-10-07).
+ * Returns a function that stops waiting.
+ */
+export function applyWhenIdle(
+  isIdle: () => boolean,
+  apply: () => void,
+  subscribe: (check: () => void) => () => void,
+): () => void {
+  let done = false;
+  let unsubscribe = () => {};
+  const check = () => {
+    if (done || !isIdle()) return;
+    done = true;
+    unsubscribe();
+    apply();
+  };
+  unsubscribe = subscribe(check);
+  check();
+  return () => {
+    done = true;
+    unsubscribe();
+  };
+}

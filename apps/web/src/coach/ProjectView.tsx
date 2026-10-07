@@ -53,13 +53,19 @@ export function ProjectView({
   }, [projects, deps, id]);
 
   const home = () => navigate(hrefFor("home"));
-  if (project === undefined) return <p className="ns-status ns-g-body">{t("project.loading")}</p>;
+  if (project === undefined) {
+    return (
+      <div className="ns-g">
+        <p className="ns-status ns-g-body">{t("project.loading")}</p>
+      </div>
+    );
+  }
   if (!project || !projects) {
     return (
-      <>
+      <div className="ns-g">
         <FlowBar back={home} backLabel={t("project.back")} title="" />
         <p className="ns-g-body">{t("project.missing")}</p>
-      </>
+      </div>
     );
   }
 
@@ -86,7 +92,7 @@ export function ProjectView({
   };
 
   return (
-    <>
+    <div className="ns-g">
       <FlowBar back={home} backLabel={t("project.back")} title={project.title} />
       <div className="ns-g-body">
         <ul className="ns-g-timeline">
@@ -130,6 +136,6 @@ export function ProjectView({
           {t("project.continue")}
         </a>
       </Foot>
-    </>
+    </div>
   );
 }

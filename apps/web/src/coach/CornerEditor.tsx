@@ -1,5 +1,6 @@
 import type { Point, Quad } from "@nextstroke/compare";
 import { type PointerEvent, useEffect, useRef, useState } from "react";
+import { useNoTouchDefaults } from "../useNoTouchDefaults.ts";
 import { normalized } from "./PhotoMarker.tsx";
 import { photoStyle } from "./photoStyle.ts";
 
@@ -52,6 +53,7 @@ export function CornerEditor({
   label: string;
 }) {
   const canvas = useRef<HTMLCanvasElement | null>(null);
+  useNoTouchDefaults(canvas);
   const [dragging, setDragging] = useState<number | null>(null);
   const aspect = image.width / image.height;
 
@@ -135,6 +137,7 @@ export function CornerEditor({
       style={photoStyle(aspect)}
       role="img"
       aria-label={label}
+      onContextMenu={(event) => event.preventDefault()}
       onPointerDown={(event) => {
         const p = at(event);
         if (!p) return;

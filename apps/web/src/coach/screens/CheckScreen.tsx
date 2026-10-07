@@ -51,7 +51,7 @@ export function CheckScreen({
         <div className="ns-g-check">
           <canvas
             ref={canvas}
-            className="ns-g-photo"
+            className="ns-g-photo ns-g-view"
             style={photoStyle(aspect)}
             role="img"
             aria-label={t("guided.check.view")}
