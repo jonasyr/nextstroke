@@ -148,3 +148,42 @@ describe("the rule-based stroke plan (D-071)", () => {
     expect(templateOf({ title: "Unbekannt", risk: "bold" })).toBeNull();
   });
 });
+
+describe("a plan on a tapped form (D-073)", () => {
+  const square = (x0: number, x1: number): [number, number][] => [
+    [x0, 0.3],
+    [x1, 0.3],
+    [x1, 0.7],
+    [x0, 0.7],
+  ];
+  const form = { lit: [square(0.3, 0.5)], shadow: [square(0.5, 0.7)], core: [square(0.6, 0.7)] };
+
+  it("puts each layer on the tone area it stands for", () => {
+    const balanced = planFor(input("depth-balanced", { area: null, form }));
+    if (!("plan" in balanced)) throw new Error(balanced.reason);
+    expect(StrokePlanSchema.parse(balanced.plan).fills.map((f) => f.polygon)).toEqual([
+      form.shadow[0],
+      form.core[0],
+    ]);
+    const dots = planFor(input("texture-careful", { area: null, form }));
+    if (!("plan" in dots)) throw new Error(dots.reason);
+    expect(dots.plan.fills.map((f) => f.polygon)).toEqual([form.lit[0], form.shadow[0]]);
+  });
+
+  it("uses the shadow side for the darkest part of a flat form", () => {
+    const flat = { ...form, core: [] };
+    const careful = planFor(input("depth-careful", { area: null, form: flat }));
+    if (!("plan" in careful)) throw new Error(careful.reason);
+    expect(careful.plan.fills[0]?.polygon).toEqual(form.shadow[0]);
+    const balanced = planFor(input("depth-balanced", { area: null, form: flat }));
+    if (!("plan" in balanced)) throw new Error(balanced.reason);
+    expect(balanced.plan.fills).toHaveLength(1);
+  });
+
+  it("asks for the circle where an idea darkens around a form, and says when nothing is left", () => {
+    expect(planFor(input("background-balanced", { form }))).toEqual({ reason: "circle" });
+    expect(planFor(input("depth-careful", { form: { lit: [], shadow: [], core: [] } }))).toEqual({
+      reason: "noArea",
+    });
+  });
+});

@@ -44,6 +44,22 @@ describe("guided flow state (Phase 3 Task 5)", () => {
       ([x, y]) => [x / 2, y / 2],
     );
     expect(shifted.area?.[0]).toEqual([0.3, 0.25]);
+    const outline: [number, number][] = [
+      [0.1, 0.1],
+      [0.2, 0.1],
+      [0.2, 0.2],
+    ];
+    const form = {
+      ...DEFAULT_CHOICES,
+      areaKind: "form" as const,
+      area: { x: 0.5, y: 0.5, r: 0.1 },
+    };
+    expect(requestFrom(form, 1, ([x, y]) => [x * 2, y], outline).area).toEqual([
+      [0.2, 0.1],
+      [0.4, 0.1],
+      [0.4, 0.2],
+    ]);
+    expect(requestFrom(form, 1).area).toBeUndefined();
   });
 
   it("draws a circle as a polygon inside the photo, round on screen", () => {

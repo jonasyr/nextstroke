@@ -18,6 +18,19 @@ describe("the plan for a chosen idea (D-071)", () => {
     expect(a3.plan.fills[0]?.spacing).toBeCloseTo(0.8 / 297);
   });
 
+  it("follows a tapped form's tone areas in form mode (D-073)", () => {
+    const square: [number, number][] = [
+      [0.5, 0.3],
+      [0.7, 0.3],
+      [0.7, 0.7],
+    ];
+    const tones = { lit: [], shadow: [square], core: [square] };
+    const result = ideaPlan(ideas[0], { ...choices, areaKind: "form" }, 0.7, tones);
+    if (!("plan" in result)) throw new Error(result.reason);
+    expect(result.plan.fills[0]?.polygon).toEqual(square);
+    expect(ideaPlan(ideas[0], { ...choices, areaKind: "form" }, 0.7)).toEqual({ reason: "noArea" });
+  });
+
   it("says why there is none for an idea it does not know", () => {
     expect(ideaPlan({ ...ideas[0], title: "Anders" }, choices, 0.7)).toEqual({ reason: "form" });
   });

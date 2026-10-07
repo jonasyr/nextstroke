@@ -84,11 +84,12 @@ Before the beginner study; the study tests instruction plus preview.
 
 ## Task 9: Optional form mode (D-073)
 
-- [ ] "Kreis | Form" on "Dein Ziel"; a tap finds the area inside the outline, more taps add parts; refusals say why.
-- [ ] "Malen" and "Radieren" brushes correct the area by hand; "Neu" starts over.
-- [ ] "rund | flach": round forms get light, half and core shadow from the inflated form; flat forms one even layer on the far half.
-- [ ] The stroke plan and preview follow the tone areas; the request's area is the form's outline; ideas that darken around a form keep the circle.
-- [ ] At most 300 ms per tap at the computing size; tests for tracing, painting, plans and the screen; e2e in Chromium and WebKit; iPhone checklist item.
+- [x] "Kreis | Form" on "Dein Ziel"; a tap finds the area inside the outline, more taps add parts; refusals say why (open outline, most of the image, only line).
+- [x] "Malen" and "Radieren" brushes correct the area by hand; "Rückgängig" and "Neu".
+- [x] "rund | flach": round forms get light, half and core shadow from the inflated form; flat forms one even layer on the far half.
+- [x] The stroke plan and preview follow the tone areas; the request's area is the form's outline; ideas that darken around a form keep the circle.
+- [x] At most about 220 ms per form at 768 px in Node (`packages/imaging/src/shading.ts`); tests for tracing, painting, plans and the screen; e2e in Chromium and WebKit (`apps/web/e2e/form.spec.ts`).
+- [ ] iPhone check: checklist item 13.
 
 ## Task 7: Goal "Näher an die Vorlage" (D-070, track step T2)
 

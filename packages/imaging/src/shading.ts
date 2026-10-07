@@ -13,6 +13,9 @@ export interface Gray {
 }
 
 export type LightSide = "left" | "top" | "right";
+/** Round forms are inflated and lit; flat ones are a plane turned slightly away from the light. */
+export type FormKind = "round" | "flat";
+type Point = [number, number];
 /** Why there is no area: it runs off the image, covers most of it, or is too small to shade. */
 export type Refusal = "leak" | "tooBig" | "tooSmall";
 
@@ -118,7 +121,12 @@ function flood(free: Uint8Array, w: number, h: number, start: number) {
     const x = i % w;
     const y = (i - x) / w;
     if (x === 0 || y === 0 || x === w - 1 || y === h - 1) touches = true;
-    const next = [x > 0 ? i - 1 : -1, x < w - 1 ? i + 1 : -1, y > 0 ? i - w : -1, y < h - 1 ? i + w : -1];
+    const next = [
+      x > 0 ? i - 1 : -1,
+      x < w - 1 ? i + 1 : -1,
+      y > 0 ? i - w : -1,
+      y < h - 1 ? i + w : -1,
+    ];
     for (const j of next) {
       if (j >= 0 && free[j] && !seen[j]) {
         seen[j] = 1;
@@ -279,7 +287,8 @@ export function distanceInside(mask: Uint8Array, w: number, h: number): Float32A
   const result = new Float32Array(w * h);
   for (let y = 0; y < h; y++) {
     const out = edt1d(grid.subarray(y * w, y * w + w), w);
-    for (let x = 0; x < w; x++) result[y * w + x] = mask[y * w + x] ? Math.sqrt(out[x] as number) : 0;
+    for (let x = 0; x < w; x++)
+      result[y * w + x] = mask[y * w + x] ? Math.sqrt(out[x] as number) : 0;
   }
   return result;
 }
@@ -304,7 +313,8 @@ function blurInside(values: Float32Array, mask: Uint8Array, w: number, h: number
         if (!mask[at(b)]) continue;
         const lo = Math.max(0, b - r);
         const hi = Math.min(length, b + r + 1);
-        out[at(b)] = ((sum[hi] as number) - (sum[lo] as number)) / ((n[hi] as number) - (n[lo] as number));
+        out[at(b)] =
+          ((sum[hi] as number) - (sum[lo] as number)) / ((n[hi] as number) - (n[lo] as number));
       }
     }
     current = out;
@@ -314,8 +324,85 @@ function blurInside(values: Float32Array, mask: Uint8Array, w: number, h: number
 
 const LIGHT: Record<LightSide, [number, number]> = { left: [-1, 0], right: [1, 0], top: [0, -1] };
 
-/** Tone bands for an area lit from one side, from its inflated height field. */
-export function shadeBands(mask: Uint8Array, w: number, h: number, light: LightSide): Uint8Array {
+/** A flat form: light on the near half, one even layer on the far half, no shading at its edges. */
+function flatBands(mask: Uint8Array, w: number, h: number, light: LightSide): Uint8Array {
+  const [lx, ly] = LIGHT[light];
+  let lo = Infinity;
+  let hi = -Infinity;
+  mask.forEach((v, i) => {
+    if (!v) return;
+    const t = -(lx * (i % w) + ly * Math.floor(i / w));
+    lo = Math.min(lo, t);
+    hi = Math.max(hi, t);
+  });
+  const bands = new Uint8Array(w * h);
+  mask.forEach((v, i) => {
+    if (!v) return;
+    const t = -(lx * (i % w) + ly * Math.floor(i / w));
+    bands[i] = (t - lo) / Math.max(1, hi - lo) >= 0.5 ? BAND.half : BAND.light;
+  });
+  return bands;
+}
+
+/** The box around a mask with a one-pixel margin, so work stays near the form. */
+function box(mask: Uint8Array, w: number, h: number) {
+  let x0 = w;
+  let y0 = h;
+  let x1 = -1;
+  let y1 = -1;
+  mask.forEach((v, i) => {
+    if (!v) return;
+    const x = i % w;
+    const y = (i - x) / w;
+    x0 = Math.min(x0, x);
+    x1 = Math.max(x1, x);
+    y0 = Math.min(y0, y);
+    y1 = Math.max(y1, y);
+  });
+  if (x1 < 0) return null;
+  x0 = Math.max(0, x0 - 1);
+  y0 = Math.max(0, y0 - 1);
+  x1 = Math.min(w - 1, x1 + 1);
+  y1 = Math.min(h - 1, y1 + 1);
+  return { x0, y0, cw: x1 - x0 + 1, ch: y1 - y0 + 1 };
+}
+
+function crop(
+  values: Uint8Array,
+  w: number,
+  b: { x0: number; y0: number; cw: number; ch: number },
+) {
+  const out = new Uint8Array(b.cw * b.ch);
+  for (let y = 0; y < b.ch; y++)
+    out.set(values.subarray((b.y0 + y) * w + b.x0, (b.y0 + y) * w + b.x0 + b.cw), y * b.cw);
+  return out;
+}
+
+/** Tone bands for an area lit from one side: round forms from their inflated height field. */
+export function shadeBands(
+  mask: Uint8Array,
+  w: number,
+  h: number,
+  light: LightSide,
+  kind: FormKind = "round",
+): Uint8Array {
+  const b = box(mask, w, h);
+  const bands = new Uint8Array(w * h);
+  if (!b) return bands;
+  const part = shadeCropped(crop(mask, w, b), b.cw, b.ch, light, kind);
+  for (let y = 0; y < b.ch; y++)
+    bands.set(part.subarray(y * b.cw, (y + 1) * b.cw), (b.y0 + y) * w + b.x0);
+  return bands;
+}
+
+function shadeCropped(
+  mask: Uint8Array,
+  w: number,
+  h: number,
+  light: LightSide,
+  kind: FormKind,
+): Uint8Array {
+  if (kind === "flat") return flatBands(mask, w, h, light);
   const d = distanceInside(mask, w, h);
   const deepest = d.reduce((m, v) => Math.max(m, v), 0);
   const smooth = blurInside(d, mask, w, h, Math.max(1, Math.round(deepest * 0.08)));
@@ -328,7 +415,9 @@ export function shadeBands(mask: Uint8Array, w: number, h: number, light: LightS
   const L = [lx * Math.cos(ELEVATION), ly * Math.cos(ELEVATION), Math.sin(ELEVATION)] as const;
   const bands = new Uint8Array(w * h);
   const at = (x: number, y: number, fallback: number) =>
-    x < 0 || y < 0 || x >= w || y >= h || !mask[y * w + x] ? fallback : (height[y * w + x] as number);
+    x < 0 || y < 0 || x >= w || y >= h || !mask[y * w + x]
+      ? fallback
+      : (height[y * w + x] as number);
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
       const i = y * w + x;
@@ -361,4 +450,230 @@ export function shadeObject(
   );
   if (!("mask" in region)) return region;
   return { bands: shadeBands(region.mask, w, h, light), mask: region.mask };
+}
+
+/** RGBA pixels as gray (Rec. 601 luma), averaged down so the long side is at most `maxSide`. */
+export function grayFrom(
+  rgba: { width: number; height: number; data: Uint8ClampedArray | Uint8Array },
+  maxSide: number,
+): Gray {
+  const scale = Math.min(1, maxSide / Math.max(rgba.width, rgba.height));
+  const width = Math.max(1, Math.round(rgba.width * scale));
+  const height = Math.max(1, Math.round(rgba.height * scale));
+  const data = new Uint8Array(width * height);
+  for (let y = 0; y < height; y++) {
+    const y0 = Math.floor((y * rgba.height) / height);
+    const y1 = Math.max(y0 + 1, Math.floor(((y + 1) * rgba.height) / height));
+    for (let x = 0; x < width; x++) {
+      const x0 = Math.floor((x * rgba.width) / width);
+      const x1 = Math.max(x0 + 1, Math.floor(((x + 1) * rgba.width) / width));
+      let sum = 0;
+      for (let sy = y0; sy < y1; sy++) {
+        for (let sx = x0; sx < x1; sx++) {
+          const i = (sy * rgba.width + sx) * 4;
+          sum +=
+            0.299 * (rgba.data[i] as number) +
+            0.587 * (rgba.data[i + 1] as number) +
+            0.114 * (rgba.data[i + 2] as number);
+        }
+      }
+      data[y * width + x] = Math.round(sum / ((x1 - x0) * (y1 - y0)));
+    }
+  }
+  return { width, height, data };
+}
+
+/** A brush stroke from `from` to `to` (pixels): sets the mask to `value` within `radius`. */
+export function paint(
+  mask: Uint8Array,
+  w: number,
+  h: number,
+  from: Point,
+  to: Point,
+  radius: number,
+  value: 0 | 1,
+): Uint8Array {
+  const out = mask.slice();
+  const steps = Math.max(
+    1,
+    Math.ceil(Math.hypot(to[0] - from[0], to[1] - from[1]) / Math.max(1, radius / 2)),
+  );
+  for (let k = 0; k <= steps; k++) {
+    const cx = from[0] + ((to[0] - from[0]) * k) / steps;
+    const cy = from[1] + ((to[1] - from[1]) * k) / steps;
+    for (
+      let y = Math.max(0, Math.floor(cy - radius));
+      y <= Math.min(h - 1, Math.ceil(cy + radius));
+      y++
+    ) {
+      for (
+        let x = Math.max(0, Math.floor(cx - radius));
+        x <= Math.min(w - 1, Math.ceil(cx + radius));
+        x++
+      ) {
+        if ((x - cx) ** 2 + (y - cy) ** 2 <= radius * radius) out[y * w + x] = value;
+      }
+    }
+  }
+  return out;
+}
+
+/** Moore neighbours, clockwise on screen (y down), starting east. */
+const AROUND: Point[] = [
+  [1, 0],
+  [1, 1],
+  [0, 1],
+  [-1, 1],
+  [-1, 0],
+  [-1, -1],
+  [0, -1],
+  [1, -1],
+];
+
+/** The outer boundary of the component containing `start` (its top-left pixel), as pixel centres. */
+function boundary(label: Int32Array, id: number, w: number, h: number, start: number): Point[] {
+  const inside = (x: number, y: number) =>
+    x >= 0 && y >= 0 && x < w && y < h && label[y * w + x] === id;
+  const sx = start % w;
+  const sy = (start - sx) / w;
+  const points: Point[] = [[sx, sy]];
+  let cx = sx;
+  let cy = sy;
+  // We arrived from the west, which is outside.
+  let back = 4;
+  for (let guard = 0; guard < w * h * 4; guard++) {
+    let moved = false;
+    for (let k = 1; k <= 8; k++) {
+      const d = (back + k) % 8;
+      const [dx, dy] = AROUND[d] as Point;
+      if (inside(cx + dx, cy + dy)) {
+        const [bx, by] = AROUND[(d + 7) % 8] as Point;
+        const ox = cx + bx;
+        const oy = cy + by;
+        cx += dx;
+        cy += dy;
+        // Direction from the new pixel back to the last outside neighbour examined.
+        back = AROUND.findIndex(([ax, ay]) => ax === ox - cx && ay === oy - cy);
+        moved = true;
+        break;
+      }
+    }
+    if (!moved || (cx === sx && cy === sy)) break;
+    points.push([cx, cy]);
+  }
+  return points;
+}
+
+/** Douglas–Peucker on an open polyline. */
+function simplifyLine(points: Point[], tolerance: number): Point[] {
+  if (points.length < 3) return points;
+  const [a, b] = [points[0] as Point, points[points.length - 1] as Point];
+  const length = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+  let worst = 0;
+  let index = 0;
+  for (let i = 1; i < points.length - 1; i++) {
+    const p = points[i] as Point;
+    const d = Math.abs((b[0] - a[0]) * (a[1] - p[1]) - (a[0] - p[0]) * (b[1] - a[1])) / length;
+    if (d > worst) {
+      worst = d;
+      index = i;
+    }
+  }
+  if (worst <= tolerance) return [a, b];
+  return [
+    ...simplifyLine(points.slice(0, index + 1), tolerance).slice(0, -1),
+    ...simplifyLine(points.slice(index), tolerance),
+  ];
+}
+
+/** A closed polygon with at most `max` points: split at the farthest point, then simplify. */
+function simplifyClosed(points: Point[], max: number): Point[] {
+  if (points.length <= max) return points;
+  const first = points[0] as Point;
+  let far = 0;
+  let farthest = 0;
+  points.forEach((p, i) => {
+    const d = Math.hypot(p[0] - first[0], p[1] - first[1]);
+    if (d > farthest) {
+      farthest = d;
+      far = i;
+    }
+  });
+  for (let tolerance = 0.5; ; tolerance *= 1.5) {
+    const one = simplifyLine(points.slice(0, far + 1), tolerance);
+    const two = simplifyLine([...points.slice(far), first], tolerance);
+    const result = [...one.slice(0, -1), ...two.slice(0, -1)];
+    if (result.length <= max) return result;
+  }
+}
+
+/**
+ * The outlines of a mask's parts as pixel-centre polygons of at most `maxPoints`, largest part
+ * first; parts under 1 % of the mask are left out. Holes are not traced.
+ */
+export function traceMask(mask: Uint8Array, w: number, h: number, maxPoints: number): Point[][] {
+  const label = new Int32Array(w * h);
+  const parts: { id: number; start: number; size: number }[] = [];
+  let total = 0;
+  for (let i = 0; i < w * h; i++) {
+    if (!mask[i] || label[i]) continue;
+    const id = parts.length + 1;
+    let size = 0;
+    const stack = [i];
+    label[i] = id;
+    while (stack.length) {
+      const j = stack.pop() as number;
+      size++;
+      const x = j % w;
+      const y = (j - x) / w;
+      for (const [dx, dy] of AROUND) {
+        const nx = x + dx;
+        const ny = y + dy;
+        const k = ny * w + nx;
+        if (nx >= 0 && ny >= 0 && nx < w && ny < h && mask[k] && !label[k]) {
+          label[k] = id;
+          stack.push(k);
+        }
+      }
+    }
+    parts.push({ id, start: i, size });
+    total += size;
+  }
+  return parts
+    .filter((p) => p.size >= Math.max(3, total * 0.01))
+    .sort((a, b) => b.size - a.size)
+    .map((p) => simplifyClosed(boundary(label, p.id, w, h, p.start), maxPoints))
+    .filter((polygon) => polygon.length >= 3);
+}
+
+export interface FormTones {
+  /** Normalized polygons of the light parts, the shadow (half and core) and the core shadow. */
+  lit: Point[][];
+  shadow: Point[][];
+  core: Point[][];
+}
+
+/** Tone bands as at most three normalized polygons each, pulled one pixel inside their area. */
+export function formTones(bands: Uint8Array, w: number, h: number): FormTones {
+  const b = box(bands, w, h);
+  const polygons = (keep: (band: number) => boolean) => {
+    if (!b) return [];
+    const part = crop(bands, w, b);
+    const mask = erode(
+      part.map((v) => (keep(v) ? 1 : 0)),
+      b.cw,
+      b.ch,
+      1,
+    );
+    return traceMask(mask, b.cw, b.ch, 64)
+      .slice(0, 3)
+      .map((polygon) =>
+        polygon.map(([x, y]): Point => [(x + b.x0 + 0.5) / w, (y + b.y0 + 0.5) / h]),
+      );
+  };
+  return {
+    lit: polygons((b) => b === BAND.light),
+    shadow: polygons((b) => b >= BAND.half),
+    core: polygons((b) => b === BAND.core),
+  };
 }
