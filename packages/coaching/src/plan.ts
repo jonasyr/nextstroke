@@ -34,10 +34,19 @@ export interface PlanInput {
   area: Circle | null;
   light: LightSide;
   protectedSpots: Circle[];
+  /** A tapped form's tone areas (D-073), normalized; the plan follows them instead of the circle. */
+  form?: FormTones | null;
+}
+
+/** Tone areas of a form: light, shadow (half and core) and core shadow, as polygons. */
+export interface FormTones {
+  lit: Point[][];
+  shadow: Point[][];
+  core: Point[][];
 }
 
 /** Why there is no preview: line work, edges or directions only the drawing shows, or no area. */
-export type NoPlanReason = "lines" | "form" | "direction" | "protect" | "noArea";
+export type NoPlanReason = "lines" | "form" | "direction" | "protect" | "noArea" | "circle";
 
 export type PlanResult =
   | {
@@ -162,17 +171,15 @@ export function planFor(input: PlanInput): PlanResult {
   const layers = LAYERS[template.id];
   if (layers === undefined) return { reason: "lines" };
   if (typeof layers === "string") return { reason: layers };
+  if (input.form) return formPlan(input, layers);
   if (!input.area) return { reason: "noArea" };
   if (AROUND_FORM.has(template.id) && input.protectedSpots.length === 0) {
     return { reason: "protect" };
   }
 
   const g = geometry(input.aspect);
-  const [short, long] = SHEET_MM[input.sheet];
-  const sheetWidth = input.aspect >= 1 ? long : short;
-  const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
-  const width = clamp((input.tipMm ?? 0.3) / sheetWidth, 0.0001, 0.01);
-  const { shadow, angle } = LIGHT[input.light];
+  const { sheetWidth, fill } = strokes(input);
+  const { shadow } = LIGHT[input.light];
   const area = input.area;
   const centre = area.x * shadow[0] + area.y * g.height * shadow[1];
   const disc = g.circle(area);
@@ -186,26 +193,75 @@ export function planFor(input: PlanInput): PlanResult {
     }
     const onPhoto = g.onPhoto(polygon);
     if (!onPhoto) continue;
-    fills.push({
-      order: fills.length + 1,
-      polygon: onPhoto,
-      angleDeg: (angle + layer.turn) % 180,
-      spacing: clamp((input.spacingMm * (layer.space ?? 1)) / sheetWidth, 0.0005, 0.05),
-      width,
-      darkness: DARKNESS,
-      cross: layer.cross ?? false,
-      ...(layer.dots ? { pattern: "dots" as const } : {}),
-    });
+    fills.push(fill(fills.length + 1, onPhoto, layer));
   }
   if (fills.length === 0) return { reason: "noArea" };
 
   const halo = template.id === "background-balanced" ? HALO_MM / sheetWidth : 0;
-  const keepFree = input.protectedSpots.flatMap((spot) => {
+  return {
+    plan: { schemaVersion: "2", strokes: [], fills },
+    keepFree: keepFree(input, halo),
+    usesLight: layers.some(usesLightLayer),
+  };
+}
+
+const usesLightLayer = (l: Layer) => l.from !== null || l.until !== undefined;
+
+function keepFree(input: PlanInput, halo: number): Point[][] {
+  const g = geometry(input.aspect);
+  return input.protectedSpots.flatMap((spot) => {
     const polygon = g.onPhoto(g.circle(spot, halo));
     return polygon ? [polygon] : [];
   });
-  const usesLight = layers.some((l) => l.from !== null || l.until !== undefined);
-  return { plan: { schemaVersion: "2", strokes: [], fills }, keepFree, usesLight };
+}
+
+/** Line width and the fill for a layer, from the tip and the coach's spacing on the sheet. */
+function strokes(input: PlanInput) {
+  const [short, long] = SHEET_MM[input.sheet];
+  const sheetWidth = input.aspect >= 1 ? long : short;
+  const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
+  const width = clamp((input.tipMm ?? 0.3) / sheetWidth, 0.0001, 0.01);
+  const { angle } = LIGHT[input.light];
+  const fill = (order: number, polygon: Point[], layer: Layer): StrokePlan["fills"][number] => ({
+    order,
+    polygon,
+    angleDeg: (angle + layer.turn) % 180,
+    spacing: clamp((input.spacingMm * (layer.space ?? 1)) / sheetWidth, 0.0005, 0.05),
+    width,
+    darkness: DARKNESS,
+    cross: layer.cross ?? false,
+    ...(layer.dots ? { pattern: "dots" as const } : {}),
+  });
+  return { sheetWidth, width, fill };
+}
+
+/**
+ * A plan on a tapped form (D-073): each layer takes the tone area it stands for. Ideas that
+ * darken a whole area around a form need the circle. A flat form has no core shadow, so a
+ * layer meant for the darkest part uses its shadow side.
+ */
+function formPlan(input: PlanInput, layers: Layer[]): PlanResult {
+  const form = input.form as FormTones;
+  if (layers.some((l) => !usesLightLayer(l))) return { reason: "circle" };
+  const usesShadow = layers.some((l) => l.from === 0);
+  const tones = (layer: Layer) => {
+    if (layer.until !== undefined) return form.lit;
+    if (layer.from === 0) return form.shadow;
+    return form.core.length || usesShadow ? form.core : form.shadow;
+  };
+  const { fill } = strokes(input);
+  const fills: StrokePlan["fills"] = [];
+  for (const layer of layers) {
+    for (const polygon of tones(layer)) {
+      if (polygon.length >= 3) fills.push(fill(fills.length + 1, polygon, layer));
+    }
+  }
+  if (fills.length === 0) return { reason: "noArea" };
+  return {
+    plan: { schemaVersion: "2", strokes: [], fills },
+    keepFree: keepFree(input, 0),
+    usesLight: true,
+  };
 }
 
 /** The template behind a saved idea, by its title and level; null for one no longer known. */

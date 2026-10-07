@@ -102,7 +102,8 @@ export function PlanPreview({
   const canvas = usePlanCanvas(image, result, view, !holding);
 
   if (!("plan" in result)) {
-    const mark = result.reason === "noArea" || result.reason === "protect";
+    const mark =
+      result.reason === "noArea" || result.reason === "protect" || result.reason === "circle";
     return (
       <section className="ns-g-plan-none ns-stack" aria-label={t("guided.plan.title")}>
         <p className="ns-note">{t(`guided.plan.none.${result.reason}`)}</p>

@@ -1,5 +1,6 @@
 import type { CoachIntent, CoachRequest, LightSide, SheetFormat } from "@nextstroke/contracts";
 import { t } from "@nextstroke/ui";
+import { type FormMarks, NO_FORM } from "./form.ts";
 
 /**
  * The guided flow's state (Phase 3 Task 5): photo, pen and paper, goal, three ideas, steps,
@@ -36,6 +37,9 @@ export interface FlowChoices {
   sheet: SheetFormat;
   /** Where the light comes from in the preview. */
   light: LightSide;
+  /** The area as a circle, or as a tapped form (D-073). */
+  areaKind: "circle" | "form";
+  form: FormMarks;
 }
 
 export const DEFAULT_CHOICES: FlowChoices = {
@@ -48,6 +52,8 @@ export const DEFAULT_CHOICES: FlowChoices = {
   protectedSpots: [],
   sheet: "A4",
   light: "left",
+  areaKind: "circle",
+  form: NO_FORM,
 };
 
 /** The choices behind a saved request; pens or papers no longer known fall back to "Weiß ich nicht". */
@@ -88,8 +94,16 @@ export function requestFrom(
   choices: FlowChoices,
   aspect: number,
   map: (p: [number, number]) => [number, number] = (p) => p,
+  /** A tapped form's outline (D-073); it is the area when the form mode is on. */
+  outline: [number, number][] | null = null,
 ): CoachRequest {
   const polygon = (spot: Spot) => spotToPolygon(spot, aspect).map(map);
+  const area =
+    choices.areaKind === "form"
+      ? outline && outline.length >= 3
+        ? outline.map(map)
+        : null
+      : choices.area && polygon(choices.area);
   return {
     intent: choices.intent,
     skill: choices.skill,
@@ -98,7 +112,7 @@ export function requestFrom(
     sheet: choices.sheet,
     light: choices.light,
     ...(choices.tipMm === null ? {} : { ownedTipsMm: [choices.tipMm] }),
-    ...(choices.area ? { area: polygon(choices.area) } : {}),
+    ...(area ? { area } : {}),
     ...(choices.protectedSpots.length ? { protected: choices.protectedSpots.map(polygon) } : {}),
   };
 }

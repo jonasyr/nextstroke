@@ -91,6 +91,31 @@ export const de = {
   "guided.plan.none.noArea":
     "Markiere einen Bereich, dann zeigt die Vorschau, wo die Striche hingehören.",
   "guided.plan.mark": "Bereich markieren",
+  "guided.plan.none.circle":
+    "Diese Idee dunkelt rund um eine Form ab. Markiere dafür den Bereich mit dem Kreis und die Form als geschützt.",
+  "guided.form.areaGroup": "Bereich als",
+  "guided.form.circle": "Kreis",
+  "guided.form.form": "Form",
+  "guided.form.image": "Form markieren",
+  "guided.form.tap":
+    "Tippe auf die Form, die Schatten bekommen soll. Ist sie durch Linien geteilt, tippe jeden Teil an.",
+  "guided.form.found": "Stimmt die blaue Fläche? Sonst mit „Malen“ und „Radieren“ korrigieren.",
+  "guided.form.leak":
+    "Hier ist der Umriss offen, die Fläche liefe bis zum Rand. Male die Form mit „Malen“ aus.",
+  "guided.form.tooBig": "Das wäre fast das ganze Bild. Tippe in eine kleinere, geschlossene Form.",
+  "guided.form.tooSmall":
+    "Hier ist nur Linie, keine Fläche. Tippe weiter innen oder male die Form aus.",
+  "guided.form.paintHint": "Fahr mit dem Finger über alles, was zur Form gehört.",
+  "guided.form.eraseHint": "Fahr mit dem Finger über alles, was nicht dazugehört.",
+  "guided.form.tools": "Werkzeug",
+  "guided.form.tapTool": "Antippen",
+  "guided.form.paint": "Malen",
+  "guided.form.erase": "Radieren",
+  "guided.form.undo": "Rückgängig",
+  "guided.form.reset": "Neu",
+  "guided.form.kind": "Die Form ist",
+  "guided.form.round": "rund",
+  "guided.form.flat": "flach",
   "guided.ideas.preview": "Vorschau",
   "guided.check.take": "Zwischenstand fotografieren",
   "guided.check.photoTitle": "Zwischenstand",

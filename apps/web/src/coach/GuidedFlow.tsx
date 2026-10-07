@@ -1,6 +1,7 @@
 import { suggest } from "@nextstroke/coaching";
 import { IMAGE_CORNERS, type Quad } from "@nextstroke/compare";
 import { newId, type Project, type SuggestionSet } from "@nextstroke/contracts";
+import { grayFrom } from "@nextstroke/imaging";
 import { DATASET } from "@nextstroke/materials";
 import {
   addCheckpoint,
@@ -24,6 +25,7 @@ import {
   type FlowStep,
   requestFrom,
 } from "./flow.ts";
+import { formImage, formMask, formOutline, formSpot, isEmpty, NO_FORM, tonesFor } from "./form.ts";
 import { ideaPlan } from "./ideaPlan.ts";
 import { ideasLead } from "./labels.ts";
 import { CheckScreen } from "./screens/CheckScreen.tsx";
@@ -98,8 +100,14 @@ export function GuidedFlow({
   const [straight, setStraight] = useState<Straight | null>(null);
   /** The straight view of the latest checkpoint, and whether it was stored. */
   const [now, setNow] = useState<{ bitmap: ImageBitmap; saved: boolean } | null>(null);
-  const original = useCorners(deps.vision ?? null, setStatus);
-  const checkpoint = useCorners(deps.vision ?? null, setStatus);
+  /** The step on screen now, so a late message from the corner search stays on its own step. */
+  const shownStep = useRef<FlowStep>(step);
+  shownStep.current = step;
+  const sayOn = (on: FlowStep) => (text: string) => {
+    if (shownStep.current === on) setStatus(text);
+  };
+  const original = useCorners(deps.vision ?? null, sayOn("photo"));
+  const checkpoint = useCorners(deps.vision ?? null, sayOn("checkPhoto"));
   const checkpointFile = useRef<{ file: File; decoded: Decoded } | null>(null);
   /** The optional template and its corners on its own image (D-070). */
   const [template, setTemplate] = useState<{ bitmap: ImageBitmap; quad: Quad } | null>(null);
@@ -159,6 +167,7 @@ export function GuidedFlow({
   const exit = () => onExit(project.current?.id ?? null);
 
   const go = (next: FlowStep) => {
+    shownStep.current = next;
     setStep(next);
     window.scrollTo?.(0, 0);
   };
@@ -195,7 +204,7 @@ export function GuidedFlow({
     const decoded = await decode(file);
     if (!decoded) return;
     setStraight(null);
-    setChoices((c) => ({ ...c, area: null, protectedSpots: [] }));
+    setChoices((c) => ({ ...c, area: null, protectedSpots: [], form: NO_FORM }));
     original.start(decoded.bitmap);
     const projects = deps.projects;
     if (!projects) return;
@@ -279,7 +288,8 @@ export function GuidedFlow({
   const showIdeas = () => {
     const marked = straight?.bitmap ?? original.image;
     const aspect = marked ? marked.width / marked.height : 1;
-    const request = requestFrom(choices, aspect, straight?.map);
+    const outline = form && !isEmpty(form.mask) ? formOutline(form.image, form.mask) : null;
+    const request = requestFrom(choices, aspect, straight?.map, outline);
     const set = suggest(request, DATASET, deps.projects?.id("sug") ?? newId("sug"));
     setSuggestions(set);
     setSelected(null);
@@ -301,8 +311,8 @@ export function GuidedFlow({
     const decoded = await decode(file);
     if (!decoded) return;
     checkpointFile.current = { file, decoded };
-    checkpoint.start(decoded.bitmap);
     go("checkPhoto");
+    checkpoint.start(decoded.bitmap);
   };
 
   /** Straightens the checkpoint into the original's frame, stores it, and shows both. */
@@ -345,12 +355,31 @@ export function GuidedFlow({
   };
 
   const change = (next: Partial<FlowChoices>) => setChoices((c) => ({ ...c, ...next }));
+  /** The straight view in gray at computing size, made once form mode is first used (D-073). */
+  const wantsForm = choices.areaKind === "form";
+  // biome-ignore lint/correctness/useExhaustiveDependencies: depends on the view, not on deps
+  const formView = useMemo(
+    () => (straight && wantsForm ? formImage(grayFrom(deps.rgba(straight.bitmap), 768)) : null),
+    [straight, wantsForm],
+  );
+  const form = useMemo(
+    () => (formView ? { image: formView, mask: formMask(formView, choices.form) } : null),
+    [formView, choices.form],
+  );
+  const formOn = choices.areaKind === "form" && form !== null && !isEmpty(form.mask);
+  const tones = useMemo(
+    () =>
+      formOn && form ? tonesFor(form.image, form.mask, choices.form.kind, choices.light) : null,
+    [formOn, form, choices.form.kind, choices.light],
+  );
+  /** Where the preview looks: the circle, or a circle around the form. */
+  const previewSpot = formOn && form ? formSpot(form.image, form.mask) : choices.area;
   /** Each idea's stroke plan on the straight view, or why there is none (D-071). */
   const plans = useMemo(() => {
     if (!suggestions || !straight) return null;
     const aspect = straight.bitmap.width / straight.bitmap.height;
-    return suggestions.ideas.map((i) => ideaPlan(i, choices, aspect));
-  }, [suggestions, straight, choices]);
+    return suggestions.ideas.map((i) => ideaPlan(i, choices, aspect, tones));
+  }, [suggestions, straight, choices, tones]);
   /** The light's side is kept with the request, so a resumed project shows the same preview. */
   const changeLight = (light: FlowChoices["light"]) => {
     change({ light });
@@ -406,6 +435,7 @@ export function GuidedFlow({
       {step === "goal" && (
         <GoalScreen
           image={straight?.bitmap ?? original.image}
+          form={straight ? form : null}
           choices={choices}
           onChange={change}
           onBack={() => go("tool")}
@@ -421,7 +451,7 @@ export function GuidedFlow({
           preview={(i) => {
             const result = plans?.[i];
             return straight && result && "plan" in result ? (
-              <PlanThumb image={straight.bitmap} result={result} area={choices.area} />
+              <PlanThumb image={straight.bitmap} result={result} area={previewSpot} />
             ) : null;
           }}
         />
@@ -439,7 +469,7 @@ export function GuidedFlow({
               <PlanPreview
                 image={straight.bitmap}
                 result={plans[selected]}
-                area={choices.area}
+                area={previewSpot}
                 light={choices.light}
                 onLight={changeLight}
                 onMark={() => go("goal")}

@@ -195,6 +195,62 @@ describe("guided flow (Phase 3 Task 5)", () => {
     canvas.restore();
   });
 
+  it("shades a tapped form instead of the circle (D-073)", async () => {
+    const { deps } = coach(projectDeps(), true);
+    // The straight view shows one closed ring in the middle.
+    deps.rgba = (image) => {
+      const data = new Uint8ClampedArray(image.width * image.height * 4).fill(235);
+      for (let i = 0; i < image.width * image.height; i++) {
+        const x = i % image.width;
+        const y = Math.floor(i / image.width);
+        if (Math.abs(Math.hypot(x - image.width / 2, y - image.height / 2) - 60) <= 1.5) {
+          data.fill(30, i * 4, i * 4 + 3);
+        }
+      }
+      return { width: image.width, height: image.height, data };
+    };
+    const projects = projectDeps();
+    deps.projects = projects;
+    render(<GuidedFlow deps={deps} onExit={() => undefined} />);
+    await takePhoto();
+    await act(async () => click("Weiter"));
+    click("Weiter");
+    choose("Form");
+    const marker = screen.getByRole("img", { name: "Form markieren" });
+    const rect = { left: 0, top: 0, width: 300, height: 400, right: 300, bottom: 400, x: 0, y: 0 };
+    marker.getBoundingClientRect = () => ({ ...rect, toJSON: () => rect });
+    fireEvent.pointerDown(marker, { clientX: 150, clientY: 200, pointerId: 1 });
+    expect(screen.getByText(/Stimmt die blaue Fläche/)).toBeTruthy();
+    await act(async () => click("Vorschläge zeigen"));
+    const [saved] = await projects.store.listProjects();
+    // The request's area is the form's outline, not a 16-point circle.
+    expect(saved?.request?.area?.length).toBeGreaterThan(16);
+    await act(async () =>
+      fireEvent.click(screen.getAllByRole("button", { name: /Schritte/ })[0] as HTMLElement),
+    );
+    expect(
+      screen.getByRole("img", { name: "Dein Blatt mit den Strichen der Anleitung" }),
+    ).toBeTruthy();
+    choose("rechts");
+    expect(screen.getByRole("radio", { name: "rechts" })).toHaveProperty("checked", true);
+  });
+
+  it("does not show a late corner message once the user has moved on", async () => {
+    const { deps } = coach(projectDeps(), true);
+    let release: (value: null) => void = () => undefined;
+    deps.vision = {
+      load: async () => ({ ok: true, ms: 1 }),
+      detectPaper: () => new Promise((resolve) => (release = resolve)),
+    } as unknown as NonNullable<CoachDeps["vision"]>;
+    render(<GuidedFlow deps={deps} onExit={() => undefined} />);
+    await takePhoto();
+    await act(async () => click("Weiter"));
+    expect(screen.getByRole("heading", { name: /Stift und Papier/ })).toBeTruthy();
+    await act(async () => release(null));
+    expect(screen.queryByText(/Blatt nicht gefunden|Ringe sitzen|Prüf/)).toBeNull();
+    expect(screen.queryByRole("status")).toBeNull();
+  });
+
   it("asks for a marked area before it can show a stroke plan", async () => {
     const { deps } = coach(projectDeps(), true);
     render(<GuidedFlow deps={deps} onExit={() => undefined} />);

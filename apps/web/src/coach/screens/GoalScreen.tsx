@@ -1,6 +1,9 @@
+import type { Refusal } from "@nextstroke/imaging";
 import { t } from "@nextstroke/ui";
 import { useState } from "react";
+import { FormMarker, type FormTool } from "../FormMarker.tsx";
 import type { FlowChoices } from "../flow.ts";
+import { type FormImage, isEmpty, NO_FORM, undo } from "../form.ts";
 import { INTENTS, intentLabel, SKILLS, skillLabel } from "../labels.ts";
 import { type MarkMode, PhotoMarker } from "../PhotoMarker.tsx";
 import { FlowBar, Foot, Option, Options, Pill } from "./parts.tsx";
@@ -12,8 +15,11 @@ export function GoalScreen({
   onChange,
   onBack,
   onNext,
+  form = null,
 }: {
   image: ImageBitmap | null;
+  /** The straight view at computing size and the form's mask, once form mode is on (D-073). */
+  form?: { image: FormImage; mask: Uint8Array } | null;
   choices: FlowChoices;
   onChange: (change: Partial<FlowChoices>) => void;
   onBack: () => void;
@@ -21,6 +27,27 @@ export function GoalScreen({
 }) {
   const [mode, setMode] = useState<MarkMode>("area");
   const [more, setMore] = useState(choices.protectedSpots.length > 0);
+  const [tool, setTool] = useState<FormTool>("tap");
+  const [refused, setRefused] = useState<Refusal | null>(null);
+  const formMarks = choices.form;
+  const setMarks = (next: FlowChoices["form"]) => {
+    setRefused(null);
+    onChange({ form: next });
+  };
+  const formHint = refused
+    ? t(`guided.form.${refused}`)
+    : tool === "paint"
+      ? t("guided.form.paintHint")
+      : tool === "erase"
+        ? t("guided.form.eraseHint")
+        : form && !isEmpty(form.mask)
+          ? t("guided.form.found")
+          : t("guided.form.tap");
+  const tools: [FormTool, string][] = [
+    ["tap", t("guided.form.tapTool")],
+    ["paint", t("guided.form.paint")],
+    ["erase", t("guided.form.erase")],
+  ];
   const hint =
     mode === "protect"
       ? t("guided.goal.protectHint")
@@ -49,6 +76,102 @@ export function GoalScreen({
         {image && (
           <section className="ns-stack">
             <h2 className="ns-label">{t("guided.goal.where")}</h2>
+            <div className="ns-g-segs" role="radiogroup" aria-label={t("guided.form.areaGroup")}>
+              <Pill
+                kind="seg"
+                name="area-kind"
+                selected={choices.areaKind === "circle"}
+                onSelect={() => onChange({ areaKind: "circle" })}
+              >
+                {t("guided.form.circle")}
+              </Pill>
+              <Pill
+                kind="seg"
+                name="area-kind"
+                selected={choices.areaKind === "form"}
+                onSelect={() => onChange({ areaKind: "form" })}
+              >
+                {t("guided.form.form")}
+              </Pill>
+            </div>
+          </section>
+        )}
+        {image && choices.areaKind === "form" && form && (
+          <section className="ns-stack">
+            <FormMarker
+              image={image}
+              form={form.image}
+              mask={form.mask}
+              marks={formMarks}
+              tool={tool}
+              onMarks={setMarks}
+              onRefused={setRefused}
+              label={t("guided.form.image")}
+            />
+            <p className="ns-sub" role="status">
+              {formHint}
+            </p>
+            <div className="ns-g-segs" role="radiogroup" aria-label={t("guided.form.tools")}>
+              {tools.map(([value, text]) => (
+                <Pill
+                  key={value}
+                  kind="seg"
+                  name="form-tool"
+                  selected={tool === value}
+                  onSelect={() => {
+                    setTool(value);
+                    setRefused(null);
+                  }}
+                >
+                  {text}
+                </Pill>
+              ))}
+            </div>
+            <div className="ns-g-row">
+              <button
+                type="button"
+                className="ns-text"
+                disabled={formMarks.steps.length === 0}
+                onClick={() => setMarks(undo(formMarks))}
+              >
+                {t("guided.form.undo")}
+              </button>
+              <button
+                type="button"
+                className="ns-text"
+                disabled={formMarks.steps.length === 0}
+                onClick={() => {
+                  setMarks({ ...NO_FORM, kind: formMarks.kind });
+                  setTool("tap");
+                }}
+              >
+                {t("guided.form.reset")}
+              </button>
+            </div>
+            {!isEmpty(form.mask) && (
+              <div className="ns-stack ns-g-plan-light">
+                <span className="ns-label" aria-hidden="true">
+                  {t("guided.form.kind")}
+                </span>
+                <div className="ns-g-segs" role="radiogroup" aria-label={t("guided.form.kind")}>
+                  {(["round", "flat"] as const).map((kind) => (
+                    <Pill
+                      key={kind}
+                      kind="seg"
+                      name="form-kind"
+                      selected={formMarks.kind === kind}
+                      onSelect={() => onChange({ form: { ...formMarks, kind } })}
+                    >
+                      {t(`guided.form.${kind}`)}
+                    </Pill>
+                  ))}
+                </div>
+              </div>
+            )}
+          </section>
+        )}
+        {image && choices.areaKind === "circle" && (
+          <section className="ns-stack">
             <PhotoMarker
               image={image}
               mode={mode}
