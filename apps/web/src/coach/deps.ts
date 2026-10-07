@@ -1,6 +1,7 @@
 import type { Rgba } from "@nextstroke/imaging";
 import type { ProjectDeps, StorageStatus } from "@nextstroke/projects";
 import type { Decoded } from "../compare/decode.ts";
+import type { CompareDeps } from "../compare/QuickCompare.tsx";
 import type { VisionDeps } from "../compare/visionClient.ts";
 
 /** What the guided flow needs from outside; the browser binds it in `browser.ts`, tests fake it. */
@@ -17,6 +18,8 @@ export interface CoachDeps {
   /** Pixels of a bitmap and back, for straightening the sheet. */
   rgba(image: ImageBitmap): Rgba;
   fromRgba(rgba: Rgba): Promise<ImageBitmap>;
+  /** One PDF page as an image, for a template from a PDF (D-070). */
+  renderPdf: CompareDeps["renderPdf"];
   /** Saves a file directly (the project export). */
   download(file: File): void;
 }

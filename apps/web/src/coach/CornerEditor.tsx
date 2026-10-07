@@ -1,7 +1,6 @@
 import type { Point, Quad } from "@nextstroke/compare";
 import { type PointerEvent, useEffect, useRef, useState } from "react";
 import { useNoTouchDefaults } from "../useNoTouchDefaults.ts";
-import { normalized } from "./PhotoMarker.tsx";
 import { photoStyle } from "./photoStyle.ts";
 
 const ACCENT = "#8fb0ff";
@@ -9,6 +8,23 @@ const WARN = "#ffd479";
 /** A press this close to a ring (CSS px) grabs it. */
 export const GRAB_PX = 40;
 const RING_PX = 14;
+/** Free border around the image (CSS px), so rings on its very corners stay whole and grabbable. */
+export const MARGIN_PX = 18;
+
+/** A pointer position as a share of the image inside the canvas's margin; null without size. */
+export function onImage(
+  event: { clientX: number; clientY: number },
+  rect: { left: number; top: number; width: number; height: number },
+  margin = MARGIN_PX,
+): Point | null {
+  const width = rect.width - 2 * margin;
+  const height = rect.height - 2 * margin;
+  if (width <= 0 || height <= 0) return null;
+  return {
+    x: (event.clientX - rect.left - margin) / width,
+    y: (event.clientY - rect.top - margin) / height,
+  };
+}
 const LOUPE_PX = 120;
 const ZOOM = 3;
 
@@ -62,12 +78,18 @@ export function CornerEditor({
     const ctx = el?.getContext("2d");
     if (!el || !ctx) return;
     const dpr = window.devicePixelRatio || 1;
+    // The image sits inside a free border; the canvas is as tall as image plus border.
+    const innerCss = Math.max(1, el.clientWidth - 2 * MARGIN_PX);
+    el.style.height = `${innerCss / aspect + 2 * MARGIN_PX}px`;
     el.width = Math.round(el.clientWidth * dpr);
-    el.height = Math.round(el.width / aspect);
+    el.height = Math.round((innerCss / aspect + 2 * MARGIN_PX) * dpr);
     const W = el.width;
-    const H = el.height;
-    ctx.drawImage(image, 0, 0, W, H);
-    const px = quad.map((p) => ({ x: p.x * W, y: p.y * H }));
+    const m = MARGIN_PX * dpr;
+    const iw = innerCss * dpr;
+    const ih = iw / aspect;
+    ctx.clearRect(0, 0, el.width, el.height);
+    ctx.drawImage(image, m, m, iw, ih);
+    const px = quad.map((p) => ({ x: m + p.x * iw, y: m + p.y * ih }));
     ctx.beginPath();
     px.forEach((p, i) => {
       if (i) ctx.lineTo(p.x, p.y);
@@ -101,9 +123,9 @@ export function CornerEditor({
       ctx.beginPath();
       ctx.arc(cx, cy, r, 0, Math.PI * 2);
       ctx.clip();
-      const sx = (held.x / W) * image.width;
-      const sy = (held.y / H) * image.height;
-      const span = ((2 * r) / ZOOM) * (image.width / W);
+      const sx = ((held.x - m) / iw) * image.width;
+      const sy = ((held.y - m) / ih) * image.height;
+      const span = ((2 * r) / ZOOM) * (image.width / iw);
       ctx.drawImage(image, sx - span / 2, sy - span / 2, span, span, cx - r, cy - r, 2 * r, 2 * r);
       ctx.restore();
       ctx.beginPath();
@@ -123,7 +145,7 @@ export function CornerEditor({
   }, [image, aspect, quad, unsure, dragging]);
 
   const at = (event: PointerEvent<HTMLCanvasElement>) =>
-    normalized(event, event.currentTarget.getBoundingClientRect());
+    onImage(event, event.currentTarget.getBoundingClientRect());
 
   const end = () => {
     if (dragging !== null) onDrop(dragging);
@@ -142,7 +164,10 @@ export function CornerEditor({
         const p = at(event);
         if (!p) return;
         const rect = event.currentTarget.getBoundingClientRect();
-        const index = ringAt(quad, p, rect);
+        const index = ringAt(quad, p, {
+          width: rect.width - 2 * MARGIN_PX,
+          height: rect.height - 2 * MARGIN_PX,
+        });
         if (index === null) return;
         event.currentTarget.setPointerCapture?.(event.pointerId);
         setDragging(index);

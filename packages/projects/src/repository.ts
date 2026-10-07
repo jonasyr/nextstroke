@@ -107,6 +107,35 @@ export async function addCheckpoint(
   }));
 }
 
+/**
+ * Sets, replaces or removes the project's template (D-070). The new image is stored as an
+ * immutable `reference` asset; a replaced or removed one is deleted unless another project
+ * uses it. Pass `null` to remove.
+ */
+export async function setReference(
+  deps: ProjectDeps,
+  seen: Project,
+  template: { image: Omit<AssetInput, "role">; corners?: Project["referenceCorners"] } | null,
+): Promise<Project> {
+  const asset = template ? await addAsset(deps, { ...template.image, role: "reference" }) : null;
+  const next = await updateProject(deps, seen, (p) => {
+    const { referenceAssetId: _, referenceCorners: __, ...rest } = p;
+    return asset
+      ? {
+          ...rest,
+          referenceAssetId: asset.id,
+          ...(template?.corners ? { referenceCorners: template.corners } : {}),
+        }
+      : rest;
+  });
+  const old = seen.referenceAssetId;
+  if (old && old !== asset?.id) {
+    const others = (await deps.store.listProjects()).filter((p) => p.id !== seen.id);
+    if (!others.some((p) => assetIdsOf(p).includes(old))) await deps.store.deleteAsset(old);
+  }
+  return next;
+}
+
 /** Every asset a project refers to. */
 export function assetIdsOf(project: Project): string[] {
   return [

@@ -106,6 +106,18 @@ Estimates include device testing and user research. They are not promises.
 
 All figures are estimates from the 2026-10-03 review and published prices; Phase 0 and the Phase 4 API reconfirmation replace them with measured values.
 
+## Feature track: templates and the NextStroke collection (D-070)
+
+Approved by the owner on 2026-10-07. A *Vorlage* (template) is what the user draws after and compares against; *inspiration* is only looked at. The same image may serve both, but the UI always says which. Research and measured counts: `docs/research/2026-10-07-open-ink-drawings.md`.
+
+| Step | What | Phase and plan | Preconditions |
+| --- | --- | --- | --- |
+| T1 | Optional template in a coach project: pick from camera, photos or files; stored as an immutable `reference` asset with its own paper corners; shown in the project view and in "Vorher und jetzt"; "Im Schnellvergleich öffnen" opens drawing and template (or start and checkpoint) already aligned | Phase 3, Task 6 | Done 2026-10-07 |
+| T2 | Goal "Näher an die Vorlage": local, deterministic comparison of the straight drawing and template; proposes areas where the template is clearly darker (fineliner can only add ink); ideas refer to the template | Phase 3, Task 7 | T1; after the beginner study, not part of its gate |
+| T3 | NextStroke collection as a template and inspiration source: a few hundred curated public-domain (CC0) pen-and-ink drawings, filterable by motif, technique and difficulty; each image keeps source, object id, licence and retrieval date; images load on demand, a chosen template is stored in the project, Quick Compare stays fully offline | Phase 4, Task 6 | A 30-image sample reviewed by the owner; hosting decided |
+| T4 | "Sieht ähnlich aus wie meins": similarity search over the collection (image embeddings) | Explicitly later (Phase 4 plan) | T3; a separate approved design |
+| T5 | Opt-in user gallery of modern fineliner work | Explicitly later | Accounts, consent and moderation (master plan: later) |
+
 ## Context and decision maintenance
 
 - Update `docs/project-state.md` after each gate.

@@ -125,6 +125,44 @@ describe("start screen", () => {
     expect(screen.queryByRole("button", { name: "Beispiel ansehen" })).toBeNull();
   });
 
+  it("opens a project's pair at its saved corners, without aligning again (D-070)", async () => {
+    const corners = [
+      { x: 0.1, y: 0.1 },
+      { x: 0.9, y: 0.1 },
+      { x: 0.9, y: 0.9 },
+      { x: 0.1, y: 0.9 },
+    ] as const;
+    const deps = makeDeps();
+    render(
+      <QuickCompare
+        deps={deps}
+        pair={async () => ({
+          original: { blob: png("z.png"), name: "Zwischenstand 1", corners },
+          reference: { blob: png("v.png"), name: "Vorlage", corners },
+        })}
+      />,
+    );
+    expect(await screen.findByRole("dialog", { name: "Vergleich" })).toBeTruthy();
+    expect(screen.getByText("An den gespeicherten Blattecken ausgerichtet")).toBeTruthy();
+    expect(screen.getByRole("tab", { name: /Ausrichten/ }).querySelector(".ns-dot")).toBeTruthy();
+  });
+
+  it("opens a pair without corners for automatic alignment, and says when there is none", async () => {
+    const { unmount } = render(
+      <QuickCompare
+        deps={makeDeps()}
+        pair={async () => ({
+          original: { blob: png("z.png"), name: "Zwischenstand 1" },
+          reference: { blob: png("s.png"), name: "Start" },
+        })}
+      />,
+    );
+    expect(await screen.findByRole("dialog", { name: "Vergleich" })).toBeTruthy();
+    unmount();
+    render(<QuickCompare deps={makeDeps()} pair={async () => null} />);
+    expect(await screen.findByText(/Noch nichts zum Vergleichen/)).toBeTruthy();
+  });
+
   it("explains a demo pair that cannot be made, and hides the link without one", async () => {
     const demoPair = vi.fn(async () => {
       throw new Error("no canvas");

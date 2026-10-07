@@ -28,4 +28,5 @@ export const browserCoachDeps: CoachDeps = {
   rgba: (image) => browserDeps.rgba(image),
   fromRgba: (rgba) => browserDeps.fromRgba(rgba),
   download: (file) => browserDeps.download(file),
+  renderPdf: (data, choose) => browserDeps.renderPdf(data, choose),
 };

@@ -1,5 +1,5 @@
 import type { Project } from "@nextstroke/contracts";
-import { deleteProject, describeStorage, exportProject } from "@nextstroke/projects";
+import { deleteProject, describeStorage, exportProject, setReference } from "@nextstroke/projects";
 import { t } from "@nextstroke/ui";
 import { useEffect, useState } from "react";
 import { hrefFor, hrefWith } from "../routing/routes.ts";
@@ -8,6 +8,9 @@ import { AssetImage } from "./AssetImage.tsx";
 import type { CoachDeps } from "./deps.ts";
 import { shortDate } from "./flow.ts";
 import { FlowBar, Foot } from "./screens/parts.tsx";
+import { TemplateCard } from "./screens/TemplateCard.tsx";
+import { quadToPairs } from "./straighten.ts";
+import { useTemplatePicker } from "./useTemplatePicker.tsx";
 
 /** A file name from the project title: letters, digits and dashes only. */
 export function exportName(title: string): string {
@@ -20,8 +23,9 @@ export function exportName(title: string): string {
 }
 
 /**
- * One project (Phase 3 Task 5): the start and every checkpoint, the idea chosen last, saving
- * the project as a file, deleting it, and drawing on.
+ * One project (Phase 3 Task 5): the start and every checkpoint, the optional template (D-070),
+ * the idea chosen last, comparing in Quick Compare, saving the project as a file, deleting it,
+ * and drawing on.
  */
 export function ProjectView({
   deps,
@@ -37,6 +41,9 @@ export function ProjectView({
   const [status, setStatus] = useState("");
   const [confirming, setConfirming] = useState(false);
   const [notes, setNotes] = useState<string[]>([]);
+  /** "template" while the corners of a newly picked template are placed. */
+  const [mode, setMode] = useState<"view" | "template">("view");
+  const picker = useTemplatePicker(deps, setStatus);
 
   useEffect(() => {
     let live = true;
@@ -68,6 +75,37 @@ export function ProjectView({
       </div>
     );
   }
+
+  const changeTemplate = async (picked: { image: Parameters<typeof setReference>[2] } | null) => {
+    try {
+      setProject(await setReference(projects, project, picked?.image ?? null));
+      setStatus(t(picked ? "guided.template.saved" : "guided.template.removed"));
+    } catch {
+      setStatus(t("guided.save.failed"));
+    }
+  };
+
+  if (mode === "template") {
+    return (
+      <div className="ns-g">
+        {picker.screen(
+          status,
+          () => {
+            const chosen = picker.chosen();
+            setMode("view");
+            if (chosen) {
+              void changeTemplate({
+                image: { image: chosen.picture.asset, corners: quadToPairs(chosen.quad) },
+              });
+            }
+          },
+          () => setMode("view"),
+        )}
+      </div>
+    );
+  }
+
+  const comparable = Boolean(project.referenceAssetId || project.checkpoints.length);
 
   const idea =
     project.suggestions && project.selectedIdea !== undefined
@@ -110,17 +148,41 @@ export function ProjectView({
             </li>
           ))}
         </ul>
+        <TemplateCard
+          preview={
+            project.referenceAssetId ? (
+              <AssetImage
+                store={projects.store}
+                assetId={project.referenceAssetId}
+                className="ns-g-shot"
+              />
+            ) : null
+          }
+          busy={picker.busy}
+          onPick={(file) =>
+            void picker.pick(file).then((ok) => {
+              if (ok) setMode("template");
+            })
+          }
+          onRemove={() => void changeTemplate(null)}
+        />
         <section className="ns-stack">
           <h2 className="ns-label">{t("project.last")}</h2>
           <p>{idea ? idea.title : t("project.noIdea")}</p>
         </section>
         <section className="ns-stack">
+          {comparable && (
+            <a className="ns-g-secondary ns-g-link-button" href={hrefWith("compare", project.id)}>
+              {t("project.compare")}
+            </a>
+          )}
           <button type="button" className="ns-g-secondary" onClick={() => void save()}>
             {t("project.export")}
           </button>
           <button type="button" className="ns-text ns-g-danger" onClick={() => void remove()}>
             {t(confirming ? "project.deleteConfirm" : "project.delete")}
           </button>
+          {picker.dialog}
           {notes.map((note) => (
             <p key={note} className="ns-note">
               {note}

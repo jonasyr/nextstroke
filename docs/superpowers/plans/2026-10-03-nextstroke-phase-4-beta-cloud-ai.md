@@ -62,6 +62,14 @@
 - [ ] Run accessibility, offline/update, privacy, and real-iPhone matrices.
 - [ ] Publish only after owner review of evidence and operating-cost limits.
 
+## Task 6: NextStroke collection (D-070, track step T3)
+
+- [ ] Review a 30-image sample with the owner (motif range, line quality, "is this inspiring for a beginner").
+- [ ] Build the curated set from CC0 museum open access: metadata filter (public domain, drawing, pen and black ink, no wash, watercolor, gouache or chalk), image filter (mostly two-tone, enough contrast), technique tags proposed by line analysis and confirmed by hand, motif tags from titles and subjects.
+- [ ] Provenance per image: source, object id, licence, retrieval date, as for material claims.
+- [ ] Picker sheet with three sources (camera, photos/files, collection) and filters by motif, technique and difficulty; images and thumbnails load on demand; a chosen template is stored in the project.
+- [ ] "So haben es andere gelöst": inspiration next to the three ideas, matched by intent and technique, labelled as inspiration.
+
 ## Exit gate
 
 - Controlled previews meet Phase 0-derived criteria on a fresh holdout set run through the production API path, because Phase 0 evidence was manual (D-031).
@@ -71,4 +79,4 @@
 
 ## Explicitly later
 
-Optional accounts, multi-device sync, D1/R2 project storage, colored pencil, watercolor, community, and AR each require a separate approved design and plan.
+Optional accounts, multi-device sync, D1/R2 project storage, colored pencil, watercolor, community, and AR each require a separate approved design and plan. So do the D-070 track steps T4 (similarity search over the collection, "sieht ähnlich aus wie meins") and T5 (an opt-in gallery of users' fineliner drawings, which needs accounts, consent and moderation).

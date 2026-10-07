@@ -2,7 +2,7 @@
 import type { Quad } from "@nextstroke/compare";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { CornerEditor, ringAt } from "./CornerEditor.tsx";
+import { CornerEditor, onImage, ringAt } from "./CornerEditor.tsx";
 import { fakeCanvas } from "./fakeCanvas.ts";
 
 afterEach(cleanup);
@@ -40,9 +40,10 @@ describe("CornerEditor", () => {
     fireEvent.pointerDown(canvas, { clientX: 200, clientY: 200, pointerId: 1 });
     fireEvent.pointerMove(canvas, { clientX: 100, clientY: 100, pointerId: 1 });
     expect(onMove).not.toHaveBeenCalled();
-    fireEvent.pointerDown(canvas, { clientX: 362, clientY: 38, pointerId: 1 });
-    fireEvent.pointerMove(canvas, { clientX: 450, clientY: 20, pointerId: 1 });
-    expect(onMove).toHaveBeenLastCalledWith(1, { x: 1, y: 0.05 });
+    // Ring 1 sits at 18 + 0.9 × 364 px across, 18 + 0.1 × 364 px down (inside the free border).
+    fireEvent.pointerDown(canvas, { clientX: 346, clientY: 54, pointerId: 1 });
+    fireEvent.pointerMove(canvas, { clientX: 450, clientY: 18, pointerId: 1 });
+    expect(onMove).toHaveBeenLastCalledWith(1, { x: 1, y: 0 });
     fireEvent.pointerUp(canvas, { pointerId: 1 });
     expect(onDrop).toHaveBeenCalledWith(1);
     fireEvent.pointerUp(canvas, { pointerId: 1 });
@@ -63,13 +64,19 @@ describe("CornerEditor", () => {
     const el = screen.getByRole("img", { name: "Ecken" });
     el.getBoundingClientRect = () => ({ ...RECT, toJSON: () => RECT });
     expect(canvas2d.calls.filter((c) => c === "arc")).toHaveLength(4);
-    for (const x of [38, 362]) {
+    for (const x of [54, 346]) {
       canvas2d.calls.length = 0;
-      fireEvent.pointerDown(el, { clientX: x, clientY: 38, pointerId: 1 });
+      fireEvent.pointerDown(el, { clientX: x, clientY: 54, pointerId: 1 });
       expect(canvas2d.calls.filter((c) => c === "clip")).toHaveLength(1);
       fireEvent.pointerUp(el, { pointerId: 1 });
     }
     rerender(<CornerEditor quad={QUAD} {...props} unsure={[]} />);
     canvas2d.restore();
+  });
+
+  it("maps a pointer into the image inside the free border", () => {
+    expect(onImage({ clientX: 18, clientY: 18 }, RECT)).toEqual({ x: 0, y: 0 });
+    expect(onImage({ clientX: 382, clientY: 200 }, RECT)).toEqual({ x: 1, y: 0.5 });
+    expect(onImage({ clientX: 1, clientY: 1 }, { ...RECT, width: 30, height: 30 })).toBeNull();
   });
 });

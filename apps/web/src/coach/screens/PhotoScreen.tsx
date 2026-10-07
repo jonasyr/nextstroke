@@ -1,7 +1,7 @@
 import type { Point, Quad } from "@nextstroke/compare";
 import { t } from "@nextstroke/ui";
 import { Camera } from "lucide-react";
-import type { ChangeEvent } from "react";
+import type { ChangeEvent, ReactNode } from "react";
 import { ICON } from "../../compare/IconButton.tsx";
 import { CornerEditor } from "../CornerEditor.tsx";
 import { FlowBar, Foot } from "./parts.tsx";
@@ -37,8 +37,21 @@ export function PhotoScreen({
   onCancel,
   onNext,
   labels = ORIGINAL,
+  template,
 }: {
-  labels?: { title: string; step?: string; back: string; next: string; input: string };
+  labels?: {
+    title: string;
+    step?: string;
+    back: string;
+    next: string;
+    input: string;
+    /** File types the picker offers; images by default. */
+    accept?: string;
+    /** The link that picks another file. */
+    change?: string;
+  };
+  /** The optional template card under the drawing's photo (D-070). */
+  template?: ReactNode;
   image: ImageBitmap | null;
   corners: CornerProps | null;
   busy: boolean;
@@ -54,7 +67,7 @@ export function PhotoScreen({
   };
   const input = {
     type: "file",
-    accept: ACCEPT,
+    accept: labels.accept ?? ACCEPT,
     className: "ns-hidden-input",
     "aria-label": labels.input,
     onChange: change,
@@ -76,9 +89,10 @@ export function PhotoScreen({
               {status}
             </p>
             <label className="ns-text ns-accent ns-g-file">
-              {t("guided.photo.change")}
+              {labels.change ?? t("guided.photo.change")}
               <input {...input} />
             </label>
+            {template}
           </div>
         ) : (
           <label className="ns-g-empty">

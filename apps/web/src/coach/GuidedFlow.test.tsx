@@ -37,6 +37,7 @@ function coach(projects: ProjectDeps | null, persisted = false) {
     }),
     fromRgba: async (rgba) => ({ width: rgba.width, height: rgba.height }) as ImageBitmap,
     download: () => undefined,
+    renderPdf: async () => null,
   };
   return { deps, persist };
 }
@@ -271,5 +272,92 @@ describe("guided flow (Phase 3 Task 5)", () => {
     render(<GuidedFlow deps={deps} projectId="prj_none" onExit={() => undefined} />);
     await act(async () => undefined);
     expect(screen.getByText("Das Projekt konnte nicht geöffnet werden.")).toBeTruthy();
+  });
+
+  it("adds a template after the photo, compares against it, and removes it (D-070)", async () => {
+    const projects = projectDeps();
+    const { deps } = coach(projects, true);
+    render(<GuidedFlow deps={deps} onExit={() => undefined} />);
+    await takePhoto();
+    expect(screen.getByText("Vorlage (optional)")).toBeTruthy();
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText("Vorlage wählen"), { target: { files: [photo()] } });
+    });
+    expect(screen.getByRole("heading", { name: "Vorlage" })).toBeTruthy();
+    expect(screen.getByText(/Ganzes Bild als Vorlage/)).toBeTruthy();
+    await act(async () => click("Übernehmen"));
+    expect(screen.getByText("Wird zum Vergleichen genutzt.")).toBeTruthy();
+    const [withTemplate] = await projects.store.listProjects();
+    expect(withTemplate?.referenceAssetId).toBeTruthy();
+    expect(withTemplate?.referenceCorners?.[2]).toEqual([1, 1]);
+
+    await act(async () => click("Weiter"));
+    click("Weiter");
+    await act(async () => click("Vorschläge zeigen"));
+    await act(async () =>
+      fireEvent.click(screen.getAllByRole("button", { name: /Schritte/ })[0] as HTMLElement),
+    );
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText("Foto des Zwischenstands wählen"), {
+        target: { files: [photo()] },
+      });
+    });
+    await act(async () => click("Vergleichen"));
+    choose("Vorlage");
+    expect(screen.getAllByText("Vorlage").length).toBeGreaterThan(1);
+    choose("Vorher");
+
+    click("Zurück");
+    click("Zurück");
+    click("Zurück");
+    click("Zurück");
+    click("Zurück");
+    click("Entfernen");
+    await act(async () => click("Wirklich entfernen?"));
+    expect(screen.getByText("Vorlage (optional)")).toBeTruthy();
+    const [after] = await projects.store.listProjects();
+    expect(after?.referenceAssetId).toBeUndefined();
+  });
+
+  it("goes back from the template step without a template, and says why a file fails", async () => {
+    const { deps } = coach(null, true);
+    render(<GuidedFlow deps={deps} onExit={() => undefined} />);
+    await takePhoto();
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText("Vorlage wählen"), {
+        target: { files: [new File([new Uint8Array([1])], "notiz.txt", { type: "text/plain" })] },
+      });
+    });
+    expect(screen.getByText(/Datei nicht lesbar/)).toBeTruthy();
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText("Vorlage wählen"), { target: { files: [photo()] } });
+    });
+    click("Zurück");
+    expect(screen.getByText("Vorlage (optional)")).toBeTruthy();
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText("Vorlage wählen"), { target: { files: [photo()] } });
+    });
+    await act(async () => click("Übernehmen"));
+    click("Entfernen");
+    await act(async () => click("Wirklich entfernen?"));
+    expect(screen.getByText("Vorlage entfernt.")).toBeTruthy();
+  });
+
+  it("chooses a page when the template is a longer PDF", async () => {
+    const { deps } = coach(null, true);
+    deps.renderPdf = async (_data, choosePage) => {
+      const page = await choosePage(3);
+      return page
+        ? { blob: new Blob([new Uint8Array([7])], { type: "image/png" }), page, count: 3 }
+        : null;
+    };
+    render(<GuidedFlow deps={deps} onExit={() => undefined} />);
+    await takePhoto();
+    const pdf = new File([new Uint8Array([1])], "vorlage.pdf", { type: "application/pdf" });
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText("Vorlage wählen"), { target: { files: [pdf] } });
+    });
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: /Seite laden/ })));
+    expect(screen.getByRole("heading", { name: "Vorlage" })).toBeTruthy();
   });
 });
