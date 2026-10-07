@@ -31,7 +31,7 @@
 | 0 | `2026-10-03-nextstroke-phase-0-proof-of-feasibility.md` | Evidence on preview, device, cost, and beginner execution | Owner approves experiment |
 | 1 | `2026-10-03-nextstroke-phase-1-foundation.md` | Lean retained workspace derived from passed experiments | Every Phase 0 GO criterion passes or the owner records a pivot (no STOP outcome, D-032) |
 | 2 | `2026-10-03-nextstroke-phase-2-quick-compare.md` | Offline comparison utility on real iPhones | Foundation green |
-| 3 | `2026-10-03-nextstroke-phase-3-guided-project.md` | Fineliner knowledge, three ideas, instructions, calibration, local projects | Quick Compare useful and stable |
+| 3 | `2026-10-03-nextstroke-phase-3-guided-project.md` | Fineliner knowledge, three ideas, instructions with a rule-based stroke-plan preview (D-071), calibration, local projects | Quick Compare useful and stable |
 | 4 | `2026-10-03-nextstroke-phase-4-beta-cloud-ai.md` | Passed controlled-preview path, checkpoints, export, public beta hardening | Coach useful without generated preview |
 
 Cloud accounts/sync are not Phase 4. They require demonstrated demand and a future design.
