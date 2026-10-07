@@ -710,3 +710,13 @@
 - **Why this addresses the spike's failures:** wrong or missing areas are caught and fixed by the user instead of guessed (criterion 1), and flat forms no longer get pillow shading (criterion 2). Speed is met by computing at reduced size.
 - **Alternatives:** Automatic replacement of the circle (failed its criteria, D-072); a lasso tool instead of brushes (harder to fix a small leak with a finger).
 - **Consequence:** Phase 3 gains Task 9, before the beginner study; the study observes whether beginners find and use form mode. iPhone checklist gains an item for tapping and painting with a finger.
+
+## D-074 — Form mode v2 ships although it missed one pre-registered criterion by one object
+
+- **Date:** 2026-10-07
+- **Refines:** D-073.
+- **Trigger:** Owner: form mode should work on most drawings, may take up to about a second, without overfitting; then, after the result, "Ja bitte" to shipping v2 with "Kleiner / Größer".
+- **Evidence:** `docs/research/2026-10-07-form-v2-plan.md`. 38 open drawings from the internet (testing only, private), split at random before development; taps and expectations written first; the test set sealed by hash and run once. v2 found the right area for 11 of 16 clearly outlined forms (target 70 %, v1: 7 of 16), refused every background tap (11 of 11), made a wrong area for 2 of 34 taps (limit 10 %), shaded every right area plausibly, at 834 ms (95th percentile, Node).
+- **Selected:** v2 replaces v1 in form mode: one tap offers the smallest real form, judged by thickness and by whether its edge meets open paper rather than more hatching; "Kleiner" and "Größer" step through the nested forms the tap can mean (petal, flower, leaf); a blacked-in area under the finger is taken whole; long forms are shaded as cylinders; round or flat is suggested from the outline on the first tap. "Suche die Form …" shows while it runs. Forms are remembered per tap, so steps, undo and repeats are instant. Candidates that differ only by line are counted once (added after the test run; on the development set it changed only which line pixels are included).
+- **Why despite the miss:** v2 is better than v1 on the gating measure by 25 points and equal on refusals; the miss is one object; form mode always shows the area before anything is drawn and offers "Kleiner / Größer", "Malen" and "Radieren".
+- **Consequence:** Phase 3 Task 10; iPhone checklist item 13 covers "Kleiner / Größer" and the time per tap on a real phone. A later run on new drawings, or the beginner study, re-checks the 70 % target.

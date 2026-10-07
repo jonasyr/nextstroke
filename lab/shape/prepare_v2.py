@@ -17,9 +17,13 @@ def main(pool: Path, work: Path, which: str) -> None:
     for image_id in split[which]:
         image = Image.open(pool / items[image_id]["file"]).convert("L")
         scale = LONG / max(image.size)
-        image = image.resize((round(image.width * scale), round(image.height * scale)), Image.LANCZOS)
+        image = image.resize(
+            (round(image.width * scale), round(image.height * scale)), Image.LANCZOS
+        )
         (out / f"{image_id}.gray").write_bytes(image.tobytes())
-        (out / f"{image_id}.json").write_text(json.dumps({"width": image.width, "height": image.height}))
+        (out / f"{image_id}.json").write_text(
+            json.dumps({"width": image.width, "height": image.height})
+        )
 
 
 if __name__ == "__main__":

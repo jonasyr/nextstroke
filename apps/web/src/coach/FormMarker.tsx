@@ -32,6 +32,7 @@ export function FormMarker({
   tool,
   onMarks,
   onRefused,
+  onSearching,
   label,
 }: {
   image: ImageBitmap;
@@ -41,6 +42,8 @@ export function FormMarker({
   tool: FormTool;
   onMarks: (marks: FormMarks) => void;
   onRefused: (reason: Refusal) => void;
+  /** Finding a form takes up to about a second: true while it runs. */
+  onSearching: (searching: boolean) => void;
   label: string;
 }) {
   const canvas = useRef<HTMLCanvasElement | null>(null);
@@ -105,9 +108,14 @@ export function FormMarker({
         const p = at(event);
         if (!p) return;
         if (tool === "tap") {
-          const result = addTap(form, marks, p);
-          if ("marks" in result) onMarks(result.marks);
-          else onRefused(result.refused);
+          // Let the "searching" line paint before the work starts.
+          onSearching(true);
+          window.setTimeout(() => {
+            const result = addTap(form, marks, p);
+            onSearching(false);
+            if ("marks" in result) onMarks(result.marks);
+            else onRefused(result.refused);
+          }, 30);
           return;
         }
         event.currentTarget.setPointerCapture?.(event.pointerId);

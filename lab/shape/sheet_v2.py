@@ -44,13 +44,16 @@ def tile(work: Path, out: Path, r: dict, label: str) -> Image.Image:
 def main(work: Path, a: Path, b: Path, out: Path, prefix: str) -> None:
     ra = json.loads((a / "results.json").read_text())
     rb = json.loads((b / "results.json").read_text())
-    pairs = [(tile(work, a, x, "v1"), tile(work, b, y, f"#{y['index']} v2")) for x, y in zip(ra, rb)]
+    pairs = [
+        (tile(work, a, x, "v1"), tile(work, b, y, f"#{y['index']} v2"))
+        for x, y in zip(ra, rb, strict=True)
+    ]
     per = 6
     for p in range(0, len(pairs), per):
         group = pairs[p : p + per]
         sheet = Image.new("RGB", (4 * 310, ((len(group) + 1) // 2) * 325), "white")
-        for i, (l, r) in enumerate(group):
-            sheet.paste(l, ((i % 2) * 620, (i // 2) * 325))
+        for i, (left, r) in enumerate(group):
+            sheet.paste(left, ((i % 2) * 620, (i // 2) * 325))
             sheet.paste(r, ((i % 2) * 620 + 310, (i // 2) * 325))
         sheet.save(out / f"{prefix}-{p // per}.jpg", quality=82)
 

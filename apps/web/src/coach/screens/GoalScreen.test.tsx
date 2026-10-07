@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { useMemo, useState } from "react";
 import { afterEach, describe, expect, it } from "vitest";
 import { DEFAULT_CHOICES, type FlowChoices } from "../flow.ts";
@@ -19,14 +19,24 @@ const drawing = formImage({
   ),
 });
 
-function Harness({ image }: { image: ImageBitmap | null }) {
+/** A square frame with a small ring inside: a form inside a form. */
+const nested = formImage({
+  width: 300,
+  height: 400,
+  data: Uint8Array.from({ length: 300 * 400 }, (_, i) => {
+    const x = i % 300;
+    const y = Math.floor(i / 300);
+    const frame =
+      x >= 60 && x <= 240 && y >= 110 && y <= 290 && (x < 63 || x > 237 || y < 113 || y > 287);
+    return frame || Math.abs(Math.hypot(x - 150, y - 200) - 30) <= 1.5 ? 30 : 235;
+  }),
+});
+
+function Harness({ image, art = drawing }: { image: ImageBitmap | null; art?: typeof drawing }) {
   const [choices, setChoices] = useState<FlowChoices>(DEFAULT_CHOICES);
   const form = useMemo(
-    () =>
-      choices.areaKind === "form"
-        ? { image: drawing, mask: formMask(drawing, choices.form) }
-        : null,
-    [choices.areaKind, choices.form],
+    () => (choices.areaKind === "form" ? { image: art, mask: formMask(art, choices.form) } : null),
+    [choices.areaKind, choices.form, art],
   );
   return (
     <>
@@ -80,16 +90,17 @@ describe("GoalScreen (D-067)", () => {
     expect(state().skill).toBe("advanced");
   });
 
-  it("finds a tapped form, says why a tap fails, and corrects it by hand (D-073)", () => {
+  it("finds a tapped form, says why a tap fails, and corrects it by hand (D-073)", async () => {
     render(<Harness image={{ width: 300, height: 400 } as ImageBitmap} />);
     fireEvent.click(screen.getByRole("radio", { name: "Form" }));
     expect(screen.getByText(/Tippe auf die Form, die Schatten bekommen soll/)).toBeTruthy();
     expect(screen.getByRole("button", { name: "Rückgängig" })).toHaveProperty("disabled", true);
     fireEvent.pointerDown(photo("Form markieren"), { clientX: 150, clientY: 200, pointerId: 1 });
-    expect(state().form.taps).toHaveLength(1);
+    expect(screen.getByText("Suche die Form …")).toBeTruthy();
+    await waitFor(() => expect(state().form.taps).toHaveLength(1));
     expect(screen.getByText(/Stimmt die blaue Fläche/)).toBeTruthy();
     fireEvent.pointerDown(photo("Form markieren"), { clientX: 10, clientY: 10, pointerId: 1 });
-    expect(screen.getByText(/Hier ist der Umriss offen/)).toBeTruthy();
+    await waitFor(() => expect(screen.getByText(/Hier ist der Umriss offen/)).toBeTruthy());
     expect(state().form.taps).toHaveLength(1);
 
     fireEvent.click(screen.getByRole("radio", { name: "flach" }));
@@ -116,5 +127,19 @@ describe("GoalScreen (D-067)", () => {
     expect(screen.getByRole("radio", { name: "Antippen" })).toHaveProperty("checked", true);
     fireEvent.click(screen.getByRole("radio", { name: "Kreis" }));
     expect(screen.getByRole("img", { name: "Stelle markieren" })).toBeTruthy();
+  });
+
+  it("steps between a form and the form around it (D-074)", async () => {
+    render(<Harness image={{ width: 300, height: 400 } as ImageBitmap} art={nested} />);
+    fireEvent.click(screen.getByRole("radio", { name: "Form" }));
+    fireEvent.pointerDown(photo("Form markieren"), { clientX: 150, clientY: 200, pointerId: 1 });
+    await waitFor(() => expect(state().form.taps).toHaveLength(1));
+    expect(screen.getByText(/„Kleiner“ oder „Größer“/)).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Kleiner" })).toHaveProperty("disabled", true);
+    fireEvent.click(screen.getByRole("button", { name: "Größer" }));
+    expect(state().form.sizes).toEqual([1]);
+    expect(screen.getByRole("button", { name: "Größer" })).toHaveProperty("disabled", true);
+    fireEvent.click(screen.getByRole("button", { name: "Kleiner" }));
+    expect(state().form.sizes).toEqual([0]);
   });
 });

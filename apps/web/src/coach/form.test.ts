@@ -9,6 +9,8 @@ import {
   formSpot,
   isEmpty,
   NO_FORM,
+  resize,
+  sizeRange,
   tonesFor,
   undo,
 } from "./form.ts";
@@ -92,5 +94,35 @@ describe("form mode (D-073)", () => {
     const round = tonesFor(image, mask, "round", "left");
     expect(round.core.length).toBeGreaterThan(0);
     expect(tonesFor(image, mask, "flat", "left").core).toHaveLength(0);
+  });
+
+  it("steps a tap's form smaller or larger, and suggests flat for a square (D-074)", () => {
+    // A square frame with a small ring inside: the ring first, the square one step larger.
+    const size = 200;
+    const data = new Uint8Array(size * size).fill(235);
+    for (let y = 0; y < size; y++) {
+      for (let x = 0; x < size; x++) {
+        const frame =
+          x >= 50 && x <= 150 && y >= 50 && y <= 150 && (x < 53 || x > 147 || y < 53 || y > 147);
+        if (frame || Math.abs(Math.hypot(x - 100, y - 100) - 20) <= 1.5) data[y * size + x] = 30;
+      }
+    }
+    const nested = formImage({ width: size, height: size, data });
+    const added = addTap(nested, NO_FORM, [0.5, 0.5]);
+    if (!("marks" in added)) throw new Error(added.refused);
+    expect(added.marks.kind).toBe("round");
+    expect(sizeRange(nested, added.marks)).toEqual({ smaller: false, larger: true });
+    const small = formMask(nested, added.marks).reduce((n, v) => n + v, 0);
+    const larger = resize(nested, added.marks, 1);
+    expect(larger.sizes).toEqual([1]);
+    expect(formMask(nested, larger).reduce((n, v) => n + v, 0)).toBeGreaterThan(small * 4);
+    expect(resize(nested, larger, 1)).toBe(larger);
+    expect(resize(nested, larger, -1).sizes).toEqual([0]);
+    expect(resize(nested, NO_FORM, 1)).toBe(NO_FORM);
+    expect(undo(larger).sizes).toEqual([]);
+    // Tapping between ring and frame: the square, suggested flat.
+    const square = addTap(nested, NO_FORM, [0.5, 0.3]);
+    if (!("marks" in square)) throw new Error(square.refused);
+    expect(square.marks.kind).toBe("flat");
   });
 });

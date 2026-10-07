@@ -91,6 +91,14 @@ Before the beginner study; the study tests instruction plus preview.
 - [x] At most about 220 ms per form at 768 px in Node (`packages/imaging/src/shading.ts`); tests for tracing, painting, plans and the screen; e2e in Chromium and WebKit (`apps/web/e2e/form.spec.ts`).
 - [ ] iPhone check: checklist item 13.
 
+## Task 10: Form mode v2 (D-074)
+
+- [x] One-tap form finding with nested candidates (`packages/imaging/src/forms.ts`): outlines, loose marks and hatching cells, dark fills; the first offer is the smallest real form.
+- [x] "Kleiner / Größer" and "Suche die Form …" on "Dein Ziel"; forms remembered per tap.
+- [x] Cylinder shading for long forms; round/flat suggested on the first tap.
+- [x] Pre-registered evaluation on a sealed test set (`docs/research/2026-10-07-form-v2-plan.md`).
+- [ ] iPhone check: checklist item 13 (time per tap, "Kleiner / Größer").
+
 ## Task 7: Goal "Näher an die Vorlage" (D-070, track step T2)
 
 After the beginner study; not part of the exit gate.

@@ -14,9 +14,13 @@ def main(cases: Path, out: Path) -> None:
     for case in sorted(p for p in cases.iterdir() if (p / "original.png").exists()):
         image = Image.open(case / "original.png").convert("L")
         scale = LONG / max(image.size)
-        image = image.resize((round(image.width * scale), round(image.height * scale)), Image.LANCZOS)
+        image = image.resize(
+            (round(image.width * scale), round(image.height * scale)), Image.LANCZOS
+        )
         (out / f"{case.name}.gray").write_bytes(image.tobytes())
-        (out / f"{case.name}.json").write_text(json.dumps({"width": image.width, "height": image.height}))
+        (out / f"{case.name}.json").write_text(
+            json.dumps({"width": image.width, "height": image.height})
+        )
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { MemoryStore, type ProjectDeps } from "@nextstroke/projects";
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { CoachDeps } from "./deps.ts";
 import { fakeCanvas } from "./fakeCanvas.ts";
@@ -220,7 +220,7 @@ describe("guided flow (Phase 3 Task 5)", () => {
     const rect = { left: 0, top: 0, width: 300, height: 400, right: 300, bottom: 400, x: 0, y: 0 };
     marker.getBoundingClientRect = () => ({ ...rect, toJSON: () => rect });
     fireEvent.pointerDown(marker, { clientX: 150, clientY: 200, pointerId: 1 });
-    expect(screen.getByText(/Stimmt die blaue Fläche/)).toBeTruthy();
+    await waitFor(() => expect(screen.getByText(/Stimmt die blaue Fläche/)).toBeTruthy());
     await act(async () => click("Vorschläge zeigen"));
     const [saved] = await projects.store.listProjects();
     // The request's area is the form's outline, not a 16-point circle.

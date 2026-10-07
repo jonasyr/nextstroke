@@ -285,11 +285,25 @@ export function formCandidates(
   const fill = darkFill(gray, tap);
   if (fill && fill.area <= w * h * MAX_SHARE) found.push(fill);
   const regions: Found[] = [];
-  for (const f of found
-    .filter((f) => f.area >= w * h * MIN_SHARE)
-    .sort((a, b) => a.area - b.area)) {
+  // Two candidates are the same form when the larger only adds a little, or adds mostly line.
+  const lines = dilate(ink, w, h, 1);
+  const same = (small: Found, large: Found) => {
+    if (large.area <= small.area * (1 + SAME)) return true;
+    let extra = 0;
+    let onLine = 0;
+    large.mask.forEach((v, i) => {
+      if (!v || small.mask[i]) return;
+      extra++;
+      if (lines[i]) onLine++;
+    });
+    return onLine >= extra * 0.8;
+  };
+  const sorted = found.filter((f) => f.area >= w * h * MIN_SHARE).sort((a, b) => a.area - b.area);
+  for (const f of sorted) {
     const last = regions.at(-1);
-    if (!last || f.area > last.area * (1 + SAME)) regions.push(f);
+    if (!last || !same(last, f)) regions.push(f);
+    // A dark fill stands for the whole blacked-in form, line included.
+    else if (f.kind === "fill") regions[regions.length - 1] = f;
   }
   if (!regions.length) return { refused: first ?? "tooSmall" };
   // Offered first: a dark fill under the finger; else the smallest outlined area that is not a
@@ -337,10 +351,13 @@ export function findForm(
     union = union ? union.map((v, j) => v | (mask[j] as number)) : mask;
   }
   if (!union) return { refused: "tooSmall" };
-  const base = Math.max(2, Math.round(Math.max(w, h) / 300));
-  const joined =
-    taps.length > 1 ? fillHoles(erode(dilate(union, w, h, base * 3), w, h, base * 3), w, h) : union;
-  return { mask: joined };
+  return { mask: taps.length > 1 ? joinForms(union, w, h) : union };
+}
+
+/** Parts of one form tapped one by one, joined across the thin lines between them. */
+export function joinForms(union: Uint8Array, w: number, h: number): Uint8Array {
+  const join = Math.max(2, Math.round(Math.max(w, h) / 300)) * 3;
+  return fillHoles(erode(dilate(union, w, h, join), w, h, join), w, h);
 }
 
 /** Area of a polygon (shoelace). */

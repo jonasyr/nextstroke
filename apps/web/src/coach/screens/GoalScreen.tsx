@@ -3,7 +3,7 @@ import { t } from "@nextstroke/ui";
 import { useState } from "react";
 import { FormMarker, type FormTool } from "../FormMarker.tsx";
 import type { FlowChoices } from "../flow.ts";
-import { type FormImage, isEmpty, NO_FORM, undo } from "../form.ts";
+import { type FormImage, isEmpty, NO_FORM, resize, sizeRange, undo } from "../form.ts";
 import { INTENTS, intentLabel, SKILLS, skillLabel } from "../labels.ts";
 import { type MarkMode, PhotoMarker } from "../PhotoMarker.tsx";
 import { FlowBar, Foot, Option, Options, Pill } from "./parts.tsx";
@@ -29,20 +29,24 @@ export function GoalScreen({
   const [more, setMore] = useState(choices.protectedSpots.length > 0);
   const [tool, setTool] = useState<FormTool>("tap");
   const [refused, setRefused] = useState<Refusal | null>(null);
+  const [searching, setSearching] = useState(false);
   const formMarks = choices.form;
   const setMarks = (next: FlowChoices["form"]) => {
     setRefused(null);
     onChange({ form: next });
   };
-  const formHint = refused
-    ? t(`guided.form.${refused}`)
-    : tool === "paint"
-      ? t("guided.form.paintHint")
-      : tool === "erase"
-        ? t("guided.form.eraseHint")
-        : form && !isEmpty(form.mask)
-          ? t("guided.form.found")
-          : t("guided.form.tap");
+  const range = form ? sizeRange(form.image, formMarks) : { smaller: false, larger: false };
+  const formHint = searching
+    ? t("guided.form.searching")
+    : refused
+      ? t(`guided.form.${refused}`)
+      : tool === "paint"
+        ? t("guided.form.paintHint")
+        : tool === "erase"
+          ? t("guided.form.eraseHint")
+          : form && !isEmpty(form.mask)
+            ? t(range.smaller || range.larger ? "guided.form.foundSizes" : "guided.form.found")
+            : t("guided.form.tap");
   const tools: [FormTool, string][] = [
     ["tap", t("guided.form.tapTool")],
     ["paint", t("guided.form.paint")],
@@ -106,6 +110,7 @@ export function GoalScreen({
               tool={tool}
               onMarks={setMarks}
               onRefused={setRefused}
+              onSearching={setSearching}
               label={t("guided.form.image")}
             />
             <p className="ns-sub" role="status">
@@ -127,6 +132,26 @@ export function GoalScreen({
                 </Pill>
               ))}
             </div>
+            {(range.smaller || range.larger) && (
+              <div className="ns-g-row2">
+                <button
+                  type="button"
+                  className="ns-g-secondary"
+                  disabled={!range.smaller}
+                  onClick={() => setMarks(resize(form.image, formMarks, -1))}
+                >
+                  {t("guided.form.smaller")}
+                </button>
+                <button
+                  type="button"
+                  className="ns-g-secondary"
+                  disabled={!range.larger}
+                  onClick={() => setMarks(resize(form.image, formMarks, 1))}
+                >
+                  {t("guided.form.larger")}
+                </button>
+              </div>
+            )}
             <div className="ns-g-row">
               <button
                 type="button"

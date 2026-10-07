@@ -100,6 +100,8 @@ export const de = {
   "guided.form.tap":
     "Tippe auf die Form, die Schatten bekommen soll. Ist sie durch Linien geteilt, tippe jeden Teil an.",
   "guided.form.found": "Stimmt die blaue Fläche? Sonst mit „Malen“ und „Radieren“ korrigieren.",
+  "guided.form.foundSizes":
+    "Stimmt die blaue Fläche? Sonst „Kleiner“ oder „Größer“, oder mit „Malen“ und „Radieren“ korrigieren.",
   "guided.form.leak":
     "Hier ist der Umriss offen, die Fläche liefe bis zum Rand. Male die Form mit „Malen“ aus.",
   "guided.form.tooBig": "Das wäre fast das ganze Bild. Tippe in eine kleinere, geschlossene Form.",
@@ -113,6 +115,9 @@ export const de = {
   "guided.form.erase": "Radieren",
   "guided.form.undo": "Rückgängig",
   "guided.form.reset": "Neu",
+  "guided.form.searching": "Suche die Form …",
+  "guided.form.smaller": "Kleiner",
+  "guided.form.larger": "Größer",
   "guided.form.kind": "Die Form ist",
   "guided.form.round": "rund",
   "guided.form.flat": "flach",

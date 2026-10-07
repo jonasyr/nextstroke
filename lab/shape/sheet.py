@@ -13,7 +13,7 @@ def hatch(shape: tuple[int, int], angle: float, spacing: int) -> np.ndarray:
     y, x = np.mgrid[0:h, 0:w]
     a = np.deg2rad(angle)
     t = x * np.sin(a) - y * np.cos(a)
-    return (np.mod(t, spacing) < 1.3)
+    return np.mod(t, spacing) < 1.3
 
 
 def main(work: Path, out: Path) -> None:
@@ -32,11 +32,21 @@ def main(work: Path, out: Path) -> None:
             two = one | hatch((h, w), 135, 6)
             ink = ((bands == 2) & one) | ((bands == 3) & two)
             rgb[ink] = [20, 20, 24]
-            edge = mask & ~np.roll(mask, 1, 0) | mask & ~np.roll(mask, 1, 1) | mask & ~np.roll(mask, -1, 0) | mask & ~np.roll(mask, -1, 1)
+            edge = (
+                mask & ~np.roll(mask, 1, 0)
+                | mask & ~np.roll(mask, 1, 1)
+                | mask & ~np.roll(mask, -1, 0)
+                | mask & ~np.roll(mask, -1, 1)
+            )
             rgb[edge] = [40, 120, 255]
             ys, xs = np.nonzero(mask)
             m = 30
-            box = (max(0, xs.min() - m), max(0, ys.min() - m), min(w, xs.max() + m), min(h, ys.max() + m))
+            box = (
+                max(0, xs.min() - m),
+                max(0, ys.min() - m),
+                min(w, xs.max() + m),
+                min(h, ys.max() + m),
+            )
         else:
             label += f" REFUSED {r['refused']}"
             box = (0, 0, w, h)

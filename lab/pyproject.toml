@@ -45,6 +45,8 @@ ignore = ["PLR2004"]
 [tool.ruff.lint.per-file-ignores]
 "src/nextstroke_lab/adapters/**" = ["TID251"]
 "tests/**" = ["TID251", "PLR0913"]
+# Spike scripts for form mode read and draw images directly (D-072, D-074).
+"shape/**" = ["TID251"]
 
 [tool.mypy]
 strict = true

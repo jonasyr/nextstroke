@@ -1,4 +1,4 @@
-"""Shape spike: a private pool of open drawings from the internet, for testing only (owner, 2026-10-07).
+"""Shape spike: a private pool of open drawings from the internet, testing only (owner, 2026-10-07).
 
 Images stay in lab/private/ and are never committed; provenance is kept per image.
 """
@@ -83,7 +83,7 @@ def main(out: Path) -> None:
         seen.add(item["url"])
         try:
             data = get(item["url"])
-        except Exception as error:  # noqa: BLE001 - a dead link is skipped
+        except Exception as error:  # a dead link is skipped
             print("skip", item["id"], error)
             continue
         suffix = ".png" if data[:4] == b"\x89PNG" else ".jpg"
