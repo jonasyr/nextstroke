@@ -1,5 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
-import { activateUpdate, reloadOnRequestedUpdate, watchForUpdate } from "./register.ts";
+import {
+  activateUpdate,
+  applyWhenIdle,
+  reloadOnRequestedUpdate,
+  watchForUpdate,
+} from "./register.ts";
 
 class FakeWorker extends EventTarget {
   state = "installing";
@@ -67,5 +72,57 @@ describe("service worker updates", () => {
     expect(worker.postMessage).toHaveBeenCalledWith("SKIP_WAITING");
     container.dispatchEvent(new Event("controllerchange"));
     expect(reload).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("applyWhenIdle", () => {
+  it("updates at once when nothing is in progress", () => {
+    const apply = vi.fn();
+    applyWhenIdle(
+      () => true,
+      apply,
+      () => () => undefined,
+    );
+    expect(apply).toHaveBeenCalledOnce();
+  });
+
+  it("waits until the app is idle, then updates once and stops listening", () => {
+    let idle = false;
+    let check = () => {};
+    const unsubscribe = vi.fn();
+    const apply = vi.fn();
+    applyWhenIdle(
+      () => idle,
+      apply,
+      (c) => {
+        check = c;
+        return unsubscribe;
+      },
+    );
+    check();
+    expect(apply).not.toHaveBeenCalled();
+    idle = true;
+    check();
+    check();
+    expect(apply).toHaveBeenCalledOnce();
+    expect(unsubscribe).toHaveBeenCalledOnce();
+  });
+
+  it("can stop waiting", () => {
+    const apply = vi.fn();
+    let check = () => {};
+    let idle = false;
+    const stop = applyWhenIdle(
+      () => idle,
+      apply,
+      (c) => {
+        check = c;
+        return () => undefined;
+      },
+    );
+    stop();
+    idle = true;
+    check();
+    expect(apply).not.toHaveBeenCalled();
   });
 });

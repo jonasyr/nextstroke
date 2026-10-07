@@ -45,6 +45,7 @@ import {
   X,
 } from "lucide-react";
 import { type PointerEvent, useCallback, useEffect, useReducer, useRef, useState } from "react";
+import { useNoTouchDefaults } from "../useNoTouchDefaults.ts";
 import type { Decoded } from "./decode.ts";
 import { type HintStore, hintStore } from "./hints.ts";
 import { ICON, IconButton } from "./IconButton.tsx";
@@ -162,6 +163,7 @@ export function QuickCompare({ deps, onHome }: { deps: CompareDeps; onHome?: () 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const workspaceRef = useRef<HTMLDivElement | null>(null);
   const [workspaceEl, setWorkspaceEl] = useState<HTMLDivElement | null>(null);
+  useNoTouchDefaults(workspaceEl);
   const gestureRef = useRef(idleGesture());
   /** The current gesture already saved an undo checkpoint for moving the Vorlage. */
   const layerRecorded = useRef(false);

@@ -664,3 +664,12 @@
 - **Selected:** `feat/guided` merges to `main` and ships with the owner's next deploy. Quick Compare stays reachable without an account, network or AI, now behind "Schnell vergleichen" (D-067). The Phase 2 iPhone checklist stays open and still gates the Phase 2 exit; it gains a short coach section (local storage, `persist()` result, camera with the corners, resuming a project after the app was closed), so one iPhone session covers both. Phase 3 exits only after the beginner study (D-048).
 - **Alternatives:** Finishing the Phase 2 checklist first (D-064 as written; costs the owner a second iPhone session).
 - **Consequence:** An iPhone-only problem may show up in either flow; checklist failures are fixed before Phase 2 is declared done.
+
+## D-069 — An app shell that never scrolls the page, no selection, updates when idle
+
+- **Date:** 2026-10-07
+- **Refines:** D-056 (UI), D-059, D-067; the service-worker update rule from the Phase 2 iPhone fix ("reload only when the user asked").
+- **Trigger:** Owner's test of the installed iPhone app: the bottom button sat mid-screen over the content (only in the Home Screen app, not in a Safari tab); dragging corner rings or circles selected the page (blue overlay, "Copy / Look Up"); the installed app still showed an older version.
+- **Selected:** The shell is `position: fixed; inset: 0` and the page never scrolls; each screen is top bar, scrolling content and a bottom bar as plain layout rows (no `position: sticky`, no `svh`/`dvh` heights, which are wrong in the iOS Home Screen app with `viewport-fit=cover`, WebKit bug 254868). The status bar uses `black-translucent`; bars pad with the safe-area insets. Nothing in the app is selectable and there is no callout or tap flash; drawing surfaces also cancel `touchstart` and `selectstart` (CSS alone does not always stop the loupe, WebKit bug 231161). Controls use `touch-action: manipulation`. One primary button per screen at the bottom; a secondary action goes to the top bar. A waiting update is applied by itself when the start screen is showing (nothing unsaved there), and the app checks for a new version whenever it returns to the foreground; elsewhere the banner still offers "Neu laden".
+- **Alternatives:** Keeping sticky bars with viewport-height fixes (still wrong in standalone on several iOS versions); applying updates on every launch (would reload during a photo pick, the 2026-10-05 bug).
+- **Consequence:** Browser tests drive the inner scroll areas; the iPhone checklist gains a point for the installed app.

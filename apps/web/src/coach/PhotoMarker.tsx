@@ -1,4 +1,5 @@
 import { type PointerEvent, useEffect, useRef, useState } from "react";
+import { useNoTouchDefaults } from "../useNoTouchDefaults.ts";
 import { dragArea, pressArea, type Spot, toggleProtected } from "./flow.ts";
 import { photoStyle } from "./photoStyle.ts";
 
@@ -42,6 +43,7 @@ export function PhotoMarker({
   label: string;
 }) {
   const canvas = useRef<HTMLCanvasElement | null>(null);
+  useNoTouchDefaults(canvas);
   const [resizing, setResizing] = useState<Spot | null>(null);
   const aspect = image.width / image.height;
 
@@ -77,6 +79,7 @@ export function PhotoMarker({
       style={photoStyle(aspect)}
       role="img"
       aria-label={label}
+      onContextMenu={(event) => event.preventDefault()}
       onPointerDown={(event) => {
         const p = at(event);
         if (!p) return;

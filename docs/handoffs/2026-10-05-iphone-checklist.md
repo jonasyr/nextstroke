@@ -28,4 +28,6 @@ Notiere: iPhone-Modell, iOS-Version, Datum.
 | 9 | Nach dem Schließen weiter | App ganz schließen (vom Home-Bildschirm aus), wieder öffnen, das Projekt antippen → „Weiterzeichnen“. | Das Projekt ist da, „Dein Ziel“ zeigt das gerade Blatt, Stift und Papier sind noch gewählt. |
 | 10 | Zwischenstand und Datei | In der Anleitung „Zwischenstand fotografieren“ → Ecken → „Vergleichen“, Trenner schieben. Dann „Fertig für heute“ → „Als Datei sichern“. | „Vorher und jetzt“ passt übereinander, die Datei landet in „Dateien“ (oder im Teilen-Menü). |
 
+| 11 | Installierte App (D-069) | Vom Home-Bildschirm öffnen. Im Coach durch alle Schritte scrollen; Ecken und Kreise mehrmals lang drücken und ziehen. App in den Hintergrund und wieder holen, auf dem Startbildschirm warten. | Unten bleibt der Knopf immer ganz unten; nichts wird blau markiert, kein „Kopieren“-Menü; nach einem neuen Deploy lädt die App auf dem Startbildschirm von selbst die neue Version. |
+
 Wenn etwas scheitert: Nummer, Modell, iOS-Version und was du gesehen hast (am besten ein Screenshot oder eine Bildschirmaufnahme) an Claude geben. Bei einem Neuladen: kam vorher eine Meldung, und war es beim ersten oder einem späteren Bild?
