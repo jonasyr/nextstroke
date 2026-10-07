@@ -25,8 +25,13 @@ export interface Guess {
   found: boolean;
 }
 
-export async function guessCorners(vision: VisionDeps | null, image: ImageBitmap): Promise<Guess> {
-  const none = { quad: INSET_CORNERS, unsure: [], found: false };
+/** `fallback`: where the rings start without a sheet (a digital template uses the whole image). */
+export async function guessCorners(
+  vision: VisionDeps | null,
+  image: ImageBitmap,
+  fallback: Quad = INSET_CORNERS,
+): Promise<Guess> {
+  const none = { quad: fallback, unsure: [], found: false };
   if (!vision) return none;
   try {
     if (!(await vision.load()).ok) return none;

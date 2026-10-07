@@ -6,7 +6,15 @@ import { t } from "@nextstroke/ui";
  * check. Pure, so the React screens stay thin; every choice ends in a `CoachRequest`.
  */
 
-export type FlowStep = "photo" | "tool" | "goal" | "ideas" | "steps" | "checkPhoto" | "check";
+export type FlowStep =
+  | "photo"
+  | "template"
+  | "tool"
+  | "goal"
+  | "ideas"
+  | "steps"
+  | "checkPhoto"
+  | "check";
 
 /** A circle on the photo, normalized to its width (x, r) and height (y). */
 export interface Spot {

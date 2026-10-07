@@ -23,7 +23,10 @@ export const ProjectSchema = z
     updatedAt: IsoDateTime,
     revision: z.int().nonnegative(),
     originalAssetId: idOf("ast"),
+    /** The template the user draws after (D-070); optional. */
     referenceAssetId: idOf("ast").optional(),
+    /** The template's paper corners on its own image (TL, TR, BR, BL, normalized). */
+    referenceCorners: PaperCorners.optional(),
     /** Paper corners on the original (TL, TR, BR, BL, normalized); the straight view derives from them. */
     paperCorners: PaperCorners.optional(),
     request: CoachRequestSchema.optional(),

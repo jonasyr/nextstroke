@@ -1,4 +1,5 @@
 import { suggest } from "@nextstroke/coaching";
+import { IMAGE_CORNERS, type Quad } from "@nextstroke/compare";
 import { newId, type Project, type SuggestionSet } from "@nextstroke/contracts";
 import { DATASET } from "@nextstroke/materials";
 import {
@@ -6,12 +7,14 @@ import {
   ConflictError,
   createProject,
   deleteProject,
+  setReference,
   updateProject,
 } from "@nextstroke/projects";
 import { t } from "@nextstroke/ui";
 import type { ChangeEvent } from "react";
 import { useEffect, useRef, useState } from "react";
 import type { Decoded } from "../compare/decode.ts";
+import { Thumb } from "../compare/Thumb.tsx";
 import type { CoachDeps } from "./deps.ts";
 import {
   choicesFrom,
@@ -27,10 +30,12 @@ import { GoalScreen } from "./screens/GoalScreen.tsx";
 import { IdeasScreen } from "./screens/IdeasScreen.tsx";
 import { PhotoScreen } from "./screens/PhotoScreen.tsx";
 import { StepsScreen } from "./screens/StepsScreen.tsx";
+import { TemplateCard } from "./screens/TemplateCard.tsx";
 import { ToolScreen } from "./screens/ToolScreen.tsx";
 import { pairsToQuad, quadToPairs } from "./straighten.ts";
 import { type Straight, straightView } from "./straightView.ts";
 import { useCorners } from "./useCorners.ts";
+import { useTemplatePicker } from "./useTemplatePicker.tsx";
 
 const CHECKPOINT_LABELS = {
   title: t("guided.check.photoTitle"),
@@ -50,16 +55,25 @@ async function assetInput(file: File, decoded: Decoded) {
   };
 }
 
-/**
- * The guided flow (Phase 3 Task 5, D-067): photo and corners, pen and paper, goal, three ideas,
- * steps, then a checkpoint photo compared with the start. Photos become immutable assets; the
- * request, ideas, chosen idea and corners are saved as revisions. Without storage it still works.
- */
 const KNOWN = {
   pens: DATASET.fineliners.map((p) => p.id),
   papers: DATASET.papers.map((p) => p.id),
 };
 
+/** A stored asset as a bitmap. */
+async function decodeAsset(deps: CoachDeps, id: string) {
+  const asset = await deps.projects?.store.getAsset(id);
+  if (!asset) return null;
+  const blob = new Blob([new Uint8Array(asset.bytes)], { type: asset.record.mimeType });
+  return deps.decode(blob);
+}
+
+/**
+ * The guided flow (Phase 3 Task 5, D-067): photo and corners, an optional template (D-070), pen
+ * and paper, goal, three ideas, steps, then a checkpoint photo compared with the start and the
+ * template. Photos become immutable assets; the request, ideas, chosen idea and corners are saved
+ * as revisions. Without storage it still works.
+ */
 export function GuidedFlow({
   deps,
   projectId = null,
@@ -85,6 +99,11 @@ export function GuidedFlow({
   const original = useCorners(deps.vision ?? null, setStatus);
   const checkpoint = useCorners(deps.vision ?? null, setStatus);
   const checkpointFile = useRef<{ file: File; decoded: Decoded } | null>(null);
+  /** The optional template and its corners on its own image (D-070). */
+  const [template, setTemplate] = useState<{ bitmap: ImageBitmap; quad: Quad } | null>(null);
+  /** The template straightened into the start's frame, for "Vorher und jetzt". */
+  const [templateStraight, setTemplateStraight] = useState<ImageBitmap | null>(null);
+  const picker = useTemplatePicker(deps, setStatus);
   const project = useRef<Project | null>(null);
   const asked = useRef(false);
 
@@ -108,7 +127,15 @@ export function GuidedFlow({
         asked.current = true;
         if (saved.request) setChoices(choicesFrom(saved.request, KNOWN));
         const quad = saved.paperCorners ? pairsToQuad(saved.paperCorners) : undefined;
-        original.start(decoded.bitmap, quad);
+        original.start(decoded.bitmap, quad ? { known: quad } : {});
+        const templateImage =
+          saved.referenceAssetId && (await decodeAsset(deps, saved.referenceAssetId));
+        if (templateImage && live) {
+          setTemplate({
+            bitmap: templateImage.bitmap,
+            quad: saved.referenceCorners ? pairsToQuad(saved.referenceCorners) : IMAGE_CORNERS,
+          });
+        }
         const view = quad && (await straightView(deps, decoded.bitmap, quad));
         if (!live) return;
         setStatus("");
@@ -207,6 +234,46 @@ export function GuidedFlow({
     }
   };
 
+  /** A template file was picked: its corner step follows. */
+  const pickTemplate = async (file: File) => {
+    if (await picker.pick(file)) go("template");
+  };
+
+  /** Keeps the template and its corners; stored as the project's reference (D-070). */
+  const acceptTemplate = async () => {
+    const chosen = picker.chosen();
+    if (!chosen) return go("photo");
+    setTemplate({ bitmap: chosen.picture.decoded.bitmap, quad: chosen.quad });
+    setTemplateStraight(null);
+    go("photo");
+    const projects = deps.projects;
+    const seen = project.current;
+    if (!projects || !seen) return setStatus("");
+    try {
+      project.current = await setReference(projects, seen, {
+        image: chosen.picture.asset,
+        corners: quadToPairs(chosen.quad),
+      });
+      setStatus(t("guided.template.saved"));
+    } catch (error) {
+      saveFailed(error);
+    }
+  };
+
+  const removeTemplate = async () => {
+    setTemplate(null);
+    setTemplateStraight(null);
+    const projects = deps.projects;
+    const seen = project.current;
+    if (!projects || !seen?.referenceAssetId) return setStatus(t("guided.template.removed"));
+    try {
+      project.current = await setReference(projects, seen, null);
+      setStatus(t("guided.template.removed"));
+    } catch (error) {
+      saveFailed(error);
+    }
+  };
+
   const showIdeas = () => {
     const marked = straight?.bitmap ?? original.image;
     const aspect = marked ? marked.width / marked.height : 1;
@@ -245,6 +312,10 @@ export function GuidedFlow({
       const size = { width: straight.bitmap.width, height: straight.bitmap.height };
       const view = await straightView(deps, checkpoint.image, checkpoint.quad, size);
       if (!view) return setStatus(t("guided.corners.folded"));
+      if (template && !templateStraight) {
+        const shown = await straightView(deps, template.bitmap, template.quad, size);
+        if (shown) setTemplateStraight(shown.bitmap);
+      }
       let saved = false;
       const projects = deps.projects;
       const seen = project.current;
@@ -292,8 +363,25 @@ export function GuidedFlow({
           onPick={(file) => void pick(file)}
           onCancel={exit}
           onNext={() => void straighten()}
+          template={
+            original.image ? (
+              <TemplateCard
+                preview={template ? <Thumb image={template.bitmap} width={56} height={70} /> : null}
+                busy={picker.busy || busy}
+                onPick={(file) => void pickTemplate(file)}
+                onRemove={() => void removeTemplate()}
+              />
+            ) : null
+          }
         />
       )}
+      {step === "template" &&
+        picker.screen(
+          status,
+          () => void acceptTemplate(),
+          () => go("photo"),
+        )}
+      {step !== "template" && picker.dialog}
       {step === "tool" && (
         <ToolScreen
           choices={choices}
@@ -357,6 +445,7 @@ export function GuidedFlow({
       {step === "check" && straight && now && (
         <CheckScreen
           before={straight.bitmap}
+          template={templateStraight}
           now={now.bitmap}
           saved={now.saved}
           onBack={() => go("steps")}
@@ -364,7 +453,7 @@ export function GuidedFlow({
           onNext={() => go("goal")}
         />
       )}
-      {step !== "photo" && step !== "checkPhoto" && status && (
+      {step !== "photo" && step !== "checkPhoto" && step !== "template" && status && (
         <p className="ns-toast ns-g-toast" role="status">
           {status}
         </p>

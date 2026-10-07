@@ -58,18 +58,18 @@
 ## Task 5: Complete non-preview guided flow
 
 - [x] Implement Capture → Straighten → Tool → Intent → Ideas → Execute → Check. Done: start screen with the coach, Quick Compare and the projects list (D-067), pure flow state with the circle area and protected spots (`apps/web/src/coach/flow.ts`). Tool, goal (circle area, protected spots under "Weitere Optionen"), three ideas and tickable steps with "Woher wissen wir das?" are done; the photo becomes the project original and the request, ideas and chosen idea are saved as revisions (`apps/web/src/coach/GuidedFlow.tsx`, e2e `guided.spec.ts` in Chromium and WebKit). The photo's paper corners are found and snapped with the Quick Compare rules (D-061, D-062), with a loupe while dragging; "Weiter" straightens the sheet locally from the immutable original, saves the corners as `paperCorners`, and marks on the straight view are carried back to the original's coordinates for the coach request. A checkpoint photo gets its own corners, is straightened into the start's frame and stored as an immutable checkpoint with `paperCorners`; "Vorher und jetzt" compares both with a divider. The project view (`#/projects/<id>`) shows start and checkpoints, the last idea, "Als Datei sichern" (the verified package), deleting with a second tap, and "Weiterzeichnen", which reopens the flow at the goal with the straight sheet and the last choices; "Projekt aus Datei öffnen" on the start screen imports a package as a copy. E2E: `guided.spec.ts`, `guided-project.spec.ts` in Chromium and WebKit.
-- [ ] Reuse Quick Compare for checkpoint inspection. (The flow has its own "Vorher und jetzt" split view on the straightened sheets; opening a project's pair in Quick Compare is still open.)
+- [x] Reuse Quick Compare for checkpoint inspection: "Im Schnellvergleich öffnen" in the project view (Task 6).
 - [ ] Test with 5–8 beginners without developer explanation.
 - [ ] This study is also the deferred Phase 0 beginner gate (D-048): use standardized starters first, define "understands" and "worsens" as in spec §15.2, and record it in the Phase 0 results report.
 
 ## Task 6: Template in a project (D-070, track step T1)
 
-- [ ] Offer an optional template after the drawing's photo (camera, photos, files, PDF page); no extra screen for people without one.
-- [ ] Store it as an immutable `reference` asset (`referenceAssetId`) with its own paper corners, straightened into the drawing's frame like a checkpoint.
-- [ ] Project view: the template beside start and checkpoints; add, replace or remove it.
-- [ ] "Vorher und jetzt" can show the template as a third view.
-- [ ] "Im Schnellvergleich öffnen" from the project view: drawing and template, or start and latest checkpoint, already aligned; this closes Task 5's open Quick Compare item.
-- [ ] Export/import carries the template; tests in Chromium and WebKit.
+- [x] Offer an optional template after the drawing's photo (camera, photos, files, PDF page); no extra screen for people without one. A quiet card "Vorlage (optional)" under the photo; picking opens its own corner step (whole image when no sheet is found), then returns.
+- [x] Store it as an immutable `reference` asset (`referenceAssetId`, `referenceCorners`; `setReference` in `packages/projects` deletes a replaced image unless another project uses it), straightened into the drawing's frame like a checkpoint.
+- [x] Project view: the template card; add, change or remove it (removing asks for a second tap).
+- [x] "Vorher und jetzt" can show the template: "Vergleichen mit Vorher | Vorlage".
+- [x] "Im Schnellvergleich öffnen" from the project view (`#/compare/<id>`): the latest drawing and the template, or the latest checkpoint and the start, aligned at the saved corners without re-running automatic alignment; "Zurück" returns to the project. This closes Task 5's open Quick Compare item.
+- [x] Export/import carries the template; e2e `template.spec.ts` in Chromium and WebKit.
 
 ## Task 7: Goal "Näher an die Vorlage" (D-070, track step T2)
 

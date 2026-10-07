@@ -48,6 +48,7 @@ function coach(projects: ProjectDeps | null) {
       throw new Error("not used");
     },
     download,
+    renderPdf: async () => null,
   };
   return { deps, download };
 }
@@ -135,5 +136,60 @@ describe("ProjectView", () => {
     await vi.waitFor(() =>
       expect(screen.getByText("Die Datei konnte nicht erstellt werden.")).toBeTruthy(),
     );
+  });
+
+  it("adds and removes a template, and opens the pair in Quick Compare (D-070)", async () => {
+    const projects = projectDeps();
+    const project = await createProject(projects, "Mit Vorlage", photo(1));
+    const { deps } = coach(projects);
+    deps.decode = async () => ({
+      bitmap: { width: 30, height: 40 } as ImageBitmap,
+      width: 30,
+      height: 40,
+      sourceWidth: 300,
+      sourceHeight: 400,
+    });
+    await show(deps, project.id);
+    expect(screen.queryByRole("link", { name: "Im Schnellvergleich öffnen" })).toBeNull();
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText("Vorlage wählen"), {
+        target: { files: [new File([new Uint8Array([4])], "v.png", { type: "image/png" })] },
+      });
+    });
+    expect(screen.getByRole("heading", { name: "Vorlage" })).toBeTruthy();
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Übernehmen" })));
+    await vi.waitFor(() => expect(screen.getByText("Vorlage gespeichert.")).toBeTruthy());
+    expect(
+      screen.getByRole("link", { name: "Im Schnellvergleich öffnen" }).getAttribute("href"),
+    ).toBe(`#/compare/${project.id}`);
+    expect((await projects.store.getProject(project.id))?.referenceAssetId).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Entfernen" }));
+    await act(async () =>
+      fireEvent.click(screen.getByRole("button", { name: "Wirklich entfernen?" })),
+    );
+    await vi.waitFor(() => expect(screen.getByText("Vorlage entfernt.")).toBeTruthy());
+    expect((await projects.store.getProject(project.id))?.referenceAssetId).toBeUndefined();
+  });
+
+  it("goes back from the template step without a change", async () => {
+    const projects = projectDeps();
+    const project = await createProject(projects, "Ohne", photo(1));
+    const { deps } = coach(projects);
+    deps.decode = async () => ({
+      bitmap: { width: 30, height: 40 } as ImageBitmap,
+      width: 30,
+      height: 40,
+      sourceWidth: 300,
+      sourceHeight: 400,
+    });
+    await show(deps, project.id);
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText("Vorlage wählen"), {
+        target: { files: [new File([new Uint8Array([4])], "v.png", { type: "image/png" })] },
+      });
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Zurück" }));
+    expect(screen.getByText("Vorlage (optional)")).toBeTruthy();
+    expect((await projects.store.getProject(project.id))?.referenceAssetId).toBeUndefined();
   });
 });

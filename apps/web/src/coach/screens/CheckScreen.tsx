@@ -1,7 +1,7 @@
 import { t } from "@nextstroke/ui";
 import { useEffect, useRef, useState } from "react";
 import { photoStyle } from "../photoStyle.ts";
-import { FlowBar, Foot } from "./parts.tsx";
+import { FlowBar, Foot, Pill } from "./parts.tsx";
 
 /**
  * Before and now (Phase 3 Task 5): the straight original and the straight checkpoint, both in
@@ -9,6 +9,7 @@ import { FlowBar, Foot } from "./parts.tsx";
  */
 export function CheckScreen({
   before,
+  template = null,
   now,
   saved,
   onBack,
@@ -16,6 +17,8 @@ export function CheckScreen({
   onNext,
 }: {
   before: ImageBitmap;
+  /** The template in the same frame (D-070); with one, the left side can show it instead. */
+  template?: ImageBitmap | null;
   now: ImageBitmap;
   saved: boolean;
   onBack: () => void;
@@ -23,6 +26,8 @@ export function CheckScreen({
   onNext: () => void;
 }) {
   const [split, setSplit] = useState(50);
+  const [against, setAgainst] = useState<"before" | "template">("before");
+  const left = against === "template" && template ? template : before;
   const canvas = useRef<HTMLCanvasElement | null>(null);
   const aspect = before.width / before.height;
 
@@ -33,7 +38,7 @@ export function CheckScreen({
     el.width = Math.round(el.clientWidth * (window.devicePixelRatio || 1));
     el.height = Math.round(el.width / aspect);
     const x = Math.round((split / 100) * el.width);
-    ctx.drawImage(before, 0, 0, el.width, el.height);
+    ctx.drawImage(left, 0, 0, el.width, el.height);
     ctx.save();
     ctx.beginPath();
     ctx.rect(x, 0, el.width - x, el.height);
@@ -42,22 +47,42 @@ export function CheckScreen({
     ctx.restore();
     ctx.fillStyle = "#8fb0ff";
     ctx.fillRect(x - 1, 0, 2, el.height);
-  }, [before, now, aspect, split]);
+  }, [left, now, aspect, split]);
 
   return (
     <>
       <FlowBar back={onBack} title={t("guided.check.title")} />
       <div className="ns-g-body">
-        <div className="ns-g-check">
+        {template && (
+          <div className="ns-g-segs" role="radiogroup" aria-label={t("guided.check.against")}>
+            <Pill
+              kind="seg"
+              name="against"
+              selected={against === "before"}
+              onSelect={() => setAgainst("before")}
+            >
+              {t("guided.check.before")}
+            </Pill>
+            <Pill
+              kind="seg"
+              name="against"
+              selected={against === "template"}
+              onSelect={() => setAgainst("template")}
+            >
+              {t("guided.check.template")}
+            </Pill>
+          </div>
+        )}
+        <div className="ns-g-check" style={{ maxWidth: photoStyle(aspect).maxWidth }}>
           <canvas
             ref={canvas}
             className="ns-g-photo ns-g-view"
-            style={photoStyle(aspect)}
+            style={{ aspectRatio: String(aspect) }}
             role="img"
             aria-label={t("guided.check.view")}
           />
           <span className="ns-g-tag" data-side="left">
-            {t("guided.check.before")}
+            {t(left === before ? "guided.check.before" : "guided.check.template")}
           </span>
           <span className="ns-g-tag" data-side="right">
             {t("guided.check.now")}

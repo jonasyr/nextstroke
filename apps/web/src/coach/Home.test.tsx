@@ -34,6 +34,7 @@ function coach(projects: ProjectDeps | null, persisted: boolean | null = false):
       throw new Error("not used");
     },
     download: () => undefined,
+    renderPdf: async () => null,
   };
 }
 

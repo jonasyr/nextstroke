@@ -42,6 +42,7 @@ describe("paper corners for the guided photo", () => {
   it("starts the rings inside the photo when there is no sheet or no vision", async () => {
     const none = { quad: INSET_CORNERS, unsure: [], found: false };
     expect(await guessCorners(null, image)).toEqual(none);
+    expect((await guessCorners(null, image, SHEET)).quad).toEqual(SHEET);
     expect(await guessCorners(vision({ load: async () => ({ ok: false, ms: 0 }) }), image)).toEqual(
       none,
     );

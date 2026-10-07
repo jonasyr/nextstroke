@@ -45,6 +45,7 @@ import {
   X,
 } from "lucide-react";
 import { type PointerEvent, useCallback, useEffect, useReducer, useRef, useState } from "react";
+import type { ComparePair } from "../coach/pair.ts";
 import { useNoTouchDefaults } from "../useNoTouchDefaults.ts";
 import type { Decoded } from "./decode.ts";
 import { type HintStore, hintStore } from "./hints.ts";
@@ -130,7 +131,16 @@ const modeOf = (s: CompareState): Mode =>
 /** Below this confidence the corner step says "Ecken prüfen". */
 const SURE = 0.95;
 
-export function QuickCompare({ deps, onHome }: { deps: CompareDeps; onHome?: () => void }) {
+export function QuickCompare({
+  deps,
+  onHome,
+  pair,
+}: {
+  deps: CompareDeps;
+  onHome?: () => void;
+  /** A project's pair (D-070): opened straight into the editor, at its saved corners. */
+  pair?: () => Promise<ComparePair | null>;
+}) {
   const [state, dispatch] = useReducer(compare, undefined, initialState);
   const apply = useCallback((action: CompareAction, record = false) => {
     if (record) dispatch({ type: "checkpoint" });
@@ -498,6 +508,52 @@ export function QuickCompare({ deps, onHome }: { deps: CompareDeps; onHome?: () 
       }),
     [],
   );
+
+  // A project's pair: both images at once, aligned at the corners the user saved (D-060, D-070).
+  // biome-ignore lint/correctness/useExhaustiveDependencies: runs once when opened from a project
+  useEffect(() => {
+    if (!pair) return;
+    let live = true;
+    void (async () => {
+      setImporting(true);
+      setStatus(t("status.loading"));
+      try {
+        const loaded = await pair();
+        if (!live) return;
+        if (!loaded) return setStatus(t("status.noPair"));
+        const [reference, original] = await Promise.all([
+          deps.decode(loaded.reference.blob),
+          deps.decode(loaded.original.blob),
+        ]);
+        if (!live) return;
+        abortRef.current?.abort();
+        pairRef.current += 1;
+        setImages({
+          original: { ...original, name: loaded.original.name, blob: loaded.original.blob },
+          reference: { ...reference, name: loaded.reference.name, blob: loaded.reference.blob },
+        });
+        dispatch({ type: "image-replaced" });
+        const drawn = loaded.original.corners;
+        const template = loaded.reference.corners;
+        if (drawn && template) {
+          dispatch({ type: "corners-auto", refCorners: template, corners: drawn });
+          // The user's own corners win: no automatic alignment on opening.
+          autoForPair.current = pairRef.current;
+          setStatus(t("status.projectPair"));
+        } else {
+          setStatus("");
+        }
+        setEditor(true);
+      } catch {
+        if (live) setStatus(t("status.unsupported"));
+      } finally {
+        if (live) setImporting(false);
+      }
+    })();
+    return () => {
+      live = false;
+    };
+  }, []);
 
   /** "Beispiel ansehen": both demo images at once, then straight into the editor (D-056). */
   async function loadDemo() {

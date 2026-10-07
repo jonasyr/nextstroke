@@ -1221,6 +1221,8 @@ input[type="range"]::-moz-range-thumb {
 }
 .ns-g-check {
   position: relative;
+  width: 100%;
+  margin-inline: auto;
 }
 .ns-g-tag {
   position: absolute;
@@ -1325,4 +1327,47 @@ a.ns-primary {
 /* A photo that only shows: swiping over it scrolls the screen. */
 .ns-g-photo.ns-g-view {
   touch-action: pan-y;
+}
+/* The optional template (D-070): a quiet card, not a step of its own. */
+.ns-g-template {
+  display: grid;
+  grid-template-columns: 56px 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 12px;
+  border-radius: 14px;
+  background: var(--surface);
+}
+.ns-g-template-thumb {
+  width: 56px;
+  height: 70px;
+  border-radius: 8px;
+  background: var(--surface-2);
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  overflow: hidden;
+}
+.ns-g-template-text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.ns-g-template-text small {
+  color: var(--muted);
+  font-size: 13px;
+}
+.ns-g-template-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+.ns-g-segs:has(> :nth-child(2):last-child) {
+  grid-template-columns: repeat(2, 1fr);
+}
+.ns-g-link-button {
+  display: grid;
+  place-items: center;
+  color: var(--fg);
+  text-decoration: none;
 }

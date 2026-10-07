@@ -1,5 +1,5 @@
 import { moveCorner, type Point, type Quad } from "@nextstroke/compare";
-import { t } from "@nextstroke/ui";
+import { type MessageKey, t } from "@nextstroke/ui";
 import { useRef, useState } from "react";
 import type { VisionDeps } from "../compare/visionClient.ts";
 import { guessCorners, INSET_CORNERS, snapCorner } from "./paper.ts";
@@ -19,29 +19,43 @@ export function useCorners(vision: VisionDeps | null, say: (text: string) => voi
   const photo = useRef(0);
   const snaps = useRef(new Map<number, Point[]>());
 
-  const start = (bitmap: ImageBitmap, known?: Quad) => {
+  /**
+   * A new photo: `known` corners saved earlier, else the automatic guess; without a sheet the
+   * rings sit at `fallback` and `missing` is said (a digital template uses the whole image).
+   */
+  const start = (
+    bitmap: ImageBitmap,
+    options: { known?: Quad; fallback?: Quad; missing?: MessageKey } = {},
+  ) => {
+    const { known, fallback = INSET_CORNERS, missing = "guided.corners.missing" } = options;
     const id = ++photo.current;
     setImage(bitmap);
-    setQuad(known ?? INSET_CORNERS);
+    setQuad(known ?? fallback);
     setUnsure([]);
     moved.current = false;
     snaps.current = new Map();
     if (known) return;
     say(t("guided.corners.finding"));
-    void guessCorners(vision, bitmap).then((guess) => {
+    void guessCorners(vision, bitmap, fallback).then((guess) => {
       if (moved.current || id !== photo.current) return;
       setQuad(guess.quad);
       setUnsure(guess.unsure);
       say(
         t(
           !guess.found
-            ? "guided.corners.missing"
+            ? missing
             : guess.unsure.length
               ? "guided.corners.check"
               : "guided.corners.found",
         ),
       );
     });
+  };
+
+  /** No photo any more (a template removed); a late guess for the old one is ignored. */
+  const clear = () => {
+    photo.current++;
+    setImage(null);
   };
 
   const onMove = (index: number, point: Point) => {
@@ -63,5 +77,5 @@ export function useCorners(vision: VisionDeps | null, say: (text: string) => voi
   const props: CornerProps | null = image
     ? { quad, unsure, onMove, onDrop: (i) => void onDrop(i) }
     : null;
-  return { image, quad, start, props };
+  return { image, quad, start, clear, props };
 }

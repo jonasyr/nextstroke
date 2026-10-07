@@ -3,6 +3,7 @@ import type { CoachDeps } from "../coach/deps.ts";
 import { GuidedFlow } from "../coach/GuidedFlow.tsx";
 import { Home } from "../coach/Home.tsx";
 import { ProjectView } from "../coach/ProjectView.tsx";
+import { projectPair } from "../coach/pair.ts";
 import { browserDeps } from "../compare/browser.ts";
 import { type CompareDeps, QuickCompare } from "../compare/QuickCompare.tsx";
 import { hrefFor, hrefWith, type Route } from "../routing/routes.ts";
@@ -27,7 +28,21 @@ export function Page({
   coach?: CoachDeps;
   compare?: CompareDeps;
 }) {
-  if (route === "compare") return <QuickCompare deps={compare} onHome={goHome} />;
+  if (route === "compare") {
+    const store = coach.projects?.store;
+    // From a project (D-070): its pair, and back to the project.
+    if (id && store) {
+      return (
+        <QuickCompare
+          key={id}
+          deps={compare}
+          pair={() => projectPair(store, id)}
+          onHome={() => navigate(hrefWith("projects", id))}
+        />
+      );
+    }
+    return <QuickCompare deps={compare} onHome={goHome} />;
+  }
   if (route === "projects" && id)
     return <ProjectView key={id} deps={coach} id={id} navigate={navigate} />;
   if (route === "home" || route === "projects") {

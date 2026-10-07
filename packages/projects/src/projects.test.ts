@@ -9,6 +9,7 @@ import {
   deleteProject,
   NotFoundError,
   type ProjectDeps,
+  setReference,
   sha256Hex,
   updateProject,
 } from "./repository.ts";
@@ -176,5 +177,28 @@ describe("storage status in plain German", () => {
     expect(describeStorage({ persisted: null })[0]).toMatch(/darf Projekte löschen/);
     expect(describeStorage({ persisted: false, usage: 90, quota: 100 })).toHaveLength(3);
     expect(describeStorage({ persisted: false, usage: 10, quota: 100 })).toHaveLength(2);
+  });
+
+  it("sets, replaces and removes a template, deleting the old image", async () => {
+    let project = await createProject(deps, "Mit Vorlage", photo(1));
+    const corners: [[number, number], [number, number], [number, number], [number, number]] = [
+      [0, 0],
+      [1, 0],
+      [1, 1],
+      [0, 1],
+    ];
+    project = await setReference(deps, project, { image: photo(5), corners });
+    const first = project.referenceAssetId ?? "";
+    expect((await deps.store.getAsset(first))?.record.role).toBe("reference");
+    expect(project.referenceCorners).toEqual(corners);
+    project = await setReference(deps, project, { image: photo(6) });
+    expect(project.referenceAssetId).not.toBe(first);
+    expect(project.referenceCorners).toBeUndefined();
+    expect(await deps.store.getAsset(first)).toBeNull();
+    const second = project.referenceAssetId ?? "";
+    project = await setReference(deps, project, null);
+    expect(project.referenceAssetId).toBeUndefined();
+    expect(await deps.store.getAsset(second)).toBeNull();
+    expect(await deps.store.getAsset(project.originalAssetId)).not.toBeNull();
   });
 });
