@@ -30,13 +30,17 @@ export function activateUpdate(worker: ServiceWorker): void {
 export function reloadOnRequestedUpdate(
   container: EventTarget,
   reload: () => void,
-): (worker: ServiceWorker) => void {
-  let requested = false;
+  whenIdle: (run: () => void) => void = (run) => run(),
+): (worker: ServiceWorker, options?: { automatic?: boolean }) => void {
+  let requested: "user" | "automatic" | null = null;
   container.addEventListener("controllerchange", () => {
-    if (requested) reload();
+    if (requested === "user") reload();
+    // iOS may hand control over long after the request, e.g. while the photo picker is open
+    // in the coach (owner report 2026-10-07): an automatic update reloads only when idle.
+    else if (requested === "automatic") whenIdle(reload);
   });
-  return (worker) => {
-    requested = true;
+  return (worker, options = {}) => {
+    if (requested !== "user") requested = options.automatic ? "automatic" : "user";
     activateUpdate(worker);
   };
 }

@@ -24,24 +24,27 @@ const idle = () => {
   );
 };
 
+/** Checks again on navigation and on returning to the app. */
+const onChange = (check: () => void) => {
+  window.addEventListener("hashchange", check);
+  document.addEventListener("visibilitychange", check);
+  return () => {
+    window.removeEventListener("hashchange", check);
+    document.removeEventListener("visibilitychange", check);
+  };
+};
+
 if (import.meta.env.PROD && "serviceWorker" in navigator) {
   const hadController = Boolean(navigator.serviceWorker.controller);
-  const update = reloadOnRequestedUpdate(navigator.serviceWorker, () => window.location.reload());
+  const update = reloadOnRequestedUpdate(
+    navigator.serviceWorker,
+    () => window.location.reload(),
+    (reload) => applyWhenIdle(idle, reload, onChange),
+  );
   navigator.serviceWorker.register("./sw.js").then((registration) => {
     watchForUpdate(registration, hadController, (worker) => {
       render(() => update(worker));
-      applyWhenIdle(
-        idle,
-        () => update(worker),
-        (check) => {
-          window.addEventListener("hashchange", check);
-          document.addEventListener("visibilitychange", check);
-          return () => {
-            window.removeEventListener("hashchange", check);
-            document.removeEventListener("visibilitychange", check);
-          };
-        },
-      );
+      applyWhenIdle(idle, () => update(worker, { automatic: true }), onChange);
     });
     // The installed app may stay in memory for days: look for a new version on every return.
     document.addEventListener("visibilitychange", () => {

@@ -73,6 +73,22 @@ describe("service worker updates", () => {
     container.dispatchEvent(new Event("controllerchange"));
     expect(reload).toHaveBeenCalledTimes(1);
   });
+
+  it("reloads after an automatic update only when the app is idle", () => {
+    const container = new EventTarget();
+    const reload = vi.fn();
+    let later: (() => void) | null = null;
+    const update = reloadOnRequestedUpdate(container, reload, (run) => {
+      later = run;
+    });
+    // Asked for on the start screen, but iOS hands control over only while the photo picker
+    // is open in the coach: the reload waits until the app is idle again.
+    update(new FakeWorker() as unknown as ServiceWorker, { automatic: true });
+    container.dispatchEvent(new Event("controllerchange"));
+    expect(reload).not.toHaveBeenCalled();
+    (later as unknown as () => void)();
+    expect(reload).toHaveBeenCalledOnce();
+  });
 });
 
 describe("applyWhenIdle", () => {
